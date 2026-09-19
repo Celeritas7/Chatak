@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#F6F4F0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1C1A17;-webkit-font-smoothing:antialiased;}
+  a{color:#17916B;text-decoration:none;}
+  a:hover{color:#0F6B4F;text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  ::selection{background:#D8EFE4;}
+</style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;background:#F6F4F0;">
+
+  <aside style="width:236px;flex:0 0 236px;padding:22px 16px;display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border-right:1px solid #EAE5DD;position:sticky;top:0;height:100vh;">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px;">
+      <div style="width:30px;height:30px;border-radius:10px;background:#17916B;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;line-height:1;">चा</div>
+      <div style="display:flex;flex-direction:column;">
+        <span style="font-size:15px;font-weight:800;letter-spacing:-0.01em;">Chatak</span>
+        <span style="font-size:10px;color:#9A938A;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">चातक · cātaka</span>
+      </div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:3px;">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="6">
+        <button onClick="{{ item.go }}" style="{{ item.style }}">
+          <span>{{ item.label }}</span>
+          <sc-if value="{{ item.badge }}">
+            <span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#FBE7E4;color:#C2453B;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ item.badge }}</span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </nav>
+
+    <button onClick="{{ goAdd }}" style="margin-top:-12px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border-radius:14px;border:0;background:#1C1A17;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
+      <span style="font-size:15px;line-height:1;">+</span><span>Track a product</span>
+    </button>
+
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:#F3F7F5;border:1px solid #E1EDE8;">
+      <div style="font-size:12px;font-weight:700;color:#14684E;">Checking 6 stores</div>
+      <div style="font-size:11px;line-height:1.5;color:#5E6B66;">Last refreshed 14 minutes ago. Reference prices are recorded daily so retailers can't rewrite history.</div>
+      <button onClick="{{ goOnboarding }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#17916B;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">How it works</button>
+    </div>
+  </aside>
+
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <header style="display:flex;align-items:center;gap:16px;padding:18px 32px;border-bottom:1px solid #EAE5DD;background:rgba(246,244,240,0.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;">
+      <div style="flex:1;max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;">
+        <span style="color:#B3ABA0;font-size:13px;">⌕</span>
+        <input placeholder="Search a product, paste a store URL…" style="flex:1;border:0;outline:0;font-size:13px;background:transparent;color:#1C1A17;" />
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;border:1px solid #EAE5DD;font-size:12px;font-weight:600;color:#6F6A62;">
+          <span style="width:7px;height:7px;border-radius:99px;background:#17916B;"></span>Sat 19 Sep 2026
+        </div>
+        <div style="width:34px;height:34px;border-radius:12px;background:#E9E3D9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#6F6A62;">K</div>
+      </div>
+    </header>
+
+    <div style="flex:1;padding:28px 32px 56px;">
+
+      <!-- ============ HOME ============ -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div style="max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:22px;">
+
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+            <div>
+              <h1 style="margin:0 0 6px;font-size:27px;font-weight:800;letter-spacing:-0.02em;">Here's where your watchlist stands</h1>
+              <p style="margin:0;font-size:14px;color:#6F6A62;">One thing is genuinely cheap today. One sale is pretending.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:4px;border-radius:13px;background:#fff;border:1px solid #EAE5DD;">
+              <span style="padding-left:8px;font-size:11px;font-weight:700;color:#9A938A;letter-spacing:0.04em;text-transform:uppercase;">Home</span>
+              <sc-for list="{{ homeModes }}" as="m" hint-placeholder-count="2">
+                <button onClick="{{ m.go }}" style="{{ m.style }}">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+            <sc-for list="{{ summary }}" as="s" hint-placeholder-count="3">
+              <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="{{ s.dot }}"></span>
+                  <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ s.label }}</span>
+                </div>
+                <div style="font-size:25px;font-weight:800;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;">{{ s.value }}</div>
+                <div style="font-size:12px;line-height:1.45;color:#6F6A62;">{{ s.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-for list="{{ homeSections }}" as="sec" hint-placeholder-count="2">
+
+            <sc-if value="{{ sec.isWatchlist }}">
+              <section style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;align-items:baseline;gap:12px;">
+                  <h2 style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.01em;">Your watchlist</h2>
+                  <span style="font-size:12px;color:#9A938A;">5 products · 6 stores each</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
+                  <sc-for list="{{ products }}" as="p" hint-placeholder-count="5">
+                    <button onClick="{{ p.open }}" style="text-align:left;padding:0;border:1px solid #EAE5DD;border-radius:20px;background:#fff;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
+                      <div style="height:116px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);display:flex;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;">
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79F94;letter-spacing:0.05em;">{{ p.shotLabel }}</span>
+                      </div>
+                      <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                          <span style="font-size:13px;font-weight:700;line-height:1.35;text-wrap:pretty;">{{ p.name }}</span>
+                          <span style="{{ p.pill }}">{{ p.verdictLabel }}</span>
+                        </div>
+                        <div style="display:flex;align-items:baseline;gap:8px;">
+                          <span style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;letter-spacing:-0.01em;">{{ p.currentText }}</span>
+                          <span style="{{ p.deltaStyle }}">{{ p.deltaText }}</span>
+                        </div>
+                        <svg viewBox="0 0 220 40" preserveAspectRatio="none" style="width:100%;height:38px;display:block;">
+                          <polyline points="{{ p.spark }}" fill="none" stroke="{{ p.sparkColor }}" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></polyline>
+                        </svg>
+                        <div style="font-size:11px;color:#8A837A;font-weight:600;">{{ p.storeLine }}</div>
+                      </div>
+                    </button>
+                  </sc-for>
+                </div>
+              </section>
+            </sc-if>
+
+            <sc-if value="{{ sec.isDeals }}">
+              <section style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;align-items:baseline;gap:12px;">
+                  <h2 style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.01em;">Live deal feed</h2>
+                  <span style="font-size:12px;color:#9A938A;">Advertised vs. real discount, across all six stores</span>
+                </div>
+                <div style="border:1px solid #EAE5DD;border-radius:20px;background:#fff;overflow:hidden;">
+                  <div style="display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;padding:11px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">
+                    <span>Product</span><span>Store</span><span>Advertised</span><span>Real</span><span>Verdict</span>
+                  </div>
+                  <sc-for list="{{ deals }}" as="d" hint-placeholder-count="5">
+                    <button onClick="{{ d.open }}" style="width:100%;text-align:left;display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:14px 18px;border:0;border-bottom:1px solid #F2EEE7;background:#fff;cursor:pointer;" style-hover="background:#FBFAF7;">
+                      <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                        <span style="font-size:13px;font-weight:700;">{{ d.name }}</span>
+                        <span style="font-size:11px;color:#8A837A;font-family:'IBM Plex Mono',monospace;">{{ d.priceText }}</span>
+                      </div>
+                      <span style="font-size:12px;font-weight:600;color:#6F6A62;">{{ d.store }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#6F6A62;text-decoration:line-through;text-decoration-color:#C9C1B6;">{{ d.advertised }}</span>
+                      <span style="{{ d.realStyle }}">{{ d.real }}</span>
+                      <span style="{{ d.pill }}">{{ d.verdictLabel }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </section>
+            </sc-if>
+
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ============ PRODUCT ============ -->
+      <sc-if value="{{ isProduct }}">
+        <div style="max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
+
+          <button onClick="{{ goHome }}" style="align-self:flex-start;padding:0;border:0;background:none;font-size:12px;font-weight:700;color:#8A837A;cursor:pointer;">← Watchlist</button>
+
+          <div style="display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;">
+            <div style="aspect-ratio:1;border-radius:20px;border:1px solid #EAE5DD;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 9px,#F8F5F0 9px 18px);display:flex;align-items:center;justify-content:center;">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79F94;letter-spacing:0.05em;text-align:center;padding:0 16px;text-wrap:pretty;">{{ product.shotLabel }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <h1 style="margin:0 0 5px;font-size:25px;font-weight:800;letter-spacing:-0.02em;text-wrap:pretty;">{{ product.name }}</h1>
+                <p style="margin:0;font-size:13px;color:#6F6A62;">{{ product.sub }}</p>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">Best price today</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1.1;">{{ product.currentText }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;padding-bottom:4px;">
+                  <span style="font-size:12px;color:#8A837A;">at <strong style="color:#1C1A17;">{{ product.bestStore }}</strong> · MSRP <span style="text-decoration:line-through;text-decoration-color:#C9C1B6;">{{ product.msrpText }}</span></span>
+                  <span style="{{ product.deltaStyle }}">{{ product.deltaText }} vs. 90-day median</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <sc-for list="{{ product.tags }}" as="t" hint-placeholder-count="3">
+                  <span style="padding:5px 11px;border-radius:999px;background:#F1EDE6;font-size:11px;font-weight:600;color:#6F6A62;">{{ t.text }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">Verdict style</span>
+            <div style="display:flex;gap:4px;padding:4px;border-radius:12px;background:#fff;border:1px solid #EAE5DD;">
+              <sc-for list="{{ verdictModes }}" as="v" hint-placeholder-count="2">
+                <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- Verdict take A: signal card -->
+          <sc-if value="{{ verdictIsCard }}">
+            <div style="{{ verdictCardStyle }}">
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+                <div style="{{ verdictLightStyle }}">
+                  <span style="font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;">{{ product.verdictLabel }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;">
+                  <h2 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-0.015em;text-wrap:pretty;">{{ product.headline }}</h2>
+                  <p style="margin:0;font-size:14px;line-height:1.55;color:#4A443C;max-width:70ch;text-wrap:pretty;">{{ product.reason }}</p>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(28,26,23,0.08);">
+                <sc-for list="{{ product.timeline }}" as="e" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.72);">
+                    <span style="font-size:11px;font-weight:700;color:#8A837A;">{{ e.when }}</span>
+                    <span style="font-size:13px;font-weight:700;">{{ e.label }}</span>
+                    <span style="font-size:11px;color:#6F6A62;">{{ e.note }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Verdict take B: banner strip -->
+          <sc-if value="{{ verdictIsBanner }}">
+            <div style="{{ verdictBannerStyle }}">
+              <div style="display:flex;align-items:center;gap:14px;min-width:0;">
+                <span style="{{ verdictDotStyle }}"></span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;">{{ product.headline }}</span>
+                  <span style="font-size:12px;color:#5E574E;">{{ product.shortReason }}</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:22px;flex-shrink:0;flex-wrap:wrap;">
+                <div style="display:flex;flex-direction:column;gap:5px;min-width:150px;">
+                  <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#8A837A;">
+                    <span>Confidence</span><span>{{ product.confidenceText }}</span>
+                  </div>
+                  <div style="height:6px;border-radius:99px;background:rgba(28,26,23,0.1);overflow:hidden;">
+                    <div style="{{ confidenceBarStyle }}"></div>
+                  </div>
+                </div>
+                <button onClick="{{ focusTarget }}" style="padding:10px 16px;border-radius:12px;border:0;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Set price target</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Fake discount forensics -->
+          <sc-if value="{{ product.hasFlag }}">
+            <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #F0D9D5;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="width:8px;height:8px;border-radius:99px;background:#C2453B;"></span>
+                <h3 style="margin:0;font-size:14px;font-weight:800;letter-spacing:-0.01em;color:#C2453B;">Inflated list price detected</h3>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+                <sc-for list="{{ product.forensics }}" as="f" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ f.label }}</span>
+                    <span style="{{ f.valueStyle }}">{{ f.value }}</span>
+                    <span style="font-size:11px;line-height:1.45;color:#6F6A62;">{{ f.note }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Chart -->
+          <div style="padding:20px 22px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <h3 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;">Price history</h3>
+              <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <div style="display:flex;gap:3px;padding:3px;border-radius:11px;background:#F4F1EB;">
+                  <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
+                    <button onClick="{{ r.go }}" style="{{ r.style }}">{{ r.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:3px;padding:3px;border-radius:11px;background:#F4F1EB;">
+                  <sc-for list="{{ graphModes }}" as="g" hint-placeholder-count="2">
+                    <button onClick="{{ g.go }}" style="{{ g.style }}">{{ g.label }}</button>
+                  </sc-for>
+                </div>
+                <button onClick="{{ toggleUsed }}" style="{{ usedToggleStyle }}">Mercari used</button>
+              </div>
+            </div>
+
+            <div style="position:relative;width:100%;padding:0 26px 0 62px;user-select:none;">
+              <sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="5">
+                <div style="{{ g.style }}">{{ g.label }}</div>
+              </sc-for>
+              <div ref="{{ chartRef }}" onMouseMove="{{ onChartMove }}" onMouseLeave="{{ onChartLeave }}" style="position:relative;width:100%;">
+              <svg viewBox="0 0 920 300" preserveAspectRatio="none" style="width:100%;height:300px;display:block;">
+                <sc-for list="{{ chart.bands }}" as="b" hint-placeholder-count="2">
+                  <rect x="{{ b.x }}" y="16" width="{{ b.w }}" height="230" fill="{{ b.fill }}" rx="6"></rect>
+                </sc-for>
+                <rect x="0" y="16" width="920" height="44" fill="#FBFAF7" rx="8"></rect>
+                <polyline points="{{ chart.refPoints }}" fill="none" stroke="#B3ABA0" strokeWidth="1.8" strokeDasharray="6 5" strokeLinejoin="round"></polyline>
+                <line x1="0" y1="68" x2="920" y2="68" stroke="#EFEBE3" strokeWidth="1"></line>
+                <sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="4">
+                  <line x1="0" y1="{{ g.y }}" x2="920" y2="{{ g.y }}" stroke="#EFEBE3" strokeWidth="1"></line>
+                </sc-for>
+                <sc-for list="{{ chart.lines }}" as="l" hint-placeholder-count="3">
+                  <polyline points="{{ l.points }}" fill="none" stroke="{{ l.color }}" strokeWidth="{{ l.width }}" strokeDasharray="{{ l.dash }}" strokeLinejoin="round" strokeLinecap="round" opacity="{{ l.opacity }}"></polyline>
+                </sc-for>
+                <sc-if value="{{ chart.hasTarget }}">
+                  <line x1="0" y1="{{ chart.targetY }}" x2="920" y2="{{ chart.targetY }}" stroke="#17916B" strokeWidth="1.5" strokeDasharray="5 5"></line>
+                </sc-if>
+                <sc-if value="{{ chart.hasHover }}">
+                  <line x1="{{ chart.hoverX }}" y1="16" x2="{{ chart.hoverX }}" y2="246" stroke="#1C1A17" strokeWidth="1" opacity="0.28"></line>
+                </sc-if>
+                <sc-for list="{{ chart.hoverDots }}" as="h" hint-placeholder-count="2">
+                  <circle cx="{{ h.x }}" cy="{{ h.y }}" r="4" fill="#fff" stroke="{{ h.color }}" strokeWidth="2.5"></circle>
+                </sc-for>
+              </svg>
+
+              <div style="position:absolute;top:21px;left:10px;font-size:9px;font-weight:700;letter-spacing:0.08em;color:#A79F94;pointer-events:none;">RETAILER REFERENCE PRICE</div>
+              <div style="position:absolute;top:20px;right:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#8A837A;pointer-events:none;">{{ chart.refRange }}</div>
+              <sc-for list="{{ chart.xLabels }}" as="x" hint-placeholder-count="5">
+                <div style="{{ x.style }}">{{ x.label }}</div>
+              </sc-for>
+              <sc-for list="{{ chart.bandLabels }}" as="b" hint-placeholder-count="2">
+                <div style="{{ b.style }}">{{ b.label }}</div>
+              </sc-for>
+
+              <div onMouseDown="{{ startDrag }}" style="{{ targetHandleStyle }}">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;">{{ targetText }}</span>
+                <span style="font-size:9px;opacity:0.75;font-weight:700;letter-spacing:0.06em;">DRAG</span>
+              </div>
+
+              <sc-if value="{{ chart.hasHover }}">
+                <div style="{{ tooltipStyle }}">
+                  <div style="font-size:11px;font-weight:700;color:#9A938A;margin-bottom:7px;">{{ chart.hoverDate }}</div>
+                  <sc-for list="{{ chart.hoverRows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:9px;justify-content:space-between;padding:2px 0;">
+                      <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#4A443C;white-space:nowrap;">
+                        <span style="{{ r.dot }}"></span>{{ r.name }}
+                      </span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;">{{ r.price }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding-top:4px;">
+              <sc-for list="{{ chart.legend }}" as="l" hint-placeholder-count="4">
+                <span style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:#6F6A62;white-space:nowrap;">
+                  <span style="{{ l.swatch }}"></span>{{ l.name }}
+                </span>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;">
+            <sc-for list="{{ product.stats }}" as="s" hint-placeholder-count="4">
+              <div style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:6px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ s.label }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;letter-spacing:-0.01em;">{{ s.value }}</span>
+                <span style="font-size:11px;color:#8A837A;">{{ s.note }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- Target + stores -->
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;align-items:start;">
+            <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
+              <h3 style="margin:0;font-size:14px;font-weight:800;letter-spacing:-0.01em;">Price target</h3>
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#6F6A62;">Drag the green line on the chart, or type a number. We'll email and push you the moment any store crosses it.</p>
+              <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:14px;border:1px solid #E1EDE8;background:#F5FAF8;">
+                <span style="font-size:15px;color:#17916B;font-weight:700;font-family:'IBM Plex Mono',monospace;">¥</span>
+                <input value="{{ targetInput }}" onChange="{{ onTargetInput }}" style="flex:1;border:0;outline:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#1C1A17;min-width:0;" />
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <sc-for list="{{ targetPresets }}" as="t" hint-placeholder-count="3">
+                  <button onClick="{{ t.go }}" style="padding:7px 12px;border-radius:10px;border:1px solid #EAE5DD;background:#fff;font-size:11px;font-weight:600;color:#6F6A62;cursor:pointer;" style-hover="border-color:#17916B;color:#17916B;">{{ t.label }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size:11px;color:#8A837A;line-height:1.5;">{{ targetOdds }}</div>
+              <button onClick="{{ saveTarget }}" style="{{ saveTargetStyle }}">{{ saveTargetLabel }}</button>
+            </div>
+
+            <div style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1fr;gap:10px;padding:12px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">
+                <span>Store</span><span>Today</span><span>30-day</span><span>Reference price</span>
+              </div>
+              <sc-for list="{{ product.storeRows }}" as="s" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1fr;gap:10px;align-items:center;padding:13px 18px;border-bottom:1px solid #F2EEE7;">
+                  <span style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;">
+                    <span style="{{ s.dot }}"></span>{{ s.name }}
+                  </span>
+                  <span style="{{ s.priceStyle }}">{{ s.price }}</span>
+                  <span style="{{ s.changeStyle }}">{{ s.change }}</span>
+                  <span style="{{ s.refStyle }}">{{ s.ref }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ ADD ============ -->
+      <sc-if value="{{ isAdd }}">
+        <div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Track a product</h1>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">We'll start recording its price everywhere it's sold, from today forward.</p>
+          </div>
+
+          <div style="display:flex;gap:4px;padding:4px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;width:fit-content;flex-wrap:wrap;">
+            <sc-for list="{{ addTabs }}" as="t" hint-placeholder-count="4">
+              <button onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ addIsUrl }}">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div style="padding:22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
+                <label style="font-size:12px;font-weight:700;color:#6F6A62;">Product URL</label>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <input value="{{ urlValue }}" onChange="{{ onUrlInput }}" placeholder="https://item.rakuten.co.jp/…" style="flex:1;min-width:240px;padding:13px 15px;border-radius:14px;border:1px solid #EAE5DD;outline:0;font-size:13px;font-family:'IBM Plex Mono',monospace;" />
+                  <button onClick="{{ fetchUrl }}" style="padding:13px 22px;border-radius:14px;border:0;background:#1C1A17;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Fetch</button>
+                </div>
+                <span style="font-size:11px;color:#9A938A;">Works with Rakuten, Amazon JP, Yodobashi, Bic Camera, Yahoo Shopping and Mercari.</span>
+              </div>
+
+              <sc-if value="{{ urlMatched }}">
+                <div style="padding:20px;border-radius:20px;background:#fff;border:1px solid #E1EDE8;display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:center;">
+                  <div style="aspect-ratio:1;border-radius:14px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F8F5F0 8px 16px);border:1px solid #EFEAE2;"></div>
+                  <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#17916B;">Matched · 6 stores found</span>
+                    <span style="font-size:15px;font-weight:700;text-wrap:pretty;">{{ urlMatched.name }}</span>
+                    <span style="font-size:12px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ urlMatched.priceText }} · 12-month history already on file</span>
+                  </div>
+                  <button onClick="{{ urlMatched.open }}" style="padding:12px 20px;border-radius:13px;border:0;background:#17916B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Add to watchlist</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ addIsBarcode }}">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
+              <div style="padding:22px;border-radius:20px;background:#1C1A17;display:flex;flex-direction:column;gap:14px;">
+                <div style="aspect-ratio:4/3;border-radius:16px;background:#2A2723;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                  <div style="width:72%;height:44%;border:2px solid #17916B;border-radius:10px;"></div>
+                  <span style="position:absolute;bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7E786F;letter-spacing:0.05em;">camera feed · JAN / EAN</span>
+                </div>
+                <span style="font-size:12px;color:#B5AEA4;line-height:1.5;">Point at the barcode on the shelf tag. Works offline — we sync when you're back on data.</span>
+              </div>
+              <div style="padding:22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:12px;">
+                <h3 style="margin:0;font-size:13px;font-weight:800;">Recent in-store scans</h3>
+                <sc-for list="{{ scans }}" as="s" hint-placeholder-count="3">
+                  <button onClick="{{ s.open }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid #EFEAE2;background:#FBFAF7;cursor:pointer;text-align:left;" style-hover="border-color:#D2CABC;">
+                    <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                      <span style="font-size:12px;font-weight:700;">{{ s.name }}</span>
+                      <span style="font-size:10px;color:#9A938A;font-family:'IBM Plex Mono',monospace;">{{ s.code }} · {{ s.where }}</span>
+                    </span>
+                    <span style="{{ s.pill }}">{{ s.verdictLabel }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ addIsSearch }}">
+            <div style="padding:22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
+              <input value="{{ searchValue }}" onChange="{{ onSearchInput }}" placeholder="Seiko Prospex Alpinist…" style="padding:13px 15px;border-radius:14px;border:1px solid #EAE5DD;outline:0;font-size:14px;" />
+              <sc-for list="{{ searchResults }}" as="r" hint-placeholder-count="3">
+                <button onClick="{{ r.open }}" style="display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:12px;border-radius:14px;border:1px solid #F2EEE7;background:#fff;cursor:pointer;text-align:left;" style-hover="background:#FBFAF7;border-color:#E2DCD2;">
+                  <div style="aspect-ratio:1;border-radius:11px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 7px,#F8F5F0 7px 14px);"></div>
+                  <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                    <span style="font-size:13px;font-weight:700;">{{ r.name }}</span>
+                    <span style="font-size:11px;color:#8A837A;">{{ r.sub }}</span>
+                  </span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;">{{ r.priceText }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ addIsAuto }}">
+            <div style="padding:24px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:18px;">
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <h3 style="margin:0;font-size:16px;font-weight:800;letter-spacing:-0.01em;">Catch fake discounts while you shop</h3>
+                <p style="margin:0;font-size:13px;line-height:1.55;color:#6F6A62;max-width:62ch;">Install the Chatak browser add-on and a small verdict badge appears on every product page you visit — no need to come back here first.</p>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+                <sc-for list="{{ storeMeta }}" as="s" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:center;gap:9px;padding:13px 15px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                    <span style="{{ s.dot }}"></span>
+                    <span style="font-size:12px;font-weight:700;">{{ s.name }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <button style="align-self:flex-start;padding:13px 22px;border-radius:14px;border:0;background:#1C1A17;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Add to browser</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ ALERTS ============ -->
+      <sc-if value="{{ isAlerts }}">
+        <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Alerts</h1>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">Four kinds of nudge. All of them arrive by email and push.</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;">
+            <sc-for list="{{ alertTypes }}" as="a" hint-placeholder-count="4">
+              <button onClick="{{ a.toggle }}" style="{{ a.cardStyle }}">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <span style="{{ a.dot }}"></span>
+                  <span style="{{ a.switchStyle }}"><span style="{{ a.knobStyle }}"></span></span>
+                </div>
+                <span style="font-size:13px;font-weight:700;text-align:left;">{{ a.label }}</span>
+                <span style="font-size:11px;line-height:1.45;color:#6F6A62;text-align:left;">{{ a.note }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid #EFEAE2;display:flex;align-items:center;gap:12px;">
+              <h3 style="margin:0;font-size:14px;font-weight:800;">Active alerts</h3>
+              <span style="font-size:11px;color:#9A938A;">{{ activeAlertCount }} running</span>
+            </div>
+            <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:1.8fr 1.1fr 1fr auto;gap:14px;align-items:center;padding:15px 20px;border-bottom:1px solid #F2EEE7;">
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                  <span style="font-size:13px;font-weight:700;">{{ a.product }}</span>
+                  <span style="font-size:11px;color:#8A837A;">{{ a.rule }}</span>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#6F6A62;">{{ a.current }}</span>
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <div style="height:5px;border-radius:99px;background:#F1EDE6;overflow:hidden;">
+                    <div style="{{ a.barStyle }}"></div>
+                  </div>
+                  <span style="font-size:10px;color:#9A938A;font-weight:600;">{{ a.distance }}</span>
+                </div>
+                <span style="{{ a.pill }}">{{ a.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:12px;">
+            <h3 style="margin:0;font-size:14px;font-weight:800;">Recently sent</h3>
+            <sc-for list="{{ alertLog }}" as="l" hint-placeholder-count="3">
+              <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid #F5F2EC;">
+                <span style="{{ l.dot }}"></span>
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                  <span style="font-size:12px;font-weight:700;">{{ l.title }}</span>
+                  <span style="font-size:11px;color:#8A837A;line-height:1.45;">{{ l.body }}</span>
+                </div>
+                <span style="font-size:11px;color:#B3ABA0;white-space:nowrap;font-weight:600;">{{ l.when }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ DEALS ============ -->
+      <sc-if value="{{ isDeals }}">
+        <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Deal feed</h1>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">Sorted by real discount — the gap between the sticker and the 90-day median.</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <sc-for list="{{ dealFilters }}" as="f" hint-placeholder-count="4">
+              <button onClick="{{ f.go }}" style="{{ f.style }}">{{ f.label }}</button>
+            </sc-for>
+          </div>
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ dealCountLabel }}</span>
+          <sc-if value="{{ dealEmpty }}">
+            <div style="padding:34px;border-radius:20px;background:#fff;border:1px dashed #E2DCD2;text-align:center;font-size:13px;color:#8A837A;">No deals match that filter right now.</div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
+            <sc-for list="{{ dealCards }}" as="d" hint-placeholder-count="5">
+              <button onClick="{{ d.open }}" style="text-align:left;padding:18px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;cursor:pointer;display:flex;flex-direction:column;gap:13px;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                  <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                    <span style="font-size:14px;font-weight:700;line-height:1.35;text-wrap:pretty;">{{ d.name }}</span>
+                    <span style="font-size:11px;color:#8A837A;font-weight:600;">{{ d.store }} · {{ d.event }}</span>
+                  </div>
+                  <span style="{{ d.pill }}">{{ d.verdictLabel }}</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:10px;">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;letter-spacing:-0.01em;">{{ d.priceText }}</span>
+                  <span style="font-size:12px;color:#9A938A;text-decoration:line-through;font-family:'IBM Plex Mono',monospace;">{{ d.wasText }}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div style="padding:10px 12px;border-radius:12px;background:#FBFAF7;border:1px solid #F0ECE4;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:9px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">Advertised</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#6F6A62;">{{ d.advertised }}</span>
+                  </div>
+                  <div style="{{ d.realBoxStyle }}">
+                    <span style="font-size:9px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;opacity:0.7;">Real</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;">{{ d.real }}</span>
+                  </div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ CALENDAR ============ -->
+      <sc-if value="{{ isCalendar }}">
+        <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Sale season calendar</h1>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">Typical drop is measured from three years of recorded prices, not from the retailer's claim.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
+            <sc-for list="{{ calendar }}" as="m" hint-placeholder-count="12">
+              <div style="{{ m.cardStyle }}">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+                  <span style="font-size:14px;font-weight:800;letter-spacing:-0.01em;">{{ m.month }}</span>
+                  <span style="font-size:10px;font-weight:700;color:#9A938A;letter-spacing:0.05em;">{{ m.year }}</span>
+                </div>
+                <sc-for list="{{ m.events }}" as="e" hint-placeholder-count="1">
+                  <div style="display:flex;flex-direction:column;gap:4px;padding:11px 13px;border-radius:13px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                      <span style="font-size:12px;font-weight:700;">{{ e.label }}</span>
+                      <span style="{{ e.dropStyle }}">{{ e.drop }}</span>
+                    </div>
+                    <span style="font-size:10px;color:#9A938A;font-weight:600;">{{ e.dates }}</span>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ m.quiet }}">
+                  <span style="font-size:11px;color:#B3ABA0;padding:6px 0;">No major events recorded</span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ SETTINGS ============ -->
+      <sc-if value="{{ isSettings }}">
+        <div style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Settings</h1>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">Defaults for every product you track.</p>
+          </div>
+          <sc-for list="{{ settingGroups }}" as="g" hint-placeholder-count="3">
+            <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
+              <h3 style="margin:0;font-size:13px;font-weight:800;letter-spacing:0.02em;">{{ g.title }}</h3>
+              <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid #F5F2EC;">
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <span style="font-size:13px;font-weight:600;">{{ r.label }}</span>
+                    <span style="font-size:11px;color:#8A837A;">{{ r.note }}</span>
+                  </div>
+                  <sc-if value="{{ r.isToggle }}">
+                    <button onClick="{{ r.toggle }}" style="{{ r.switchStyle }}"><span style="{{ r.knobStyle }}"></span></button>
+                  </sc-if>
+                  <sc-if value="{{ r.isChoice }}">
+                    <div style="display:flex;gap:3px;padding:3px;border-radius:11px;background:#F4F1EB;flex-shrink:0;">
+                      <sc-for list="{{ r.options }}" as="o" hint-placeholder-count="3">
+                        <button onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ============ ONBOARDING ============ -->
+      <sc-if value="{{ isOnboarding }}">
+        <div style="max-width:720px;margin:32px auto 0;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center;">
+          <div style="width:100%;padding:38px 34px;border-radius:26px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:20px;align-items:center;">
+            <span style="padding:6px 13px;border-radius:999px;background:#F1EDE6;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A837A;">Step {{ onboardStepLabel }}</span>
+            <h1 style="margin:0;font-size:29px;font-weight:800;letter-spacing:-0.025em;line-height:1.2;max-width:19ch;text-wrap:pretty;">{{ onboard.title }}</h1>
+            <p style="margin:0;font-size:15px;line-height:1.6;color:#6F6A62;max-width:48ch;text-wrap:pretty;">{{ onboard.body }}</p>
+            <div style="width:100%;height:190px;border-radius:18px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 9px,#F8F5F0 9px 18px);border:1px solid #EFEAE2;display:flex;align-items:center;justify-content:center;">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79F94;letter-spacing:0.05em;">{{ onboard.shot }}</span>
+            </div>
+            <div style="display:flex;gap:7px;">
+              <sc-for list="{{ onboardDots }}" as="d" hint-placeholder-count="3">
+                <span style="{{ d.style }}"></span>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button onClick="{{ goHome }}" style="padding:12px 18px;border-radius:13px;border:0;background:none;color:#8A837A;font-size:13px;font-weight:700;cursor:pointer;">Skip</button>
+              <button onClick="{{ onboardNext }}" style="padding:12px 26px;border-radius:13px;border:0;background:#17916B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">{{ onboardNextLabel }}</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:900},&quot;defaultHome&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;watchlist&quot;,&quot;deals&quot;],&quot;default&quot;:&quot;watchlist&quot;,&quot;tsType&quot;:&quot;'watchlist' | 'deals'&quot;,&quot;section&quot;:&quot;Layout variants&quot;},&quot;defaultGraph&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overlay&quot;,&quot;best&quot;],&quot;default&quot;:&quot;overlay&quot;,&quot;tsType&quot;:&quot;'overlay' | 'best'&quot;,&quot;section&quot;:&quot;Layout variants&quot;},&quot;verdictStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;card&quot;,&quot;banner&quot;],&quot;default&quot;:&quot;card&quot;,&quot;tsType&quot;:&quot;'card' | 'banner'&quot;,&quot;section&quot;:&quot;Layout variants&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    productId: 'seiko',
+    homeMode: this.props.defaultHome ?? 'watchlist',
+    graphMode: this.props.defaultGraph ?? 'overlay',
+    verdictMode: this.props.verdictStyle ?? 'card',
+    range: 90,
+    showUsed: false,
+    target: null,
+    targetSaved: false,
+    hover: null,
+    addTab: 'url',
+    url: 'https://item.rakuten.co.jp/watch-store/spb507j1/',
+    urlFetched: true,
+    search: 'alpinist',
+    dealFilter: 'All stores',
+    onboardStep: 0,
+    alertOn: { target: true, fake: true, low: true, event: true },
+    settings: { email: true, push: true, used: false, lang: 'EN', fmt: '¥12,800', range: '90d' }
+  };
+
+  chartRef = React.createRef();
+
+  yen(n) { return '¥' + Math.round(n).toLocaleString('en-US'); }
+
+  // ---------- data ----------
+  build() {
+    if (this._d) return this._d;
+    const D = 365, today = new Date(2026, 8, 19);
+    const start = new Date(today.getTime() - (D - 1) * 86400000);
+    const idx = (s) => Math.round((new Date(s + 'T00:00:00') - start) / 86400000);
+    const dateAt = (i) => new Date(start.getTime() + i * 86400000);
+
+    const events = [
+      { label: 'Black Friday', store: 'Amazon JP', i0: idx('2025-11-28'), i1: idx('2025-12-01'), depth: 0.10, fake: false },
+      { label: 'Rakuten Super Sale', store: 'Rakuten', i0: idx('2025-12-04'), i1: idx('2025-12-11'), depth: 0.02, fake: true },
+      { label: 'New Year', store: 'Yodobashi', i0: idx('2026-01-01'), i1: idx('2026-01-05'), depth: 0.07, fake: false },
+      { label: 'Rakuten Super Sale', store: 'Rakuten', i0: idx('2026-03-04'), i1: idx('2026-03-11'), depth: 0.06, fake: false },
+      { label: 'Golden Week', store: 'All', i0: idx('2026-04-29'), i1: idx('2026-05-06'), depth: 0.04, fake: false },
+      { label: 'Prime Day', store: 'Amazon JP', i0: idx('2026-07-14'), i1: idx('2026-07-16'), depth: 0.12, fake: false },
+      { label: 'Rakuten Super Sale', store: 'Rakuten', i0: idx('2026-09-04'), i1: idx('2026-09-11'), depth: 0.02, fake: true }
+    ];
+
+    const stores = [
+      { name: 'Rakuten', color: '#B4413A', f: 1.005 },
+      { name: 'Amazon JP', color: '#C98A17', f: 0.988 },
+      { name: 'Yodobashi', color: '#3E7BB6', f: 0.978 },
+      { name: 'Bic Camera', color: '#8B5FA8', f: 0.996 },
+      { name: 'Yahoo Shopping', color: '#5A8F52', f: 1.012 }
+    ];
+    const usedStore = { name: 'Mercari (used)', color: '#8A837A', f: 0.80, used: true };
+
+    const rnd = (seed) => { let x = seed >>> 0; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); };
+
+    const gen = (seed, base, f, storeName) => {
+      const r = rnd(seed), out = [];
+      let p = base * f;
+      for (let i = 0; i < D; i++) {
+        p += (base * f - p) * 0.03 + (r() - 0.5) * base * 0.007;
+        let v = p;
+        for (const e of events) {
+          if (i >= e.i0 && i <= e.i1) {
+            const m = (e.store === storeName || e.store === 'All') ? 1 : 0.35;
+            v = p * (1 - e.depth * m);
+          }
+        }
+        out.push(Math.round(v / 100) * 100);
+      }
+      return out;
+    };
+
+    const defs = [
+      { id: 'seiko', name: 'Seiko Prospex Alpinist SPB507J1', short: 'Seiko Alpinist SPB507J1', sub: '"ClassicPine" green dial · 39.5mm · 6R55 automatic', shot: 'product shot — watch on strap, 1:1', msrp: 143000, base: 111500, seed: 1171, verdict: 'wait', tail: { mode: 'delta', v: 0.041 } },
+      { id: 'orient', name: 'Orient Star Contemporary RE-AV0B02Y00B', short: 'Orient Star RE-AV0B02Y00B', sub: 'Semi-skeleton · 41mm · 70-hour power reserve', shot: 'product shot — watch, 1:1', msrp: 88000, base: 66900, seed: 2213, verdict: 'buy', tail: { mode: 'belowLow', v: 0.008 } },
+      { id: 'citizen', name: 'Citizen Attesa AT8181-63E', short: 'Citizen Attesa AT8181-63E', sub: 'Eco-Drive radio-controlled · titanium', shot: 'product shot — watch, 1:1', msrp: 110000, base: 82000, seed: 3319, verdict: 'watch', tail: { mode: 'delta', v: 0.016 } },
+      { id: 'gshock', name: 'Casio G-Shock GMW-B5000D-1JF', short: 'G-Shock GMW-B5000D', sub: 'Full metal square · Bluetooth · solar', shot: 'product shot — watch, 1:1', msrp: 88000, base: 69400, seed: 4423, verdict: 'watch', tail: { mode: 'delta', v: -0.031 } },
+      { id: 'sony', name: 'Sony WH-1000XM6', short: 'Sony WH-1000XM6', sub: 'Wireless noise-cancelling headphones', shot: 'product shot — headphones, 1:1', msrp: 59400, base: 47300, seed: 5531, verdict: 'watch', tail: { mode: 'delta', v: -0.021 } }
+    ];
+
+    const pct = (v) => (Math.round(Math.abs(v) * 1000) / 10) + '%';
+    const inflated = (msrp) => Math.round((msrp * 1.175) / 1000) * 1000;
+
+    const copy = {
+      seiko: (q) => ({
+        headline: "Wait — September's sale wasn't a discount",
+        reason: 'Rakuten raised its reference price from ' + this.yen(q.msrp) + ' to ' + this.yen(inflated(q.msrp)) + ' on 28 August, then advertised 33% off during the Super Sale. What you would actually pay, ' + this.yen(q.current) + ', is ' + pct(q.delta) + ' above the 90-day median of ' + this.yen(q.median) + '. Black Friday has cut this model 12% two years running.',
+        shortReason: 'Reference price inflated 17% eight days before the sale began.',
+        confidence: 0.82,
+        timeline: [
+          { when: 'Now · 19 Sep', label: 'Post-sale drift', note: this.yen(q.current) + ' — still above the median' },
+          { when: 'In 69 days · 27 Nov', label: 'Amazon Black Friday', note: 'Dropped 12% in 2024 and 2025' },
+          { when: 'In 76 days · 4 Dec', label: 'Rakuten Super Sale', note: 'Points-heavy, price rarely moves' }
+        ]
+      }),
+      orient: (q) => ({
+        headline: 'Buy — this is the lowest price on record',
+        reason: q.bestStore + ' is at ' + this.yen(q.current) + ', ' + pct(q.delta) + ' under the 90-day median of ' + this.yen(q.median) + ' and below the previous 12-month low of ' + this.yen(q.minBefore) + '. No reference-price games: the ' + this.yen(q.msrp) + ' list price has held all year.',
+        shortReason: 'A 12-month low, and the list price has never been inflated.',
+        confidence: 0.91,
+        timeline: [
+          { when: 'Now · 19 Sep', label: 'Record low', note: q.bestStore + ' ' + this.yen(q.current) + ', in stock' },
+          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Historically only −2% on this model' },
+          { when: 'In 104 days · 1 Jan', label: 'New Year sale', note: 'Matched, never beat, today\u2019s price' }
+        ]
+      }),
+      citizen: (q) => ({
+        headline: 'Watch — fair, but not a deal yet',
+        reason: 'At ' + this.yen(q.current) + ' you are ' + this.yen(Math.abs(q.current - q.median)) + ' ' + (q.delta >= 0 ? 'above' : 'below') + ' the 90-day median of ' + this.yen(q.median) + '. Nothing is inflated, nothing is discounted. Prime Day took it to ' + this.yen(q.primeLow) + ' in July.',
+        shortReason: 'Sitting on its median. Prime Day went ' + pct((q.primeLow - q.median) / q.median) + ' lower.',
+        confidence: 0.64,
+        timeline: [
+          { when: 'Now · 19 Sep', label: 'Flat', note: 'Within 2% of median for 6 weeks' },
+          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Typical −8%' },
+          { when: 'In 298 days · 14 Jul', label: 'Prime Day', note: 'Deepest cut of the year' }
+        ]
+      }),
+      gshock: (q) => ({
+        headline: 'Watch — the discount is real but small',
+        reason: q.bestStore + ' is ' + pct(q.delta) + ' ' + (q.delta >= 0 ? 'above' : 'under') + ' the 90-day median of ' + this.yen(q.median) + ', with genuine reference pricing. Full-metal squares rarely move more than 6%, so this is close to as good as it gets outside Prime Day.',
+        shortReason: 'An honest ' + pct(q.delta) + ' off the median. The ceiling on this model is about 6%.',
+        confidence: 0.58,
+        timeline: [
+          { when: 'Now · 19 Sep', label: 'Mild dip', note: pct(q.delta) + ' vs median' },
+          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Typical −5%' },
+          { when: 'In 76 days · 4 Dec', label: 'Rakuten Super Sale', note: 'Points only, price flat' }
+        ]
+      }),
+      sony: (q) => ({
+        headline: 'Watch — a bigger cut is very likely',
+        reason: 'Headphones follow a sharp release cycle. This sat at ' + this.yen(q.primeLow) + ' during Prime Day and Amazon has discounted every XM generation by 20%+ in its first Black Friday. Today is ' + this.yen(q.current) + '.',
+        shortReason: 'Prime Day was ' + pct((q.primeLow - q.current) / q.current) + ' lower. Black Friday usually beats it.',
+        confidence: 0.77,
+        timeline: [
+          { when: 'Now · 19 Sep', label: 'Near list', note: this.yen(q.current) + ', ' + pct(q.delta) + ' vs median' },
+          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Expect ' + this.yen(q.primeLow * 0.96) + ' or below' },
+          { when: 'Past · 14 Jul', label: 'Prime Day', note: 'Hit ' + this.yen(q.primeLow) + ' for three days' }
+        ]
+      })
+    };
+
+    const median90 = (arr) => { const s = arr.slice(-90).slice().sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+
+    const products = defs.map((dd) => {
+      const series = stores.map((s, k) => ({ name: s.name, color: s.color, values: gen(dd.seed + k * 97, dd.base, s.f, s.name) }));
+      const used = { name: usedStore.name, color: usedStore.color, used: true, values: gen(dd.seed + 701, dd.base, usedStore.f, 'Mercari') };
+      const bestOf = () => { const b = []; for (let i = 0; i < D; i++) b.push(Math.min(...series.map((s) => s.values[i]))); return b; };
+      let best = bestOf();
+      const ramp = 18;
+      const minBefore = Math.min(...best.slice(0, D - ramp));
+      for (let pass = 0; pass < 5; pass++) {
+        const med = median90(best);
+        const want = dd.tail.mode === 'belowLow' ? minBefore * (1 - dd.tail.v) : med * (1 + dd.tail.v);
+        const f = want / best[D - 1];
+        if (Math.abs(f - 1) < 0.0004) break;
+        for (const s of series) {
+          for (let k = 0; k < ramp; k++) {
+            const i = D - ramp + k, w = (k + 1) / ramp;
+            s.values[i] = Math.round((s.values[i] * (1 + (f - 1) * w)) / 100) * 100;
+          }
+        }
+        best = bestOf();
+      }
+      const refs = [];
+      for (let i = 0; i < D; i++) {
+        let r = dd.msrp;
+        for (const e of events) if (e.fake && i >= e.i0 - 8 && i <= e.i1 + 2) r = inflated(dd.msrp);
+        refs.push(r);
+      }
+      const median = median90(best);
+      const cur = best[D - 1];
+      const bestStore = series.reduce((a, b) => (b.values[D - 1] < a.values[D - 1] ? b : a));
+      const primeLow = Math.min(...best.slice(idx('2026-07-14'), idx('2026-07-16') + 1));
+      const prod = {
+        ...dd, series, used, best, refs, median, minBefore, primeLow,
+        current: cur, low: Math.min(...best), high: Math.max(...best),
+        bestStore: bestStore.name,
+        delta: (cur - median) / median
+      };
+      prod.copy = copy[dd.id](prod);
+      return prod;
+    });
+
+    this._d = { D, products, stores, events, dateAt, idx };
+    return this._d;
+  }
+
+  // ---------- helpers ----------
+  set = (k, v) => this.setState({ [k]: v, hover: null });
+  open = (id) => () => this.setState({ screen: 'product', productId: id, target: null, targetSaved: false, hover: null });
+
+  seg(active) {
+    return 'padding:7px 13px;border-radius:9px;border:0;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;transition:background .15s;' +
+      (active ? 'background:#1C1A17;color:#fff;' : 'background:transparent;color:#8A837A;');
+  }
+  pill(v) {
+    const c = { buy: ['#E3F3EC', '#0F6B4F'], wait: ['#FBE7E4', '#B03A31'], watch: ['#FBEFD9', '#96620A'] }[v];
+    return 'padding:5px 11px;border-radius:999px;background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;';
+  }
+  vcolor(v) { return { buy: '#17916B', wait: '#C2453B', watch: '#C08A15' }[v]; }
+  vlabel(v) { return { buy: 'Buy now', wait: 'Wait', watch: 'Watch' }[v]; }
+  dot(color, size) { return 'width:' + (size || 8) + 'px;height:' + (size || 8) + 'px;border-radius:99px;background:' + color + ';flex-shrink:0;display:inline-block;'; }
+
+  // ---------- target drag ----------
+  startDrag = (e) => {
+    e.preventDefault();
+    this._drag = true;
+    window.addEventListener('mousemove', this.onDrag);
+    window.addEventListener('mouseup', this.endDrag);
+  };
+  onDrag = (e) => {
+    const el = this.chartRef.current, sc = this._scale;
+    if (!el || !sc) return;
+    const r = el.getBoundingClientRect();
+    const vy = ((e.clientY - r.top) / r.height) * 300;
+    const t = sc.max - ((vy - sc.padT) / (sc.h)) * (sc.max - sc.min);
+    const clamped = Math.max(sc.min * 0.9, Math.min(sc.max, t));
+    this.setState({ target: Math.round(clamped / 100) * 100, targetSaved: false });
+  };
+  endDrag = () => {
+    this._drag = false;
+    window.removeEventListener('mousemove', this.onDrag);
+    window.removeEventListener('mouseup', this.endDrag);
+  };
+  componentWillUnmount() { this.endDrag(); }
+
+  onChartMove = (e) => {
+    if (this._drag) return;
+    const el = this.chartRef.current, sc = this._scale;
+    if (!el || !sc) return;
+    const r = el.getBoundingClientRect();
+    const f = (e.clientX - r.left) / r.width;
+    if (f < 0 || f > 1) { if (this.state.hover !== null) this.setState({ hover: null }); return; }
+    const i = Math.round(f * (sc.n - 1));
+    if (i !== this.state.hover) this.setState({ hover: i });
+  };
+  onChartLeave = () => { if (this.state.hover !== null) this.setState({ hover: null }); };
+
+  renderVals() {
+    const S = this.state, d = this.build();
+    const p = d.products.find((x) => x.id === S.productId) || d.products[0];
+    const screen = S.screen;
+
+    // ---- nav ----
+    const navDefs = [
+      ['home', 'Home'], ['deals', 'Deal feed'], ['calendar', 'Season calendar'],
+      ['alerts', 'Alerts', 2], ['settings', 'Settings']
+    ];
+    const nav = navDefs.map(([id, label, badge]) => ({
+      label, badge,
+      go: () => this.setState({ screen: id, hover: null }),
+      style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border-radius:12px;border:0;cursor:pointer;font-size:13px;font-weight:' +
+        (screen === id ? '700' : '600') + ';text-align:left;background:' +
+        (screen === id ? '#F1EDE6' : 'transparent') + ';color:' + (screen === id ? '#1C1A17' : '#7E786F') + ';'
+    }));
+
+    // ---- range slice ----
+    const n = Math.min(S.range, d.D);
+    const off = d.D - n;
+    const mTop = 80, mBot = 246, mH = mBot - mTop;
+    const x = (i) => (i / (n - 1)) * 920;
+
+    const visibleStores = p.series.concat(S.showUsed ? [p.used] : []);
+    let seriesForScale;
+    if (S.graphMode === 'best') seriesForScale = [{ name: 'Best price', color: '#17916B', values: p.best }].concat(S.showUsed ? [p.used] : []);
+    else seriesForScale = visibleStores;
+    const refSlice = p.refs.slice(off);
+    const target = S.target != null ? S.target : Math.round((p.median * 0.93) / 100) * 100;
+    const allVals = seriesForScale.flatMap((s) => s.values.slice(off)).concat([target]);
+    let min = Math.min(...allVals), max = Math.max(...allVals);
+    const pad = (max - min) * 0.12 || 1000;
+    min = Math.floor((min - pad) / 1000) * 1000;
+    max = Math.ceil((max + pad) / 1000) * 1000;
+    const y = (v) => mTop + (1 - (v - min) / (max - min)) * mH;
+    this._scale = { min, max, padT: mTop, h: mH, n };
+
+    let rMin = Math.min(...refSlice), rMax = Math.max(...refSlice);
+    if (rMax - rMin < 1) { rMin -= 2000; rMax += 2000; }
+    const rSpan = rMax - rMin;
+    const yRef = (v) => 38 + (1 - (v - (rMin - rSpan * 0.3)) / (rSpan * 1.6)) * 16;
+
+    const pts = (vals, fy) => vals.slice(off).map((v, i) => x(i) + ',' + fy(v).toFixed(1)).join(' ');
+
+    const lines = seriesForScale.map((s) => ({
+      points: pts(s.values, y), color: s.color, width: s.used ? 1.8 : (S.graphMode === 'best' ? 2.6 : 1.9),
+      dash: s.used ? '4 4' : '0', opacity: 1
+    }));
+    const refPoints = pts(p.refs, yRef);
+
+    const bands = [], bandLabels = [];
+    for (const e of d.events) {
+      if (e.i1 < off) continue;
+      const a = Math.max(e.i0, off) - off, b = Math.min(e.i1, d.D - 1) - off;
+      const bx = x(a), bw = Math.max(x(b) - bx, 8);
+      bands.push({ x: bx, w: bw, fill: e.fake ? 'rgba(194,69,59,0.08)' : 'rgba(23,145,107,0.07)' });
+      if (bw > 42) {
+        const base = 'position:absolute;top:72px;font-size:10px;font-weight:700;white-space:nowrap;pointer-events:none;color:' + (e.fake ? '#C2453B' : '#5E8E7C') + ';';
+        const lp = (bx + 5) / 9.2;
+        bandLabels.push({
+          label: e.fake ? '⚑ ' + e.label : e.label,
+          style: base + (lp > 56
+            ? 'right:' + Math.max(0, 100 - (bx + bw) / 9.2).toFixed(2) + '%;'
+            : 'left:' + lp.toFixed(2) + '%;')
+        });
+      }
+    }
+
+    const grid = [];
+    for (let k = 0; k <= 4; k++) {
+      const v = min + ((max - min) * k) / 4;
+      grid.push({
+        y: y(v).toFixed(1), label: this.yen(v),
+        style: "position:absolute;left:0;width:52px;text-align:right;top:" + y(v).toFixed(1) + "px;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A79F94;white-space:nowrap;pointer-events:none;"
+      });
+    }
+
+    const xLabels = [];
+    for (let k = 0; k < 5; k++) {
+      const i = Math.round((k / 4) * (n - 1));
+      const dt = d.dateAt(off + i);
+      const lp = x(i) / 9.2;
+      xLabels.push({
+        label: dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        style: 'position:absolute;top:256px;font-size:11px;color:#A79F94;white-space:nowrap;pointer-events:none;' +
+          (k === 0 ? 'left:0;' : k === 4 ? 'right:0;' : 'left:' + lp.toFixed(2) + '%;transform:translateX(-50%);')
+      });
+    }
+
+    const hi = S.hover;
+    const hoverRows = [], hoverDots = [];
+    if (hi !== null && hi >= 0 && hi < n) {
+      const rowSrc = seriesForScale.slice().sort((a, b) => a.values[off + hi] - b.values[off + hi]);
+      for (const s of rowSrc) {
+        hoverRows.push({ name: s.name, price: this.yen(s.values[off + hi]), dot: this.dot(s.color, 7) });
+        hoverDots.push({ x: x(hi).toFixed(1), y: y(s.values[off + hi]).toFixed(1), color: s.color });
+      }
+      hoverRows.push({ name: 'Listed as', price: this.yen(p.refs[off + hi]), dot: this.dot('#C9C1B6', 7) });
+    }
+    const hoverXf = hi !== null ? x(hi) / 920 : 0;
+
+    const targetY = y(Math.max(min, Math.min(max, target)));
+
+    const legend = [{ name: 'Reference price (top strip)', swatch: 'width:16px;height:0;border-top:2px dashed #C9C1B6;display:inline-block;flex-shrink:0;' }]
+      .concat(seriesForScale.map((s) => ({ name: s.name, swatch: 'width:16px;height:3px;border-radius:2px;background:' + s.color + ';display:inline-block;flex-shrink:0;' })));
+
+    // ---- product view models ----
+    const deltaPct = Math.round(Math.abs(p.delta) * 1000) / 10;
+    const deltaText = (p.delta >= 0 ? '+' : '−') + deltaPct + '%';
+    const deltaStyle = 'font-size:12px;font-weight:700;color:' + (p.delta >= 0 ? '#C2453B' : '#17916B') + ';';
+
+    const lowIdx = p.best.indexOf(p.low), highIdx = p.best.indexOf(p.high);
+    const mon = (i) => d.dateAt(i).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const inEvent = (i) => { const e = d.events.find((ev) => i >= ev.i0 && i <= ev.i1); return e ? e.label : null; };
+    const lowNote = lowIdx >= d.D - 3
+      ? 'Today — a new record'
+      : (inEvent(lowIdx) ? 'Set during ' + inEvent(lowIdx) : 'Set ' + mon(lowIdx));
+    const highNote = highIdx >= d.D - 3
+      ? "Today — the year's highest"
+      : (inEvent(highIdx) ? 'Peaked during ' + inEvent(highIdx) : 'Peaked ' + mon(highIdx));
+
+    const productVM = {
+      name: p.name, sub: p.sub, shotLabel: p.shot,
+      currentText: this.yen(p.current), msrpText: this.yen(p.msrp), bestStore: p.bestStore,
+      deltaText, deltaStyle,
+      verdictLabel: this.vlabel(p.verdict),
+      headline: p.copy.headline, reason: p.copy.reason, shortReason: p.copy.shortReason,
+      confidenceText: Math.round(p.copy.confidence * 100) + '%',
+      hasFlag: p.id === 'seiko',
+      tags: [{ text: '12 months of history' }, { text: '6 stores tracked' }, { text: 'Checked 14 min ago' }],
+      timeline: p.copy.timeline,
+      stats: [
+        { label: '90-day median', value: this.yen(p.median), note: 'What it normally costs' },
+        { label: '12-month low', value: this.yen(p.low), note: lowNote },
+        { label: '12-month high', value: this.yen(p.high), note: highNote },
+        { label: 'Today vs. median', value: deltaText, note: p.delta >= 0 ? 'More expensive than usual' : 'Cheaper than usual' }
+      ],
+      storeRows: p.series.concat([p.used]).map((s) => {
+        const cur = s.values[d.D - 1], prev = s.values[d.D - 31];
+        const ch = ((cur - prev) / prev) * 100;
+        const isBest = !s.used && cur === p.current;
+        const inflated = !s.used && s.name === 'Rakuten' && p.id === 'seiko';
+        return {
+          name: s.name, dot: this.dot(s.color),
+          price: this.yen(cur),
+          priceStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:" + (isBest ? '700' : '500') + ';color:' + (isBest ? '#17916B' : '#1C1A17') + ';',
+          change: (ch >= 0 ? '+' : '−') + Math.abs(ch).toFixed(1) + '%',
+          changeStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:" + (ch >= 0 ? '#C2453B' : '#17916B') + ';',
+          ref: s.used ? '—' : this.yen(p.refs[d.D - 1]) + (inflated ? ' ⚑' : ''),
+          refStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:" + (inflated ? '700' : '500') + ';color:' + (inflated ? '#C2453B' : '#9A938A') + ';'
+        };
+      }),
+      forensics: [
+        { label: 'Reference price on 20 Aug', value: this.yen(p.msrp), note: 'Matches the manufacturer MSRP', valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;" },
+        { label: 'Reference price on 4 Sep', value: this.yen(Math.round((p.msrp * 1.175) / 1000) * 1000), note: 'Raised 17% eight days before the sale', valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#C2453B;" },
+        { label: 'Advertised discount', value: '33% OFF', note: 'Measured against the inflated figure', valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#6F6A62;text-decoration:line-through;" },
+        { label: 'Real change vs. median', value: deltaText, note: 'You pay ' + deltaPct + '% more than the 90-day norm of ' + this.yen(p.median), valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:" + (p.delta >= 0 ? '#C2453B' : '#17916B') + ';' }
+      ]
+    };
+
+    // ---- lists ----
+    const pvm = (q) => ({
+      name: q.short, shotLabel: q.shot, open: this.open(q.id),
+      currentText: this.yen(q.current),
+      deltaText: (q.delta >= 0 ? '+' : '−') + (Math.round(Math.abs(q.delta) * 1000) / 10) + '%',
+      deltaStyle: 'font-size:11px;font-weight:700;color:' + (q.delta >= 0 ? '#C2453B' : '#17916B') + ';',
+      pill: this.pill(q.verdict), verdictLabel: this.vlabel(q.verdict),
+      storeLine: 'Best at ' + q.bestStore + ' · ' + (q.verdict === 'wait' ? 'flagged sale' : 'clean pricing'),
+      sparkColor: this.vcolor(q.verdict),
+      spark: (() => {
+        const v = q.best.slice(-90);
+        const lo = Math.min(...v), hi2 = Math.max(...v);
+        return v.map((val, i) => (i / (v.length - 1)) * 218 + 1 + ',' + (36 - ((val - lo) / (hi2 - lo || 1)) * 32).toFixed(1)).join(' ');
+      })()
+    });
+    const products = d.products.map(pvm);
+
+    const realOf = (q) => ({
+      real: (q.delta >= 0 ? '+' : '−') + (Math.round(Math.abs(q.delta) * 1000) / 10) + '%',
+      good: q.delta < -0.02
+    });
+    const dealSrc = [
+      { q: d.products[1], store: 'Yodobashi', event: 'Autumn clearance', adv: '30% OFF' },
+      { q: d.products[0], store: 'Rakuten', event: 'Super Sale (ended)', adv: '33% OFF' },
+      { q: d.products[4], store: 'Amazon JP', event: 'Daily deal', adv: '19% OFF' },
+      { q: d.products[3], store: 'Bic Camera', event: 'Point campaign', adv: '20% OFF' },
+      { q: d.products[2], store: 'Yahoo Shopping', event: 'PayPay boost', adv: '25% OFF' }
+    ].map((s) => ({ ...s, ...realOf(s.q) }));
+    const deals = dealSrc.map((s) => ({
+      name: s.q.short, store: s.store, priceText: this.yen(s.q.current) + ' · ' + s.event,
+      advertised: s.adv, real: s.real,
+      realStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:" + (s.good ? '#17916B' : '#C2453B') + ';',
+      pill: this.pill(s.q.verdict), verdictLabel: this.vlabel(s.q.verdict), open: this.open(s.q.id)
+    }));
+    const dealFiltered = dealSrc.filter((s) =>
+      S.dealFilter === 'All stores' ? true
+        : S.dealFilter === 'Real discounts only' ? s.good
+          : s.store === S.dealFilter);
+    const dealCards = dealFiltered.map((s) => ({
+      name: s.q.short, store: s.store, event: s.event,
+      priceText: this.yen(s.q.current), wasText: this.yen(s.q.msrp),
+      advertised: s.adv, real: s.real,
+      realBoxStyle: 'padding:10px 12px;border-radius:12px;display:flex;flex-direction:column;gap:2px;background:' +
+        (s.good ? '#E3F3EC' : '#FBE7E4') + ';color:' + (s.good ? '#0F6B4F' : '#B03A31') + ';',
+      pill: this.pill(s.q.verdict), verdictLabel: this.vlabel(s.q.verdict), open: this.open(s.q.id)
+    }));
+
+    // ---- calendar ----
+    const evByMonth = {
+      'Sep2026': [{ label: 'Rakuten Super Sale', dates: '4–11 Sep · ended', drop: '+1%', bad: true }],
+      'Oct2026': [],
+      'Nov2026': [{ label: 'Amazon Black Friday', dates: '27–30 Nov', drop: '−12%', bad: false }],
+      'Dec2026': [{ label: 'Rakuten Super Sale', dates: '4–11 Dec', drop: '−2%', bad: true }, { label: 'Year-end clearance', dates: '26–31 Dec', drop: '−6%', bad: false }],
+      'Jan2027': [{ label: 'New Year sale', dates: '1–5 Jan', drop: '−7%', bad: false }],
+      'Feb2027': [],
+      'Mar2027': [{ label: 'Rakuten Super Sale', dates: '4–11 Mar', drop: '−6%', bad: false }],
+      'Apr2027': [{ label: 'Golden Week', dates: '29 Apr–6 May', drop: '−4%', bad: false }],
+      'May2027': [],
+      'Jun2027': [{ label: 'Rakuten Super Sale', dates: '4–11 Jun', drop: '−5%', bad: false }],
+      'Jul2027': [{ label: 'Amazon Prime Day', dates: '14–16 Jul', drop: '−12%', bad: false }],
+      'Aug2027': []
+    };
+    const monthOrder = ['Sep2026', 'Oct2026', 'Nov2026', 'Dec2026', 'Jan2027', 'Feb2027', 'Mar2027', 'Apr2027', 'May2027', 'Jun2027', 'Jul2027', 'Aug2027'];
+    const calendar = monthOrder.map((k, i) => {
+      const evs = evByMonth[k];
+      const big = evs.some((e) => !e.bad && parseFloat(e.drop) <= -7);
+      return {
+        month: k.slice(0, 3), year: k.slice(3),
+        quiet: evs.length === 0,
+        cardStyle: 'padding:16px 18px;border-radius:18px;display:flex;flex-direction:column;gap:10px;background:' +
+          (big ? '#F3F9F6' : '#fff') + ';border:1px solid ' + (big ? '#D6E9E0' : '#EAE5DD') + ';' + (i === 0 ? 'box-shadow:0 0 0 2px #1C1A17;' : ''),
+        events: evs.map((e) => ({
+          label: e.label, dates: e.dates, drop: e.drop,
+          dropStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:" + (e.bad ? '#C2453B' : '#17916B') + ';'
+        }))
+      };
+    });
+
+    // ---- alerts ----
+    const aDefs = [
+      ['target', 'Price hits my target', 'Any store crosses the number you set.', '#17916B'],
+      ['fake', 'Fake discount detected', 'A retailer raises its reference price before a sale.', '#C2453B'],
+      ['low', 'Lowest price ever', 'Beats every price we have on record.', '#C08A15'],
+      ['event', 'Sale event starting soon', 'Three days before a season we track.', '#3E7BB6']
+    ];
+    const alertTypes = aDefs.map(([k, label, note, color]) => {
+      const on = S.alertOn[k];
+      return {
+        label, note, dot: this.dot(color, 10),
+        toggle: () => this.setState({ alertOn: { ...S.alertOn, [k]: !on } }),
+        cardStyle: 'padding:16px 18px;border-radius:18px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:9px;text-align:left;border:1px solid ' + (on ? '#D6E9E0' : '#EAE5DD') + ';',
+        switchStyle: 'width:36px;height:20px;border-radius:99px;padding:2px;display:flex;background:' + (on ? '#17916B' : '#DDD7CE') + ';justify-content:' + (on ? 'flex-end' : 'flex-start') + ';transition:all .18s;',
+        knobStyle: 'width:16px;height:16px;border-radius:99px;background:#fff;display:block;'
+      };
+    });
+    const P = (id) => d.products.find((q) => q.id === id);
+    const orientTarget = 63000, seikoTarget = 102000;
+    const progress = (q, gap) => Math.max(0.06, Math.min(0.94, 1 - gap / (q.median * 0.25)));
+
+    const alerts = [
+      { id: 'seiko', kind: 'target', target: seikoTarget },
+      { id: 'orient', kind: 'target', target: orientTarget },
+      { id: 'sony', kind: 'low' },
+      { id: 'citizen', kind: 'fake' }
+    ].map((a) => {
+      const q = P(a.id);
+      let rule, distance, bar, status, v;
+      if (a.kind === 'target') {
+        rule = 'Target ' + this.yen(a.target) + ' · any store';
+        const hit = q.current <= a.target;
+        status = hit ? 'Triggered' : 'Waiting';
+        v = hit ? 'buy' : 'watch';
+        distance = hit ? this.yen(a.target - q.current) + ' under target' : this.yen(q.current - a.target) + ' to go';
+        bar = hit ? 1 : progress(q, q.current - a.target);
+      } else if (a.kind === 'low') {
+        rule = 'Lowest price ever';
+        const hit = q.current <= q.low;
+        status = hit ? 'Triggered' : 'Waiting';
+        v = hit ? 'buy' : 'watch';
+        distance = hit ? 'New record today' : this.yen(q.current - q.low) + ' above record';
+        bar = hit ? 1 : progress(q, q.current - q.low);
+      } else {
+        const flagged = a.id === 'seiko';
+        rule = 'Fake discount watch';
+        status = flagged ? 'Flagged' : 'Clean';
+        v = flagged ? 'wait' : 'buy';
+        distance = flagged ? 'Reference price inflated' : 'Reference price stable';
+        bar = flagged ? 1 : 0.28;
+      }
+      return {
+        product: q.short, rule, current: this.yen(q.current), distance, status, pill: this.pill(v),
+        barStyle: 'height:100%;width:' + Math.round(bar * 100) + '%;border-radius:99px;background:' + this.vcolor(v) + ';'
+      };
+    });
+
+    const oq = P('orient'), sq = P('seiko');
+    const alertLog = [
+      { title: 'Orient Star hit your ' + this.yen(orientTarget) + ' target', body: oq.bestStore + ' dropped to ' + this.yen(oq.current) + ' — a 12-month low, below the previous best of ' + this.yen(oq.minBefore) + '. Sent to email and push.', when: '2d ago', dot: this.dot('#17916B', 9) },
+      { title: 'Fake discount: Seiko SPB507J1 at Rakuten', body: 'Reference price raised ' + this.yen(sq.msrp) + ' → ' + this.yen(Math.round((sq.msrp * 1.175) / 1000) * 1000) + ' before the Super Sale, while the price you pay stayed at ' + this.yen(sq.current) + '.', when: '15d ago', dot: this.dot('#C2453B', 9) },
+      { title: 'Rakuten Super Sale starts in 3 days', body: 'We are watching 5 of your products across the event window.', when: '18d ago', dot: this.dot('#3E7BB6', 9) }
+    ];
+
+    // ---- settings ----
+    const choiceRow = (label, note, key, opts) => ({
+      label, note, isChoice: true,
+      options: opts.map((o) => ({
+        label: o, go: () => this.setState({ settings: { ...S.settings, [key]: o } }),
+        style: this.seg(S.settings[key] === o)
+      }))
+    });
+    const toggleRow = (label, note, key) => {
+      const on = S.settings[key];
+      return {
+        label, note, isToggle: true,
+        toggle: () => this.setState({ settings: { ...S.settings, [key]: !on } }),
+        switchStyle: 'width:40px;height:23px;border-radius:99px;padding:2px;border:0;cursor:pointer;display:flex;flex-shrink:0;background:' + (on ? '#17916B' : '#DDD7CE') + ';justify-content:' + (on ? 'flex-end' : 'flex-start') + ';',
+        knobStyle: 'width:19px;height:19px;border-radius:99px;background:#fff;display:block;'
+      };
+    };
+    const settingGroups = [
+      { title: 'Notifications', rows: [toggleRow('Email', 'kenji@example.com', 'email'), toggleRow('Push notifications', 'This browser and the mobile app', 'push')] },
+      { title: 'Display', rows: [choiceRow('Language', 'Interface language', 'lang', ['EN', '日本語']), choiceRow('Price format', 'How amounts are written', 'fmt', ['¥12,800', '12,800円']), choiceRow('Default graph range', 'Applied to every product', 'range', ['30d', '90d', '1y'])] },
+      { title: 'Data', rows: [toggleRow('Include Mercari used prices', 'Shown as a separate dashed line', 'used')] }
+    ];
+
+    // ---- onboarding ----
+    const steps = [
+      { title: 'Retailers rewrite the past. We do not.', body: 'Chatak records the price of everything you track, every day, at six Japanese stores. That record cannot be edited by a seller before a sale.', shot: 'illustration — calendar of recorded prices' },
+      { title: 'A discount is only real against the median', body: 'When a shop raises its reference price to ¥168,000 and takes 33% off, we compare the result to what you would normally have paid. Usually the answer is: nothing changed.', shot: 'illustration — inflated list price vs. flat street price' },
+      { title: 'Green, amber, red. That is the whole app.', body: 'Buy now, watch, or wait. Set a target price and we will email and push you the moment any store crosses it.', shot: 'illustration — traffic light verdict card' }
+    ];
+    const step = steps[S.onboardStep];
+
+    // ---- misc ----
+    const addTabs = [['url', 'Paste URL'], ['barcode', 'Scan barcode'], ['search', 'Search catalog'], ['auto', 'Auto-detect']].map(([k, label]) => ({
+      label, go: () => this.setState({ addTab: k }), style: this.seg(S.addTab === k)
+    }));
+
+    const targetDist = ((target - p.current) / p.current) * 100;
+
+    return {
+      nav,
+      goHome: () => this.setState({ screen: 'home' }),
+      goAdd: () => this.setState({ screen: 'add' }),
+      goOnboarding: () => this.setState({ screen: 'onboarding', onboardStep: 0 }),
+      isHome: screen === 'home', isProduct: screen === 'product', isAdd: screen === 'add',
+      isAlerts: screen === 'alerts', isDeals: screen === 'deals', isCalendar: screen === 'calendar',
+      isSettings: screen === 'settings', isOnboarding: screen === 'onboarding',
+
+      homeModes: [['watchlist', 'Watchlist first'], ['deals', 'Deals first']].map(([k, label]) => ({
+        label, go: () => this.set('homeMode', k), style: this.seg(S.homeMode === k)
+      })),
+      homeSections: S.homeMode === 'watchlist'
+        ? [{ isWatchlist: true }, { isDeals: true }]
+        : [{ isDeals: true }, { isWatchlist: true }],
+
+      summary: [
+        { label: 'Ready to buy', value: '1', note: 'Orient Star is at a 12-month low', dot: this.dot('#17916B', 9) },
+        { label: 'Fake discounts flagged', value: '2', note: 'Reference price raised before a sale', dot: this.dot('#C2453B', 9) },
+        { label: 'Next real event', value: '69 days', note: 'Amazon Black Friday, 27 Nov', dot: this.dot('#C08A15', 9) }
+      ],
+
+      dealEmpty: dealFiltered.length === 0,
+      dealCountLabel: dealFiltered.length + (dealFiltered.length === 1 ? ' deal' : ' deals') + (S.dealFilter === 'All stores' ? '' : ' · ' + S.dealFilter),
+      products, deals, dealCards, calendar, alertTypes, alerts, alertLog, settingGroups,
+      activeAlertCount: alerts.length,
+      dealFilters: ['All stores', 'Rakuten', 'Amazon JP', 'Yodobashi', 'Real discounts only'].map((f) => ({
+        label: f, go: () => this.set('dealFilter', f),
+        style: 'padding:8px 14px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:700;border:1px solid ' +
+          (S.dealFilter === f ? '#1C1A17' : '#EAE5DD') + ';background:' + (S.dealFilter === f ? '#1C1A17' : '#fff') +
+          ';color:' + (S.dealFilter === f ? '#fff' : '#6F6A62') + ';'
+      })),
+
+      product: productVM,
+      verdictModes: [['card', 'Signal card'], ['banner', 'Banner strip']].map(([k, label]) => ({
+        label, go: () => this.set('verdictMode', k), style: this.seg(S.verdictMode === k)
+      })),
+      verdictIsCard: S.verdictMode === 'card',
+      verdictIsBanner: S.verdictMode === 'banner',
+      verdictCardStyle: 'padding:24px 26px;border-radius:22px;background:' +
+        ({ buy: '#EAF5F0', wait: '#FBEEEC', watch: '#FCF4E4' }[p.verdict]) + ';border:1px solid ' +
+        ({ buy: '#D6E9E0', wait: '#F3DAD6', watch: '#F0E2C6' }[p.verdict]) + ';',
+      verdictLightStyle: 'width:112px;height:112px;border-radius:26px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:#fff;background:' + this.vcolor(p.verdict) + ';',
+      verdictBannerStyle: 'display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:18px 22px;border-radius:18px;border-left:6px solid ' +
+        this.vcolor(p.verdict) + ';background:#fff;border-top:1px solid #EAE5DD;border-right:1px solid #EAE5DD;border-bottom:1px solid #EAE5DD;',
+      verdictDotStyle: 'width:38px;height:38px;border-radius:14px;flex-shrink:0;background:' + this.vcolor(p.verdict) + ';',
+      confidenceBarStyle: 'height:100%;width:' + Math.round(p.copy.confidence * 100) + '%;background:' + this.vcolor(p.verdict) + ';border-radius:99px;',
+
+      ranges: [[30, '30d'], [90, '90d'], [365, '1y']].map(([v, label]) => ({
+        label, go: () => this.set('range', v), style: this.seg(S.range === v)
+      })),
+      graphModes: [['overlay', 'All stores'], ['best', 'Best price']].map(([k, label]) => ({
+        label, go: () => this.set('graphMode', k), style: this.seg(S.graphMode === k)
+      })),
+      toggleUsed: () => this.set('showUsed', !S.showUsed),
+      usedToggleStyle: 'padding:9px 14px;border-radius:11px;cursor:pointer;font-size:12px;font-weight:700;border:1px solid ' +
+        (S.showUsed ? '#1C1A17' : '#EAE5DD') + ';background:' + (S.showUsed ? '#1C1A17' : '#fff') + ';color:' + (S.showUsed ? '#fff' : '#8A837A') + ';',
+
+      chartRef: this.chartRef,
+      onChartMove: this.onChartMove,
+      onChartLeave: this.onChartLeave,
+      startDrag: this.startDrag,
+      chart: {
+        lines, bands, bandLabels, grid, xLabels, legend, refPoints,
+        refNow: this.yen(p.refs[d.D - 1]),
+        refRange: this.yen(Math.min(...refSlice)) + ' → ' + this.yen(Math.max(...refSlice)),
+        hasTarget: true, targetY: targetY.toFixed(1),
+        hasHover: hi !== null, hoverX: hi !== null ? x(hi).toFixed(1) : 0,
+        hoverDate: hi !== null ? d.dateAt(off + hi).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '',
+        hoverRows, hoverDots
+      },
+      tooltipStyle: 'position:absolute;top:8px;pointer-events:none;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;box-shadow:0 10px 30px rgba(28,26,23,0.13);min-width:190px;z-index:5;' +
+        (hoverXf > 0.55 ? 'right:' + ((1 - hoverXf) * 100 + 2).toFixed(1) + '%;' : 'left:' + (hoverXf * 100 + 2).toFixed(1) + '%;'),
+      targetHandleStyle: 'position:absolute;left:0;display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:9px;background:#17916B;color:#fff;cursor:ns-resize;z-index:6;transform:translateY(-50%);top:' +
+        ((targetY / 300) * 100) + '%;',
+      targetText: this.yen(target),
+      targetInput: target.toLocaleString('en-US'),
+      onTargetInput: (e) => {
+        const v = parseInt(String(e.target.value).replace(/[^0-9]/g, ''), 10);
+        this.setState({ target: isNaN(v) ? 0 : v, targetSaved: false });
+      },
+      targetPresets: [
+        { label: '90-day median', go: () => this.setState({ target: Math.round(p.median / 100) * 100, targetSaved: false }) },
+        { label: 'Match 12-mo low', go: () => this.setState({ target: p.low, targetSaved: false }) },
+        { label: 'Beat low by 5%', go: () => this.setState({ target: Math.round((p.low * 0.95) / 100) * 100, targetSaved: false }) }
+      ],
+      targetOdds: targetDist >= 0
+        ? 'Already met — ' + p.bestStore + ' is ' + this.yen(p.current) + ' today.'
+        : 'That is ' + Math.abs(Math.round(targetDist * 10) / 10) + '% below today. Reached ' + (Math.abs(targetDist) > 10 ? '1 time' : '4 times') + ' in the last 12 months, always during a tracked sale event.',
+      saveTarget: () => this.setState({ targetSaved: true }),
+      saveTargetLabel: S.targetSaved ? '✓ Alert saved — email + push' : 'Save alert',
+      saveTargetStyle: 'padding:12px 18px;border-radius:13px;border:0;cursor:pointer;font-size:13px;font-weight:700;background:' +
+        (S.targetSaved ? '#E3F3EC' : '#17916B') + ';color:' + (S.targetSaved ? '#0F6B4F' : '#fff') + ';',
+      focusTarget: () => this.setState({ target: Math.round((p.median * 0.93) / 100) * 100 }),
+
+      addTabs,
+      addIsUrl: S.addTab === 'url', addIsBarcode: S.addTab === 'barcode',
+      addIsSearch: S.addTab === 'search', addIsAuto: S.addTab === 'auto',
+      urlValue: S.url,
+      onUrlInput: (e) => this.setState({ url: e.target.value, urlFetched: false }),
+      fetchUrl: () => this.setState({ urlFetched: true }),
+      urlMatched: S.urlFetched ? { name: d.products[0].name, priceText: this.yen(d.products[0].current), open: this.open('seiko') } : null,
+      searchValue: S.search,
+      onSearchInput: (e) => this.setState({ search: e.target.value }),
+      searchResults: d.products.slice(0, 3).map((q) => ({ name: q.name, sub: q.sub, priceText: this.yen(q.current), open: this.open(q.id) })),
+      scans: [
+        { name: 'Seiko Alpinist SPB507J1', code: '4954628249104', where: 'Bic Camera Shinjuku', pill: this.pill('wait'), verdictLabel: 'Wait', open: this.open('seiko') },
+        { name: 'Sony WH-1000XM6', code: '4548736149328', where: 'Yodobashi Akiba', pill: this.pill('watch'), verdictLabel: 'Watch', open: this.open('sony') },
+        { name: 'G-Shock GMW-B5000D', code: '4549526283710', where: 'Bic Camera Shibuya', pill: this.pill('watch'), verdictLabel: 'Watch', open: this.open('gshock') }
+      ],
+      storeMeta: d.stores.concat([{ name: 'Mercari (used)', color: '#8A837A' }]).map((s) => ({ name: s.name, dot: this.dot(s.color, 9) })),
+
+      onboard: step,
+      onboardStepLabel: (S.onboardStep + 1) + ' of 3',
+      onboardDots: steps.map((_, i) => ({
+        style: 'width:' + (i === S.onboardStep ? '22px' : '7px') + ';height:7px;border-radius:99px;background:' + (i === S.onboardStep ? '#17916B' : '#DDD7CE') + ';display:block;transition:width .2s;'
+      })),
+      onboardNextLabel: S.onboardStep === 2 ? 'Start tracking' : 'Next',
+      onboardNext: () => S.onboardStep === 2 ? this.setState({ screen: 'home' }) : this.setState({ onboardStep: S.onboardStep + 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>
