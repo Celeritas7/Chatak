@@ -11,11 +11,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="./js/chatak-config.js"></script>
+<script src="./js/chatak-engine.js"></script>
 <style>
   *{box-sizing:border-box;}
   body{margin:0;background:#F6F4F0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1C1A17;-webkit-font-smoothing:antialiased;}
-  a{color:#17916B;text-decoration:none;}
-  a:hover{color:#0F6B4F;text-decoration:underline;}
+  a{color:#0F6B4F;text-decoration:none;}
+  a:hover{color:#0A5740;text-decoration:underline;}
   input,button,select,textarea{font-family:inherit;}
   ::selection{background:#D8EFE4;}
 </style>
@@ -23,12 +25,13 @@
 
 <div style="display:flex;min-height:100vh;background:#F6F4F0;">
 
+  <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
   <aside style="width:236px;flex:0 0 236px;padding:22px 16px;display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border-right:1px solid #EAE5DD;position:sticky;top:0;height:100vh;">
     <div style="display:flex;align-items:center;gap:10px;padding:0 8px;">
       <div style="width:30px;height:30px;border-radius:10px;background:#17916B;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;line-height:1;">चा</div>
       <div style="display:flex;flex-direction:column;">
         <span style="font-size:15px;font-weight:800;letter-spacing:-0.01em;">Chatak</span>
-        <span style="font-size:10px;color:#9A938A;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">चातक · cātaka</span>
+        <span style="font-size:10px;color:#6F6A62;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">चातक · cātaka</span>
       </div>
     </div>
 
@@ -37,37 +40,125 @@
         <button onClick="{{ item.go }}" style="{{ item.style }}">
           <span>{{ item.label }}</span>
           <sc-if value="{{ item.badge }}">
-            <span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#FBE7E4;color:#C2453B;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ item.badge }}</span>
+            <span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#FBE7E4;color:#A5322A;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ item.badge }}</span>
           </sc-if>
         </button>
       </sc-for>
     </nav>
 
+    <sc-if value="{{ perms.track }}" hint-placeholder-val="{{ true }}">
     <button onClick="{{ goAdd }}" style="margin-top:-12px;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border-radius:14px;border:0;background:#1C1A17;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
       <span style="font-size:15px;line-height:1;">+</span><span>Track a product</span>
     </button>
+    </sc-if>
 
     <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:#F3F7F5;border:1px solid #E1EDE8;">
-      <div style="font-size:12px;font-weight:700;color:#14684E;">Checking 6 stores</div>
-      <div style="font-size:11px;line-height:1.5;color:#5E6B66;">Last refreshed 14 minutes ago. Reference prices are recorded daily so retailers can't rewrite history.</div>
-      <button onClick="{{ goOnboarding }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#17916B;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">How it works</button>
+      <div style="font-size:12px;font-weight:700;color:#14684E;">{{ statusTitle }}</div>
+      <div style="font-size:11px;line-height:1.5;color:#5E6B66;">{{ statusLine }} Reference prices are recorded daily so retailers can't rewrite history.</div>
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <button onClick="{{ goOnboarding }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">How it works</button>
+        <span style="font-size:10px;color:#5E6B66;font-family:'IBM Plex Mono',monospace;">{{ buildStamp }}</span>
+      </div>
     </div>
   </aside>
+  </sc-if>
 
   <main style="flex:1;min-width:0;display:flex;flex-direction:column;">
 
+    <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
     <header style="display:flex;align-items:center;gap:16px;padding:18px 32px;border-bottom:1px solid #EAE5DD;background:rgba(246,244,240,0.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;">
       <div style="flex:1;max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;">
-        <span style="color:#B3ABA0;font-size:13px;">⌕</span>
-        <input placeholder="Search a product, paste a store URL…" style="flex:1;border:0;outline:0;font-size:13px;background:transparent;color:#1C1A17;" />
+        <span style="color:#6F6A62;font-size:13px;">⌕</span>
+        <input value="{{ headerQuery }}" onChange="{{ onHeaderQuery }}" onKeyDown="{{ onHeaderKey }}" placeholder="Search a product, paste a store URL…" style="flex:1;border:0;outline:0;font-size:13px;background:transparent;color:#1C1A17;" />
       </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;border:1px solid #EAE5DD;font-size:12px;font-weight:600;color:#6F6A62;">
-          <span style="width:7px;height:7px;border-radius:99px;background:#17916B;"></span>Sat 19 Sep 2026
+          <span style="width:7px;height:7px;border-radius:99px;background:#17916B;"></span>{{ todayLabel }}
         </div>
-        <div style="width:34px;height:34px;border-radius:12px;background:#E9E3D9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#6F6A62;">K</div>
+        <div style="width:34px;height:34px;border-radius:12px;background:#E9E3D9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#57524B;">K</div>
       </div>
     </header>
+
+    <sc-if value="{{ dataStrip }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ dataStrip.style }}">
+        <span style="{{ dataStrip.dotStyle }}"></span>
+        <span style="font-weight:700;">{{ dataStrip.title }}</span>
+        <span style="flex:1;min-width:0;">{{ dataStrip.body }}</span>
+        <sc-if value="{{ dataStrip.retry }}">
+          <button onClick="{{ dataStrip.retry }}" style="padding:6px 12px;border-radius:9px;border:1px solid currentColor;background:transparent;color:inherit;font-size:11px;font-weight:700;cursor:pointer;">{{ dataStrip.retryLabel }}</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    </sc-if>
+
+    <sc-if value="{{ isEmptyLive }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:560px;margin:80px auto;padding:0 32px;display:flex;flex-direction:column;gap:14px;text-align:center;align-items:center;">
+        <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-0.02em;">Nothing tracked yet</h1>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#6F6A62;max-width:44ch;text-wrap:pretty;">Paste a product URL and we start recording its price today. The first useful verdict is about two weeks away — we will not pretend otherwise.</p>
+        <sc-if value="{{ perms.track }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ goAdd }}" style="padding:12px 22px;border-radius:13px;border:0;background:#0E6B4E;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Track a product</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAuthDown }}" hint-placeholder-val="{{ false }}">
+      <div style="min-height:100vh;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 24px;background:#F6F4F0;">
+        <div style="width:100%;max-width:430px;padding:26px;border-radius:18px;background:#fff;border:1px solid #F0CFCB;display:flex;flex-direction:column;gap:11px;">
+          <div style="display:flex;align-items:center;gap:9px;">
+            <span style="width:8px;height:8px;border-radius:999px;background:#C2453B;"></span>
+            <span style="font-size:13px;font-weight:700;color:#A5322A;">Cannot reach the server</span>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A62;text-wrap:pretty;">Signing in needs the backend, and it is not answering. Nothing you type now could succeed.</p>
+          <p style="margin:0;font-size:12px;line-height:1.55;color:#8C877E;font-family:'IBM Plex Mono',monospace;">{{ authDownMessage }}</p>
+          <button onClick="{{ retryLive }}" style="align-self:flex-start;padding:11px 17px;border-radius:12px;border:0;background:#0E6B4E;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Try again</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ false }}">
+      <div style="min-height:100vh;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:40px 24px;background:#F6F4F0;">
+        <div style="display:flex;align-items:center;gap:11px;">
+          <div style="width:34px;height:34px;border-radius:11px;background:#17916B;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;line-height:1;">चा</div>
+          <div style="display:flex;flex-direction:column;">
+            <span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;">Chatak</span>
+            <span style="font-size:10px;color:#6F6A62;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">चातक · cātaka</span>
+          </div>
+        </div>
+
+        <sc-if value="{{ auth.showForm }}">
+          <div style="width:100%;max-width:376px;padding:26px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:13px;">
+            <label for="chatak-email" style="font-size:12px;font-weight:700;color:#1C1A17;">Email address</label>
+            <input id="chatak-email" type="email" value="{{ auth.email }}" onChange="{{ auth.onEmail }}" onKeyDown="{{ auth.onKey }}" placeholder="you@example.com" autoComplete="email" spellcheck="false" style="padding:13px 15px;border-radius:13px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:15px;color:#1C1A17;outline:none;" style-focus="border-color:#0E6B4E;background:#fff;" />
+            <sc-if value="{{ auth.error }}">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#B03A31;">{{ auth.error }}</p>
+            </sc-if>
+            <button onClick="{{ auth.send }}" disabled="{{ auth.disabled }}" style="{{ auth.buttonStyle }}">{{ auth.buttonLabel }}</button>
+            <sc-if value="{{ auth.demo }}">
+              <p style="margin:0;font-size:12px;line-height:1.55;color:#6F6A62;text-wrap:pretty;">{{ auth.demoNote }}</p>
+            </sc-if>
+            <sc-if value="{{ auth.hasBackend }}">
+              <p style="margin:0;font-size:12px;line-height:1.55;color:#6F6A62;text-wrap:pretty;">We email you a one-time link. No password.</p>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="flex:1;height:1px;background:#EAE5DD;"></span>
+              <span style="font-size:11px;font-weight:600;color:#8C877E;">or</span>
+              <span style="flex:1;height:1px;background:#EAE5DD;"></span>
+            </div>
+            <button onClick="{{ auth.google }}" disabled="{{ auth.disabled }}" style="{{ auth.googleStyle }}"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink:0;"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"></path><path fill="#FBBC05" d="M10.4 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.8-6.1z"></path><path fill="#34A853" d="M24 48c6.2 0 11.6-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6.1C6.5 42.6 14.6 48 24 48z"></path></svg>{{ auth.googleLabel }}</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ auth.sent }}">
+          <div style="width:100%;max-width:376px;padding:24px;border-radius:18px;background:#F3F7F5;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:11px;">
+            <div style="font-size:13px;font-weight:700;color:#14684E;">Check your email</div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#41544D;text-wrap:pretty;">{{ auth.sentNote }}</p>
+            <button onClick="{{ auth.resend }}" disabled="{{ auth.resendLocked }}" style="{{ auth.resendStyle }}">{{ auth.resendLabel }}</button>
+            <button onClick="{{ auth.reset }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">Use a different address</button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
 
     <div style="flex:1;padding:28px 32px 56px;">
 
@@ -78,13 +169,7 @@
           <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">
             <div>
               <h1 style="margin:0 0 6px;font-size:27px;font-weight:800;letter-spacing:-0.02em;">Here's where your watchlist stands</h1>
-              <p style="margin:0;font-size:14px;color:#6F6A62;">One thing is genuinely cheap today. One sale is pretending.</p>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:4px;border-radius:13px;background:#fff;border:1px solid #EAE5DD;">
-              <span style="padding-left:8px;font-size:11px;font-weight:700;color:#9A938A;letter-spacing:0.04em;text-transform:uppercase;">Home</span>
-              <sc-for list="{{ homeModes }}" as="m" hint-placeholder-count="2">
-                <button onClick="{{ m.go }}" style="{{ m.style }}">{{ m.label }}</button>
-              </sc-for>
+              <p style="margin:0;font-size:14px;color:#6F6A62;">{{ homeSubtitle }}</p>
             </div>
           </div>
 
@@ -93,7 +178,7 @@
               <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:9px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                   <span style="{{ s.dot }}"></span>
-                  <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ s.label }}</span>
+                  <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">{{ s.label }}</span>
                 </div>
                 <div style="font-size:25px;font-weight:800;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;">{{ s.value }}</div>
                 <div style="font-size:12px;line-height:1.45;color:#6F6A62;">{{ s.note }}</div>
@@ -107,13 +192,13 @@
               <section style="display:flex;flex-direction:column;gap:14px;">
                 <div style="display:flex;align-items:baseline;gap:12px;">
                   <h2 style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.01em;">Your watchlist</h2>
-                  <span style="font-size:12px;color:#9A938A;">5 products · 6 stores each</span>
+                  <span style="font-size:12px;color:#6F6A62;">{{ watchlistCount }}</span>
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
                   <sc-for list="{{ products }}" as="p" hint-placeholder-count="5">
                     <button onClick="{{ p.open }}" style="text-align:left;padding:0;border:1px solid #EAE5DD;border-radius:20px;background:#fff;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
                       <div style="height:116px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);display:flex;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;">
-                        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79F94;letter-spacing:0.05em;">{{ p.shotLabel }}</span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F6A62;letter-spacing:0.05em;">{{ p.shotLabel }}</span>
                       </div>
                       <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
@@ -127,7 +212,7 @@
                         <svg viewBox="0 0 220 40" preserveAspectRatio="none" style="width:100%;height:38px;display:block;">
                           <polyline points="{{ p.spark }}" fill="none" stroke="{{ p.sparkColor }}" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></polyline>
                         </svg>
-                        <div style="font-size:11px;color:#8A837A;font-weight:600;">{{ p.storeLine }}</div>
+                        <div style="font-size:11px;color:#6F6A62;font-weight:600;">{{ p.storeLine }}</div>
                       </div>
                     </button>
                   </sc-for>
@@ -139,17 +224,17 @@
               <section style="display:flex;flex-direction:column;gap:14px;">
                 <div style="display:flex;align-items:baseline;gap:12px;">
                   <h2 style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.01em;">Live deal feed</h2>
-                  <span style="font-size:12px;color:#9A938A;">Advertised vs. real discount, across all six stores</span>
+                  <span style="font-size:12px;color:#6F6A62;">Advertised vs. real discount, across every store we track</span>
                 </div>
                 <div style="border:1px solid #EAE5DD;border-radius:20px;background:#fff;overflow:hidden;">
-                  <div style="display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;padding:11px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">
+                  <div style="display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;padding:11px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6F6A62;">
                     <span>Product</span><span>Store</span><span>Advertised</span><span>Real</span><span>Verdict</span>
                   </div>
                   <sc-for list="{{ deals }}" as="d" hint-placeholder-count="5">
                     <button onClick="{{ d.open }}" style="width:100%;text-align:left;display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:14px 18px;border:0;border-bottom:1px solid #F2EEE7;background:#fff;cursor:pointer;" style-hover="background:#FBFAF7;">
                       <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
                         <span style="font-size:13px;font-weight:700;">{{ d.name }}</span>
-                        <span style="font-size:11px;color:#8A837A;font-family:'IBM Plex Mono',monospace;">{{ d.priceText }}</span>
+                        <span style="font-size:11px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ d.priceText }}</span>
                       </div>
                       <span style="font-size:12px;font-weight:600;color:#6F6A62;">{{ d.store }}</span>
                       <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#6F6A62;text-decoration:line-through;text-decoration-color:#C9C1B6;">{{ d.advertised }}</span>
@@ -169,11 +254,11 @@
       <sc-if value="{{ isProduct }}">
         <div style="max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
 
-          <button onClick="{{ goHome }}" style="align-self:flex-start;padding:0;border:0;background:none;font-size:12px;font-weight:700;color:#8A837A;cursor:pointer;">← Watchlist</button>
+          <button onClick="{{ goHome }}" style="align-self:flex-start;padding:0;border:0;background:none;font-size:12px;font-weight:700;color:#6F6A62;cursor:pointer;">← Watchlist</button>
 
           <div style="display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;">
             <div style="aspect-ratio:1;border-radius:20px;border:1px solid #EAE5DD;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 9px,#F8F5F0 9px 18px);display:flex;align-items:center;justify-content:center;">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79F94;letter-spacing:0.05em;text-align:center;padding:0 16px;text-wrap:pretty;">{{ product.shotLabel }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F6A62;letter-spacing:0.05em;text-align:center;padding:0 16px;text-wrap:pretty;">{{ product.shotLabel }}</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:14px;">
               <div>
@@ -182,12 +267,12 @@
               </div>
               <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
                 <div style="display:flex;flex-direction:column;gap:2px;">
-                  <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">Best price today</span>
+                  <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6F6A62;">Best price today</span>
                   <span style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1.1;">{{ product.currentText }}</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:5px;padding-bottom:4px;">
-                  <span style="font-size:12px;color:#8A837A;">at <strong style="color:#1C1A17;">{{ product.bestStore }}</strong> · MSRP <span style="text-decoration:line-through;text-decoration-color:#C9C1B6;">{{ product.msrpText }}</span></span>
-                  <span style="{{ product.deltaStyle }}">{{ product.deltaText }} vs. 90-day median</span>
+                  <span style="font-size:12px;color:#6F6A62;">at <strong style="color:#1C1A17;">{{ product.bestStore }}</strong> · MSRP <span style="text-decoration:line-through;text-decoration-color:#C9C1B6;">{{ product.msrpText }}</span></span>
+                  <span style="{{ product.deltaStyle }}">{{ product.deltaText }} vs. {{ product.medianLabel }}</span>
                 </div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -195,15 +280,6 @@
                   <span style="padding:5px 11px;border-radius:999px;background:#F1EDE6;font-size:11px;font-weight:600;color:#6F6A62;">{{ t.text }}</span>
                 </sc-for>
               </div>
-            </div>
-          </div>
-
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">Verdict style</span>
-            <div style="display:flex;gap:4px;padding:4px;border-radius:12px;background:#fff;border:1px solid #EAE5DD;">
-              <sc-for list="{{ verdictModes }}" as="v" hint-placeholder-count="2">
-                <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
-              </sc-for>
             </div>
           </div>
 
@@ -217,12 +293,21 @@
                 <div style="display:flex;flex-direction:column;gap:9px;">
                   <h2 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-0.015em;text-wrap:pretty;">{{ product.headline }}</h2>
                   <p style="margin:0;font-size:14px;line-height:1.55;color:#4A443C;max-width:70ch;text-wrap:pretty;">{{ product.reason }}</p>
+                  <div style="display:flex;flex-direction:column;gap:5px;max-width:280px;margin-top:3px;">
+                    <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">
+                      <span>{{ product.confidenceLabel }}</span><span>{{ product.confidenceText }}</span>
+                    </div>
+                    <div style="height:6px;border-radius:99px;background:rgba(28,26,23,0.1);overflow:hidden;">
+                      <div style="{{ confidenceBarStyle }}"></div>
+                    </div>
+                    <span style="font-size:11px;line-height:1.45;color:#6F6A62;">{{ product.confidenceNote }}</span>
+                  </div>
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(28,26,23,0.08);">
                 <sc-for list="{{ product.timeline }}" as="e" hint-placeholder-count="3">
                   <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.72);">
-                    <span style="font-size:11px;font-weight:700;color:#8A837A;">{{ e.when }}</span>
+                    <span style="font-size:11px;font-weight:700;color:#6F6A62;">{{ e.when }}</span>
                     <span style="font-size:13px;font-weight:700;">{{ e.label }}</span>
                     <span style="font-size:11px;color:#6F6A62;">{{ e.note }}</span>
                   </div>
@@ -243,8 +328,8 @@
               </div>
               <div style="display:flex;align-items:center;gap:22px;flex-shrink:0;flex-wrap:wrap;">
                 <div style="display:flex;flex-direction:column;gap:5px;min-width:150px;">
-                  <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#8A837A;">
-                    <span>Confidence</span><span>{{ product.confidenceText }}</span>
+                  <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">
+                    <span>{{ product.confidenceLabel }}</span><span>{{ product.confidenceText }}</span>
                   </div>
                   <div style="height:6px;border-radius:99px;background:rgba(28,26,23,0.1);overflow:hidden;">
                     <div style="{{ confidenceBarStyle }}"></div>
@@ -265,7 +350,7 @@
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
                 <sc-for list="{{ product.forensics }}" as="f" hint-placeholder-count="4">
                   <div style="display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ f.label }}</span>
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">{{ f.label }}</span>
                     <span style="{{ f.valueStyle }}">{{ f.value }}</span>
                     <span style="font-size:11px;line-height:1.45;color:#6F6A62;">{{ f.note }}</span>
                   </div>
@@ -297,7 +382,7 @@
               <sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="5">
                 <div style="{{ g.style }}">{{ g.label }}</div>
               </sc-for>
-              <div ref="{{ chartRef }}" onMouseMove="{{ onChartMove }}" onMouseLeave="{{ onChartLeave }}" style="position:relative;width:100%;">
+              <div ref="{{ chartRef }}" onPointerMove="{{ onChartMove }}" onPointerLeave="{{ onChartLeave }}" style="position:relative;width:100%;touch-action:pan-x;">
               <svg viewBox="0 0 920 300" preserveAspectRatio="none" style="width:100%;height:300px;display:block;">
                 <sc-for list="{{ chart.bands }}" as="b" hint-placeholder-count="2">
                   <rect x="{{ b.x }}" y="16" width="{{ b.w }}" height="230" fill="{{ b.fill }}" rx="6"></rect>
@@ -322,8 +407,8 @@
                 </sc-for>
               </svg>
 
-              <div style="position:absolute;top:21px;left:10px;font-size:9px;font-weight:700;letter-spacing:0.08em;color:#A79F94;pointer-events:none;">RETAILER REFERENCE PRICE</div>
-              <div style="position:absolute;top:20px;right:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#8A837A;pointer-events:none;">{{ chart.refRange }}</div>
+              <div style="position:absolute;top:21px;left:10px;font-size:10px;font-weight:700;letter-spacing:0.08em;color:#6F6A62;pointer-events:none;">RETAILER REFERENCE PRICE</div>
+              <div style="position:absolute;top:20px;right:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#6F6A62;pointer-events:none;">{{ chart.refRange }}</div>
               <sc-for list="{{ chart.xLabels }}" as="x" hint-placeholder-count="5">
                 <div style="{{ x.style }}">{{ x.label }}</div>
               </sc-for>
@@ -331,14 +416,14 @@
                 <div style="{{ b.style }}">{{ b.label }}</div>
               </sc-for>
 
-              <div onMouseDown="{{ startDrag }}" style="{{ targetHandleStyle }}">
+              <div onPointerDown="{{ startDrag }}" style="{{ targetHandleStyle }}">
                 <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;">{{ targetText }}</span>
-                <span style="font-size:9px;opacity:0.75;font-weight:700;letter-spacing:0.06em;">DRAG</span>
+                <span style="font-size:10px;opacity:0.75;font-weight:700;letter-spacing:0.06em;">DRAG</span>
               </div>
 
               <sc-if value="{{ chart.hasHover }}">
                 <div style="{{ tooltipStyle }}">
-                  <div style="font-size:11px;font-weight:700;color:#9A938A;margin-bottom:7px;">{{ chart.hoverDate }}</div>
+                  <div style="font-size:11px;font-weight:700;color:#6F6A62;margin-bottom:7px;">{{ chart.hoverDate }}</div>
                   <sc-for list="{{ chart.hoverRows }}" as="r" hint-placeholder-count="3">
                     <div style="display:flex;align-items:center;gap:9px;justify-content:space-between;padding:2px 0;">
                       <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#4A443C;white-space:nowrap;">
@@ -365,9 +450,9 @@
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;">
             <sc-for list="{{ product.stats }}" as="s" hint-placeholder-count="4">
               <div style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:6px;">
-                <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ s.label }}</span>
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">{{ s.label }}</span>
                 <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;letter-spacing:-0.01em;">{{ s.value }}</span>
-                <span style="font-size:11px;color:#8A837A;">{{ s.note }}</span>
+                <span style="font-size:11px;color:#6F6A62;">{{ s.note }}</span>
               </div>
             </sc-for>
           </div>
@@ -378,7 +463,7 @@
               <h3 style="margin:0;font-size:14px;font-weight:800;letter-spacing:-0.01em;">Price target</h3>
               <p style="margin:0;font-size:12px;line-height:1.5;color:#6F6A62;">Drag the green line on the chart, or type a number. We'll email and push you the moment any store crosses it.</p>
               <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:14px;border:1px solid #E1EDE8;background:#F5FAF8;">
-                <span style="font-size:15px;color:#17916B;font-weight:700;font-family:'IBM Plex Mono',monospace;">¥</span>
+                <span style="font-size:15px;color:#0F6B4F;font-weight:700;font-family:'IBM Plex Mono',monospace;">¥</span>
                 <input value="{{ targetInput }}" onChange="{{ onTargetInput }}" style="flex:1;border:0;outline:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#1C1A17;min-width:0;" />
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -386,22 +471,31 @@
                   <button onClick="{{ t.go }}" style="padding:7px 12px;border-radius:10px;border:1px solid #EAE5DD;background:#fff;font-size:11px;font-weight:600;color:#6F6A62;cursor:pointer;" style-hover="border-color:#17916B;color:#17916B;">{{ t.label }}</button>
                 </sc-for>
               </div>
-              <div style="font-size:11px;color:#8A837A;line-height:1.5;">{{ targetOdds }}</div>
+              <div style="font-size:11px;color:#6F6A62;line-height:1.5;">{{ targetOdds }}</div>
               <button onClick="{{ saveTarget }}" style="{{ saveTargetStyle }}">{{ saveTargetLabel }}</button>
             </div>
 
             <div style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
-              <div style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1fr;gap:10px;padding:12px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">
+              <div style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1fr;gap:10px;padding:12px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">
                 <span>Store</span><span>Today</span><span>30-day</span><span>Reference price</span>
               </div>
+              <div style="padding:10px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:11px;line-height:1.45;color:#6F6A62;">{{ storeCoverageNote }}</div>
               <sc-for list="{{ product.storeRows }}" as="s" hint-placeholder-count="6">
                 <div style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1fr;gap:10px;align-items:center;padding:13px 18px;border-bottom:1px solid #F2EEE7;">
-                  <span style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;">
-                    <span style="{{ s.dot }}"></span>{{ s.name }}
+                  <span style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;min-width:0;">
+                    <span style="{{ s.dot }}"></span><span>{{ s.name }}</span>
+                    <sc-if value="{{ s.planned }}">
+                      <span style="padding:2px 6px;border-radius:6px;background:#F1EDE6;color:#6F6A62;font-size:10px;font-weight:700;letter-spacing:0.04em;white-space:nowrap;">PLANNED</span>
+                    </sc-if>
                   </span>
                   <span style="{{ s.priceStyle }}">{{ s.price }}</span>
                   <span style="{{ s.changeStyle }}">{{ s.change }}</span>
-                  <span style="{{ s.refStyle }}">{{ s.ref }}</span>
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <span style="{{ s.refStyle }}">{{ s.ref }}</span>
+                    <sc-if value="{{ s.refNote }}">
+                      <span style="font-size:10px;font-weight:600;color:#C2453B;line-height:1.3;">{{ s.refNote }}</span>
+                    </sc-if>
+                  </span>
                 </div>
               </sc-for>
             </div>
@@ -414,7 +508,7 @@
         <div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
           <div>
             <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Track a product</h1>
-            <p style="margin:0;font-size:14px;color:#6F6A62;">We'll start recording its price everywhere it's sold, from today forward.</p>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">We'll record its price at every store we check, every day, starting today.</p>
           </div>
 
           <div style="display:flex;gap:4px;padding:4px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;width:fit-content;flex-wrap:wrap;">
@@ -431,18 +525,22 @@
                   <input value="{{ urlValue }}" onChange="{{ onUrlInput }}" placeholder="https://item.rakuten.co.jp/…" style="flex:1;min-width:240px;padding:13px 15px;border-radius:14px;border:1px solid #EAE5DD;outline:0;font-size:13px;font-family:'IBM Plex Mono',monospace;" />
                   <button onClick="{{ fetchUrl }}" style="padding:13px 22px;border-radius:14px;border:0;background:#1C1A17;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Fetch</button>
                 </div>
-                <span style="font-size:11px;color:#9A938A;">Works with Rakuten, Amazon JP, Yodobashi, Bic Camera, Yahoo Shopping and Mercari.</span>
+                <span style="font-size:11px;color:#6F6A62;">Works with Rakuten Ichiba and Yahoo Shopping today. More stores as we add them.</span>
               </div>
 
+              <sc-if value="{{ urlError }}">
+                <div style="padding:14px 18px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;color:#B03A31;font-weight:600;">{{ urlError }}</div>
+              </sc-if>
               <sc-if value="{{ urlMatched }}">
                 <div style="padding:20px;border-radius:20px;background:#fff;border:1px solid #E1EDE8;display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:center;">
                   <div style="aspect-ratio:1;border-radius:14px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F8F5F0 8px 16px);border:1px solid #EFEAE2;"></div>
                   <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
-                    <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#17916B;">Matched · 6 stores found</span>
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0F6B4F;">{{ urlMatched.status }}</span>
                     <span style="font-size:15px;font-weight:700;text-wrap:pretty;">{{ urlMatched.name }}</span>
-                    <span style="font-size:12px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ urlMatched.priceText }} · 12-month history already on file</span>
+                    <span style="font-size:12px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ urlMatched.priceText }}</span>
+                    <span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ urlMatched.note }}</span>
                   </div>
-                  <button onClick="{{ urlMatched.open }}" style="padding:12px 20px;border-radius:13px;border:0;background:#17916B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Add to watchlist</button>
+                  <button onClick="{{ urlMatched.open }}" style="padding:12px 20px;border-radius:13px;border:0;background:#0E6B4E;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">{{ urlMatched.cta }}</button>
                 </div>
               </sc-if>
             </div>
@@ -453,19 +551,30 @@
               <div style="padding:22px;border-radius:20px;background:#1C1A17;display:flex;flex-direction:column;gap:14px;">
                 <div style="aspect-ratio:4/3;border-radius:16px;background:#2A2723;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
                   <div style="width:72%;height:44%;border:2px solid #17916B;border-radius:10px;"></div>
-                  <span style="position:absolute;bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7E786F;letter-spacing:0.05em;">camera feed · JAN / EAN</span>
+                  <span style="position:absolute;bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F6A62;letter-spacing:0.05em;">camera feed · JAN / EAN</span>
                 </div>
-                <span style="font-size:12px;color:#B5AEA4;line-height:1.5;">Point at the barcode on the shelf tag. Works offline — we sync when you're back on data.</span>
+                <span style="font-size:12px;color:#B5AEA4;line-height:1.5;">Point at the barcode on the shelf tag, or type the digits below.</span>
+                <div style="display:flex;gap:8px;">
+                  <input value="{{ scanInput }}" onChange="{{ onScanInput }}" placeholder="4954628249104" inputMode="numeric" style="flex:1;min-width:0;padding:11px 13px;border-radius:12px;border:1px solid #3A362F;background:#2A2723;color:#fff;outline:0;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:0.04em;" />
+                  <button onClick="{{ runScan }}" style="padding:11px 16px;border-radius:12px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Look up</button>
+                </div>
               </div>
-              <div style="padding:22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:12px;">
-                <h3 style="margin:0;font-size:13px;font-weight:800;">Recent in-store scans</h3>
-                <sc-for list="{{ scans }}" as="s" hint-placeholder-count="3">
-                  <button onClick="{{ s.open }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid #EFEAE2;background:#FBFAF7;cursor:pointer;text-align:left;" style-hover="border-color:#D2CABC;">
+              <div style="padding:22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <h3 style="margin:0;font-size:13px;font-weight:800;">Last scan</h3>
+                  <span style="font-size:11px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ scan.code }} · {{ scan.where }}</span>
+                </div>
+                <div style="padding:11px 13px;border-radius:12px;background:#FBFAF7;border:1px solid #F0ECE4;font-size:11px;line-height:1.5;color:#6F6A62;">{{ scan.note }}</div>
+                <sc-for list="{{ scan.candidates }}" as="c" hint-placeholder-count="3">
+                  <button onClick="{{ c.open }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid #EFEAE2;background:#fff;cursor:pointer;text-align:left;" style-hover="border-color:#D2CABC;">
                     <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
-                      <span style="font-size:12px;font-weight:700;">{{ s.name }}</span>
-                      <span style="font-size:10px;color:#9A938A;font-family:'IBM Plex Mono',monospace;">{{ s.code }} · {{ s.where }}</span>
+                      <span style="font-size:12px;font-weight:700;">{{ c.name }}</span>
+                      <span style="font-size:10px;color:#6F6A62;">{{ c.shop }}</span>
                     </span>
-                    <span style="{{ s.pill }}">{{ s.verdictLabel }}</span>
+                    <span style="display:flex;align-items:center;gap:9px;flex-shrink:0;">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;">{{ c.priceText }}</span>
+                      <span style="{{ c.matchStyle }}">{{ c.matchLabel }}</span>
+                    </span>
                   </button>
                 </sc-for>
               </div>
@@ -480,7 +589,7 @@
                   <div style="aspect-ratio:1;border-radius:11px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 7px,#F8F5F0 7px 14px);"></div>
                   <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
                     <span style="font-size:13px;font-weight:700;">{{ r.name }}</span>
-                    <span style="font-size:11px;color:#8A837A;">{{ r.sub }}</span>
+                    <span style="font-size:11px;color:#6F6A62;">{{ r.sub }}</span>
                   </span>
                   <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;">{{ r.priceText }}</span>
                 </button>
@@ -496,7 +605,7 @@
               </div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
                 <sc-for list="{{ storeMeta }}" as="s" hint-placeholder-count="6">
-                  <div style="display:flex;align-items:center;gap:9px;padding:13px 15px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                  <div style="{{ s.style }}">
                     <span style="{{ s.dot }}"></span>
                     <span style="font-size:12px;font-weight:700;">{{ s.name }}</span>
                   </div>
@@ -532,20 +641,20 @@
           <div style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
             <div style="padding:16px 20px;border-bottom:1px solid #EFEAE2;display:flex;align-items:center;gap:12px;">
               <h3 style="margin:0;font-size:14px;font-weight:800;">Active alerts</h3>
-              <span style="font-size:11px;color:#9A938A;">{{ activeAlertCount }} running</span>
+              <span style="font-size:11px;color:#6F6A62;">{{ activeAlertCount }} running</span>
             </div>
             <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="4">
               <div style="display:grid;grid-template-columns:1.8fr 1.1fr 1fr auto;gap:14px;align-items:center;padding:15px 20px;border-bottom:1px solid #F2EEE7;">
                 <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
                   <span style="font-size:13px;font-weight:700;">{{ a.product }}</span>
-                  <span style="font-size:11px;color:#8A837A;">{{ a.rule }}</span>
+                  <span style="font-size:11px;color:#6F6A62;">{{ a.rule }}</span>
                 </div>
                 <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#6F6A62;">{{ a.current }}</span>
                 <div style="display:flex;flex-direction:column;gap:5px;">
                   <div style="height:5px;border-radius:99px;background:#F1EDE6;overflow:hidden;">
                     <div style="{{ a.barStyle }}"></div>
                   </div>
-                  <span style="font-size:10px;color:#9A938A;font-weight:600;">{{ a.distance }}</span>
+                  <span style="font-size:10px;color:#6F6A62;font-weight:600;">{{ a.distance }}</span>
                 </div>
                 <span style="{{ a.pill }}">{{ a.status }}</span>
               </div>
@@ -559,9 +668,9 @@
                 <span style="{{ l.dot }}"></span>
                 <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
                   <span style="font-size:12px;font-weight:700;">{{ l.title }}</span>
-                  <span style="font-size:11px;color:#8A837A;line-height:1.45;">{{ l.body }}</span>
+                  <span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ l.body }}</span>
                 </div>
-                <span style="font-size:11px;color:#B3ABA0;white-space:nowrap;font-weight:600;">{{ l.when }}</span>
+                <span style="font-size:11px;color:#6F6A62;white-space:nowrap;font-weight:600;">{{ l.when }}</span>
               </div>
             </sc-for>
           </div>
@@ -573,16 +682,16 @@
         <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
           <div>
             <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Deal feed</h1>
-            <p style="margin:0;font-size:14px;color:#6F6A62;">Sorted by real discount — the gap between the sticker and the 90-day median.</p>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">Sorted by real discount — the gap between the sticker and each product's own median.</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <sc-for list="{{ dealFilters }}" as="f" hint-placeholder-count="4">
               <button onClick="{{ f.go }}" style="{{ f.style }}">{{ f.label }}</button>
             </sc-for>
           </div>
-          <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#9A938A;">{{ dealCountLabel }}</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">{{ dealCountLabel }}</span>
           <sc-if value="{{ dealEmpty }}">
-            <div style="padding:34px;border-radius:20px;background:#fff;border:1px dashed #E2DCD2;text-align:center;font-size:13px;color:#8A837A;">No deals match that filter right now.</div>
+            <div style="padding:34px;border-radius:20px;background:#fff;border:1px dashed #E2DCD2;text-align:center;font-size:13px;color:#6F6A62;">No deals match that filter right now.</div>
           </sc-if>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
             <sc-for list="{{ dealCards }}" as="d" hint-placeholder-count="5">
@@ -590,21 +699,24 @@
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
                   <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
                     <span style="font-size:14px;font-weight:700;line-height:1.35;text-wrap:pretty;">{{ d.name }}</span>
-                    <span style="font-size:11px;color:#8A837A;font-weight:600;">{{ d.store }} · {{ d.event }}</span>
+                    <span style="font-size:11px;color:#6F6A62;font-weight:600;">{{ d.store }} · {{ d.event }}</span>
                   </div>
                   <span style="{{ d.pill }}">{{ d.verdictLabel }}</span>
                 </div>
                 <div style="display:flex;align-items:baseline;gap:10px;">
                   <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;letter-spacing:-0.01em;">{{ d.priceText }}</span>
-                  <span style="font-size:12px;color:#9A938A;text-decoration:line-through;font-family:'IBM Plex Mono',monospace;">{{ d.wasText }}</span>
+                  <span style="{{ d.wasStyle }}">{{ d.wasText }}</span>
                 </div>
+                <sc-if value="{{ d.wasNote }}">
+                  <span style="font-size:11px;color:#C2453B;font-weight:600;margin-top:-8px;">{{ d.wasNote }}</span>
+                </sc-if>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                   <div style="padding:10px 12px;border-radius:12px;background:#FBFAF7;border:1px solid #F0ECE4;display:flex;flex-direction:column;gap:2px;">
-                    <span style="font-size:9px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#9A938A;">Advertised</span>
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6F6A62;">Advertised</span>
                     <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#6F6A62;">{{ d.advertised }}</span>
                   </div>
                   <div style="{{ d.realBoxStyle }}">
-                    <span style="font-size:9px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;opacity:0.7;">Real</span>
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;opacity:0.7;">Real</span>
                     <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;">{{ d.real }}</span>
                   </div>
                 </div>
@@ -619,30 +731,178 @@
         <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
           <div>
             <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Sale season calendar</h1>
-            <p style="margin:0;font-size:14px;color:#6F6A62;">Typical drop is measured from three years of recorded prices, not from the retailer's claim.</p>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">{{ calendarNote }}</p>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
             <sc-for list="{{ calendar }}" as="m" hint-placeholder-count="12">
               <div style="{{ m.cardStyle }}">
                 <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
                   <span style="font-size:14px;font-weight:800;letter-spacing:-0.01em;">{{ m.month }}</span>
-                  <span style="font-size:10px;font-weight:700;color:#9A938A;letter-spacing:0.05em;">{{ m.year }}</span>
+                  <span style="font-size:10px;font-weight:700;color:#6F6A62;letter-spacing:0.05em;">{{ m.year }}</span>
                 </div>
                 <sc-for list="{{ m.events }}" as="e" hint-placeholder-count="1">
                   <div style="display:flex;flex-direction:column;gap:4px;padding:11px 13px;border-radius:13px;background:#FBFAF7;border:1px solid #F0ECE4;">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                       <span style="font-size:12px;font-weight:700;">{{ e.label }}</span>
-                      <span style="{{ e.dropStyle }}">{{ e.drop }}</span>
+                      <span style="{{ e.dropStyle }}" title="Estimated, not measured">{{ e.drop }}</span>
                     </div>
-                    <span style="font-size:10px;color:#9A938A;font-weight:600;">{{ e.dates }}</span>
+                    <span style="font-size:10px;color:#6F6A62;font-weight:600;">{{ e.dates }}</span>
                   </div>
                 </sc-for>
                 <sc-if value="{{ m.quiet }}">
-                  <span style="font-size:11px;color:#B3ABA0;padding:6px 0;">No major events recorded</span>
+                  <span style="font-size:11px;color:#6F6A62;padding:6px 0;">No major events recorded</span>
                 </sc-if>
               </div>
             </sc-for>
           </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ MATRIX ============ -->
+      <sc-if value="{{ isMatrix }}">
+        <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <h1 style="margin:0;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Price matrix</h1>
+            <p style="margin:0;font-size:13px;color:#6F6A62;">{{ mx.subtitle }}</p>
+          </div>
+
+          <sc-if value="{{ mx.notice }}">
+            <div style="padding:12px 16px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;color:#8C2E27;font-weight:600;">{{ mx.notice }}</div>
+          </sc-if>
+
+          <sc-if value="{{ mx.loading }}">
+            <div style="padding:28px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;font-size:13px;color:#6F6A62;">Reading shops from Cost…</div>
+          </sc-if>
+
+          <sc-if value="{{ mx.ready }}">
+            <sc-if value="{{ mx.hasDue }}">
+              <section style="padding:18px 20px;border-radius:18px;background:#FCF4E4;border:1px solid #F0E2C6;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+                  <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;color:#5E3E06;">{{ mx.dueTitle }}</h2>
+                  <span style="font-size:12px;color:#7A5A20;">Confirmed more than {{ mx.reviewDays }} days ago. Still the same? One tap resets the clock.</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;">
+                  <sc-for list="{{ mx.queue }}" as="q" hint-placeholder-count="4">
+                    <div style="padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #F0E2C6;display:flex;flex-direction:column;gap:9px;">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+                        <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                          <span style="font-size:13px;font-weight:700;">{{ q.item }}</span>
+                          <span style="font-size:11px;color:#6F6A62;">{{ q.shop }} · {{ q.ago }}</span>
+                        </span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;">{{ q.price }}</span>
+                      </div>
+                      <sc-if value="{{ mx.canEdit }}">
+                        <div style="display:flex;gap:8px;">
+                          <button onClick="{{ q.confirm }}" style="flex:1;padding:8px 10px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Still {{ q.price }}</button>
+                          <button onClick="{{ q.change }}" style="padding:8px 12px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">Changed</button>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ mx.queueMore }}">
+                  <button onClick="{{ mx.toggleQueue }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#7A4F08;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ mx.queueMoreLabel }}</button>
+                </sc-if>
+              </section>
+            </sc-if>
+
+            <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:#6F6A62;font-weight:600;">
+              <span style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:3px;background:#DDF0E7;border:1px solid #9FD3BE;"></span>lowest in column</span>
+              <span style="display:flex;align-items:center;gap:6px;"><span style="font-family:'IBM Plex Mono',monospace;opacity:0.45;">{{ mx.staleSample }}</span>stale · {{ mx.staleDays }}+ days</span>
+              <span style="display:flex;align-items:center;gap:6px;"><span style="padding:1px 5px;border-radius:5px;background:#F1EDE6;font-size:10px;font-weight:700;">shelf</span>seen on shelf, not paid</span>
+              <span>{{ mx.hint }}</span>
+            </div>
+
+            <sc-if value="{{ mx.adding }}">
+              <div style="padding:16px 18px;border-radius:16px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+                <label style="display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:700;color:#6F6A62;flex:2;min-width:160px;">Item
+                  <input value="{{ mx.newName }}" onChange="{{ mx.onNewName }}" placeholder="Milk" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:14px;color:#1C1A17;outline:none;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:700;color:#6F6A62;flex:1;min-width:100px;">Pack size
+                  <input value="{{ mx.newSize }}" onChange="{{ mx.onNewSize }}" placeholder="1 L" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#1C1A17;outline:none;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:700;color:#6F6A62;flex:1;min-width:130px;">Category
+                  <input list="chatak-mx-cats" value="{{ mx.newCat }}" onChange="{{ mx.onNewCat }}" placeholder="Dairy" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:14px;color:#1C1A17;outline:none;" />
+                </label>
+                <datalist id="chatak-mx-cats">
+                  <sc-for list="{{ mx.catOptions }}" as="c" hint-placeholder-count="3"><option value="{{ c.value }}"></option></sc-for>
+                </datalist>
+                <div style="display:flex;gap:6px;">
+                  <button onClick="{{ mx.addItem }}" style="{{ mx.addStyle }}">Add item</button>
+                  <button onClick="{{ mx.cancelAdd }}" style="padding:10px 12px;border-radius:11px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ mx.emptyNote }}">
+              <div style="padding:14px 18px;border-radius:14px;background:#fff;border:1px dashed #E2DCD2;font-size:12px;color:#6F6A62;">{{ mx.emptyNote }}</div>
+            </sc-if>
+
+            <div style="border-radius:18px;background:#fff;border:1px solid #EAE5DD;overflow-x:auto;">
+              <div style="min-width:max-content;">
+                <div style="display:grid;grid-template-columns:{{ mx.cols }};background:#FBFAF7;border-bottom:1px solid #EFEAE2;">
+                  <div style="position:sticky;left:0;background:#FBFAF7;padding:12px 16px;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6F6A62;display:flex;align-items:flex-end;">Shop</div>
+                  <sc-for list="{{ mx.items }}" as="it" hint-placeholder-count="8">
+                    <div style="{{ it.headStyle }}">
+                      <span style="font-size:9px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#8C877E;">{{ it.cat }}</span>
+                      <div style="display:flex;align-items:center;gap:5px;">
+                        <button onClick="{{ it.toggleStar }}" title="Pin to the front (just for you)" style="{{ it.starStyle }}">★</button>
+                        <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.name }}</span>
+                      </div>
+                      <span style="font-size:10px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ it.size }}</span>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ mx.canEdit }}">
+                    <div style="padding:8px;border-left:1px solid #F2EEE7;display:flex;align-items:center;justify-content:center;">
+                      <button onClick="{{ mx.startAdd }}" style="padding:8px 12px;border-radius:10px;border:1px dashed #C8BFB1;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" style-hover="border-color:#0E6B4E;color:#0E6B4E;">+ Item</button>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <sc-for list="{{ mx.rows }}" as="r" hint-placeholder-count="6">
+                  <div style="border-bottom:1px solid #F2EEE7;">
+                    <div style="display:grid;grid-template-columns:{{ mx.cols }};">
+                      <button onClick="{{ r.toggle }}" style="{{ r.headStyle }}">
+                        <span style="{{ r.nameStyle }}">{{ r.name }}</span>
+                        <sc-if value="{{ r.fav }}"><span style="font-size:10px;font-weight:700;color:#96620A;">★ Cost favourite</span></sc-if>
+                        <sc-if value="{{ r.orphan }}"><span style="font-size:10px;font-weight:700;color:#A5322A;">Removed in Cost · read-only</span></sc-if>
+                      </button>
+                      <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="8">
+                        <div style="{{ c.style }}">
+                          <span style="{{ c.priceStyle }}">{{ c.text }}</span>
+                          <span style="{{ c.subStyle }}">{{ c.sub }}</span>
+                        </div>
+                      </sc-for>
+                      <sc-if value="{{ mx.canEdit }}"><div style="border-left:1px solid #F2EEE7;"></div></sc-if>
+                    </div>
+                    <sc-if value="{{ r.open }}">
+                      <div style="display:grid;grid-template-columns:{{ mx.cols }};background:#F3F9F6;border-top:1px solid #D6E9E0;">
+                        <div style="position:sticky;left:0;background:#F3F9F6;padding:12px 16px;display:flex;flex-direction:column;gap:8px;justify-content:center;z-index:1;">
+                          <div style="display:flex;gap:3px;padding:3px;border-radius:10px;background:#fff;width:fit-content;">
+                            <sc-for list="{{ mx.shelfOpts }}" as="o" hint-placeholder-count="2">
+                              <button onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</button>
+                            </sc-for>
+                          </div>
+                          <div style="display:flex;gap:6px;">
+                            <button onClick="{{ mx.saveRow }}" style="{{ mx.saveRowStyle }}">{{ mx.saveRowLabel }}</button>
+                            <button onClick="{{ mx.closeRow }}" style="padding:8px 10px;border-radius:10px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+                          </div>
+                        </div>
+                        <sc-for list="{{ mx.edits }}" as="e" hint-placeholder-count="8">
+                          <div style="padding:10px 8px;border-left:1px solid #DCEDE5;display:flex;flex-direction:column;gap:4px;">
+                            <input value="{{ e.value }}" onChange="{{ e.onChange }}" placeholder="{{ e.placeholder }}" inputMode="numeric" autoFocus="{{ e.focus }}" style="{{ e.style }}" />
+                            <span style="font-size:10px;font-weight:600;color:#5E8E7C;">{{ e.hint }}</span>
+                          </div>
+                        </sc-for>
+                        <div style="border-left:1px solid #DCEDE5;"></div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <span style="font-size:11px;color:#6F6A62;">Every save is kept on record; the grid shows only the latest. Blank inputs leave a price unchanged. Stars are yours alone.</span>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -660,10 +920,13 @@
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid #F5F2EC;">
                   <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
                     <span style="font-size:13px;font-weight:600;">{{ r.label }}</span>
-                    <span style="font-size:11px;color:#8A837A;">{{ r.note }}</span>
+                    <span style="font-size:11px;color:#6F6A62;">{{ r.note }}</span>
                   </div>
                   <sc-if value="{{ r.isToggle }}">
                     <button onClick="{{ r.toggle }}" style="{{ r.switchStyle }}"><span style="{{ r.knobStyle }}"></span></button>
+                  </sc-if>
+                  <sc-if value="{{ r.isAction }}">
+                    <button onClick="{{ r.act }}" style="{{ r.actStyle }}">{{ r.actLabel }}</button>
                   </sc-if>
                   <sc-if value="{{ r.isChoice }}">
                     <div style="display:flex;gap:3px;padding:3px;border-radius:11px;background:#F4F1EB;flex-shrink:0;">
@@ -683,11 +946,11 @@
       <sc-if value="{{ isOnboarding }}">
         <div style="max-width:720px;margin:32px auto 0;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center;">
           <div style="width:100%;padding:38px 34px;border-radius:26px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:20px;align-items:center;">
-            <span style="padding:6px 13px;border-radius:999px;background:#F1EDE6;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A837A;">Step {{ onboardStepLabel }}</span>
+            <span style="padding:6px 13px;border-radius:999px;background:#F1EDE6;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6F6A62;">Step {{ onboardStepLabel }}</span>
             <h1 style="margin:0;font-size:29px;font-weight:800;letter-spacing:-0.025em;line-height:1.2;max-width:19ch;text-wrap:pretty;">{{ onboard.title }}</h1>
             <p style="margin:0;font-size:15px;line-height:1.6;color:#6F6A62;max-width:48ch;text-wrap:pretty;">{{ onboard.body }}</p>
             <div style="width:100%;height:190px;border-radius:18px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 9px,#F8F5F0 9px 18px);border:1px solid #EFEAE2;display:flex;align-items:center;justify-content:center;">
-              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79F94;letter-spacing:0.05em;">{{ onboard.shot }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F6A62;letter-spacing:0.05em;">{{ onboard.shot }}</span>
             </div>
             <div style="display:flex;gap:7px;">
               <sc-for list="{{ onboardDots }}" as="d" hint-placeholder-count="3">
@@ -695,8 +958,8 @@
               </sc-for>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
-              <button onClick="{{ goHome }}" style="padding:12px 18px;border-radius:13px;border:0;background:none;color:#8A837A;font-size:13px;font-weight:700;cursor:pointer;">Skip</button>
-              <button onClick="{{ onboardNext }}" style="padding:12px 26px;border-radius:13px;border:0;background:#17916B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">{{ onboardNextLabel }}</button>
+              <button onClick="{{ goHome }}" style="padding:12px 18px;border-radius:13px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Skip</button>
+              <button onClick="{{ onboardNext }}" style="padding:12px 26px;border-radius:13px;border:0;background:#0E6B4E;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">{{ onboardNextLabel }}</button>
             </div>
           </div>
         </div>
@@ -711,9 +974,9 @@ class Component extends DCLogic {
   state = {
     screen: 'home',
     productId: 'seiko',
-    homeMode: this.props.defaultHome ?? 'watchlist',
-    graphMode: this.props.defaultGraph ?? 'overlay',
-    verdictMode: this.props.verdictStyle ?? 'card',
+    homeMode: null,
+    graphMode: null,
+    verdictMode: null,
     range: 90,
     showUsed: false,
     target: null,
@@ -722,176 +985,46 @@ class Component extends DCLogic {
     addTab: 'url',
     url: 'https://item.rakuten.co.jp/watch-store/spb507j1/',
     urlFetched: true,
+    urlError: null,
+    headerQuery: '',
+    lastCaptured: new Date(2026, 8, 19, 5, 0),
     search: 'alpinist',
     dealFilter: 'All stores',
     onboardStep: 0,
+    live: null,
     alertOn: { target: true, fake: true, low: true, event: true },
-    settings: { email: true, push: true, used: false, lang: 'EN', fmt: '¥12,800', range: '90d' }
+    settings: { email: true, push: true, used: false, lang: 'EN', fmt: '¥12,800', range: '90d' },
+    authEmail: '', authSent: false, authBusy: false, authError: null,
+    authGoogleBusy: false, resendIn: 0, signOutAsking: false,
+    mx: null, mxOpen: null, mxFocus: null, mxDraft: {}, mxShelf: false, mxAll: false,
+    mxAdding: false, mxNew: { name: '', size: '', cat: '' }, mxBusy: false, mxError: null
   };
 
   chartRef = React.createRef();
 
+  buildStamp = '2026-10-07-matrix';
+
   yen(n) { return '¥' + Math.round(n).toLocaleString('en-US'); }
 
   // ---------- data ----------
+  // All price reasoning lives in js/chatak-engine.js; this only chooses between
+  // live rows and generated fixtures.
   build() {
     if (this._d) return this._d;
-    const D = 365, today = new Date(2026, 8, 19);
-    const start = new Date(today.getTime() - (D - 1) * 86400000);
-    const idx = (s) => Math.round((new Date(s + 'T00:00:00') - start) / 86400000);
-    const dateAt = (i) => new Date(start.getTime() + i * 86400000);
-
-    const events = [
-      { label: 'Black Friday', store: 'Amazon JP', i0: idx('2025-11-28'), i1: idx('2025-12-01'), depth: 0.10, fake: false },
-      { label: 'Rakuten Super Sale', store: 'Rakuten', i0: idx('2025-12-04'), i1: idx('2025-12-11'), depth: 0.02, fake: true },
-      { label: 'New Year', store: 'Yodobashi', i0: idx('2026-01-01'), i1: idx('2026-01-05'), depth: 0.07, fake: false },
-      { label: 'Rakuten Super Sale', store: 'Rakuten', i0: idx('2026-03-04'), i1: idx('2026-03-11'), depth: 0.06, fake: false },
-      { label: 'Golden Week', store: 'All', i0: idx('2026-04-29'), i1: idx('2026-05-06'), depth: 0.04, fake: false },
-      { label: 'Prime Day', store: 'Amazon JP', i0: idx('2026-07-14'), i1: idx('2026-07-16'), depth: 0.12, fake: false },
-      { label: 'Rakuten Super Sale', store: 'Rakuten', i0: idx('2026-09-04'), i1: idx('2026-09-11'), depth: 0.02, fake: true }
-    ];
-
-    const stores = [
-      { name: 'Rakuten', color: '#B4413A', f: 1.005 },
-      { name: 'Amazon JP', color: '#C98A17', f: 0.988 },
-      { name: 'Yodobashi', color: '#3E7BB6', f: 0.978 },
-      { name: 'Bic Camera', color: '#8B5FA8', f: 0.996 },
-      { name: 'Yahoo Shopping', color: '#5A8F52', f: 1.012 }
-    ];
-    const usedStore = { name: 'Mercari (used)', color: '#8A837A', f: 0.80, used: true };
-
-    const rnd = (seed) => { let x = seed >>> 0; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); };
-
-    const gen = (seed, base, f, storeName) => {
-      const r = rnd(seed), out = [];
-      let p = base * f;
-      for (let i = 0; i < D; i++) {
-        p += (base * f - p) * 0.03 + (r() - 0.5) * base * 0.007;
-        let v = p;
-        for (const e of events) {
-          if (i >= e.i0 && i <= e.i1) {
-            const m = (e.store === storeName || e.store === 'All') ? 1 : 0.35;
-            v = p * (1 - e.depth * m);
-          }
-        }
-        out.push(Math.round(v / 100) * 100);
-      }
-      return out;
-    };
-
-    const defs = [
-      { id: 'seiko', name: 'Seiko Prospex Alpinist SPB507J1', short: 'Seiko Alpinist SPB507J1', sub: '"ClassicPine" green dial · 39.5mm · 6R55 automatic', shot: 'product shot — watch on strap, 1:1', msrp: 143000, base: 111500, seed: 1171, verdict: 'wait', tail: { mode: 'delta', v: 0.041 } },
-      { id: 'orient', name: 'Orient Star Contemporary RE-AV0B02Y00B', short: 'Orient Star RE-AV0B02Y00B', sub: 'Semi-skeleton · 41mm · 70-hour power reserve', shot: 'product shot — watch, 1:1', msrp: 88000, base: 66900, seed: 2213, verdict: 'buy', tail: { mode: 'belowLow', v: 0.008 } },
-      { id: 'citizen', name: 'Citizen Attesa AT8181-63E', short: 'Citizen Attesa AT8181-63E', sub: 'Eco-Drive radio-controlled · titanium', shot: 'product shot — watch, 1:1', msrp: 110000, base: 82000, seed: 3319, verdict: 'watch', tail: { mode: 'delta', v: 0.016 } },
-      { id: 'gshock', name: 'Casio G-Shock GMW-B5000D-1JF', short: 'G-Shock GMW-B5000D', sub: 'Full metal square · Bluetooth · solar', shot: 'product shot — watch, 1:1', msrp: 88000, base: 69400, seed: 4423, verdict: 'watch', tail: { mode: 'delta', v: -0.031 } },
-      { id: 'sony', name: 'Sony WH-1000XM6', short: 'Sony WH-1000XM6', sub: 'Wireless noise-cancelling headphones', shot: 'product shot — headphones, 1:1', msrp: 59400, base: 47300, seed: 5531, verdict: 'watch', tail: { mode: 'delta', v: -0.021 } }
-    ];
-
-    const pct = (v) => (Math.round(Math.abs(v) * 1000) / 10) + '%';
-    const inflated = (msrp) => Math.round((msrp * 1.175) / 1000) * 1000;
-
-    const copy = {
-      seiko: (q) => ({
-        headline: "Wait — September's sale wasn't a discount",
-        reason: 'Rakuten raised its reference price from ' + this.yen(q.msrp) + ' to ' + this.yen(inflated(q.msrp)) + ' on 28 August, then advertised 33% off during the Super Sale. What you would actually pay, ' + this.yen(q.current) + ', is ' + pct(q.delta) + ' above the 90-day median of ' + this.yen(q.median) + '. Black Friday has cut this model 12% two years running.',
-        shortReason: 'Reference price inflated 17% eight days before the sale began.',
-        confidence: 0.82,
-        timeline: [
-          { when: 'Now · 19 Sep', label: 'Post-sale drift', note: this.yen(q.current) + ' — still above the median' },
-          { when: 'In 69 days · 27 Nov', label: 'Amazon Black Friday', note: 'Dropped 12% in 2024 and 2025' },
-          { when: 'In 76 days · 4 Dec', label: 'Rakuten Super Sale', note: 'Points-heavy, price rarely moves' }
-        ]
-      }),
-      orient: (q) => ({
-        headline: 'Buy — this is the lowest price on record',
-        reason: q.bestStore + ' is at ' + this.yen(q.current) + ', ' + pct(q.delta) + ' under the 90-day median of ' + this.yen(q.median) + ' and below the previous 12-month low of ' + this.yen(q.minBefore) + '. No reference-price games: the ' + this.yen(q.msrp) + ' list price has held all year.',
-        shortReason: 'A 12-month low, and the list price has never been inflated.',
-        confidence: 0.91,
-        timeline: [
-          { when: 'Now · 19 Sep', label: 'Record low', note: q.bestStore + ' ' + this.yen(q.current) + ', in stock' },
-          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Historically only −2% on this model' },
-          { when: 'In 104 days · 1 Jan', label: 'New Year sale', note: 'Matched, never beat, today\u2019s price' }
-        ]
-      }),
-      citizen: (q) => ({
-        headline: 'Watch — fair, but not a deal yet',
-        reason: 'At ' + this.yen(q.current) + ' you are ' + this.yen(Math.abs(q.current - q.median)) + ' ' + (q.delta >= 0 ? 'above' : 'below') + ' the 90-day median of ' + this.yen(q.median) + '. Nothing is inflated, nothing is discounted. Prime Day took it to ' + this.yen(q.primeLow) + ' in July.',
-        shortReason: 'Sitting on its median. Prime Day went ' + pct((q.primeLow - q.median) / q.median) + ' lower.',
-        confidence: 0.64,
-        timeline: [
-          { when: 'Now · 19 Sep', label: 'Flat', note: 'Within 2% of median for 6 weeks' },
-          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Typical −8%' },
-          { when: 'In 298 days · 14 Jul', label: 'Prime Day', note: 'Deepest cut of the year' }
-        ]
-      }),
-      gshock: (q) => ({
-        headline: 'Watch — the discount is real but small',
-        reason: q.bestStore + ' is ' + pct(q.delta) + ' ' + (q.delta >= 0 ? 'above' : 'under') + ' the 90-day median of ' + this.yen(q.median) + ', with genuine reference pricing. Full-metal squares rarely move more than 6%, so this is close to as good as it gets outside Prime Day.',
-        shortReason: 'An honest ' + pct(q.delta) + ' off the median. The ceiling on this model is about 6%.',
-        confidence: 0.58,
-        timeline: [
-          { when: 'Now · 19 Sep', label: 'Mild dip', note: pct(q.delta) + ' vs median' },
-          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Typical −5%' },
-          { when: 'In 76 days · 4 Dec', label: 'Rakuten Super Sale', note: 'Points only, price flat' }
-        ]
-      }),
-      sony: (q) => ({
-        headline: 'Watch — a bigger cut is very likely',
-        reason: 'Headphones follow a sharp release cycle. This sat at ' + this.yen(q.primeLow) + ' during Prime Day and Amazon has discounted every XM generation by 20%+ in its first Black Friday. Today is ' + this.yen(q.current) + '.',
-        shortReason: 'Prime Day was ' + pct((q.primeLow - q.current) / q.current) + ' lower. Black Friday usually beats it.',
-        confidence: 0.77,
-        timeline: [
-          { when: 'Now · 19 Sep', label: 'Near list', note: this.yen(q.current) + ', ' + pct(q.delta) + ' vs median' },
-          { when: 'In 69 days · 27 Nov', label: 'Black Friday', note: 'Expect ' + this.yen(q.primeLow * 0.96) + ' or below' },
-          { when: 'Past · 14 Jul', label: 'Prime Day', note: 'Hit ' + this.yen(q.primeLow) + ' for three days' }
-        ]
-      })
-    };
-
-    const median90 = (arr) => { const s = arr.slice(-90).slice().sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
-
-    const products = defs.map((dd) => {
-      const series = stores.map((s, k) => ({ name: s.name, color: s.color, values: gen(dd.seed + k * 97, dd.base, s.f, s.name) }));
-      const used = { name: usedStore.name, color: usedStore.color, used: true, values: gen(dd.seed + 701, dd.base, usedStore.f, 'Mercari') };
-      const bestOf = () => { const b = []; for (let i = 0; i < D; i++) b.push(Math.min(...series.map((s) => s.values[i]))); return b; };
-      let best = bestOf();
-      const ramp = 18;
-      const minBefore = Math.min(...best.slice(0, D - ramp));
-      for (let pass = 0; pass < 5; pass++) {
-        const med = median90(best);
-        const want = dd.tail.mode === 'belowLow' ? minBefore * (1 - dd.tail.v) : med * (1 + dd.tail.v);
-        const f = want / best[D - 1];
-        if (Math.abs(f - 1) < 0.0004) break;
-        for (const s of series) {
-          for (let k = 0; k < ramp; k++) {
-            const i = D - ramp + k, w = (k + 1) / ramp;
-            s.values[i] = Math.round((s.values[i] * (1 + (f - 1) * w)) / 100) * 100;
-          }
-        }
-        best = bestOf();
-      }
-      const refs = [];
-      for (let i = 0; i < D; i++) {
-        let r = dd.msrp;
-        for (const e of events) if (e.fake && i >= e.i0 - 8 && i <= e.i1 + 2) r = inflated(dd.msrp);
-        refs.push(r);
-      }
-      const median = median90(best);
-      const cur = best[D - 1];
-      const bestStore = series.reduce((a, b) => (b.values[D - 1] < a.values[D - 1] ? b : a));
-      const primeLow = Math.min(...best.slice(idx('2026-07-14'), idx('2026-07-16') + 1));
-      const prod = {
-        ...dd, series, used, best, refs, median, minBefore, primeLow,
-        current: cur, low: Math.min(...best), high: Math.max(...best),
-        bestStore: bestStore.name,
-        delta: (cur - median) / median
-      };
-      prod.copy = copy[dd.id](prod);
-      return prod;
-    });
-
-    this._d = { D, products, stores, events, dateAt, idx };
+    const E = window.ChatakEngine;
+    if (!E) { this.waitForEngine(); return { D: 0, products: [], stores: [], events: [], upcoming: [], live: false, notReady: true, dateAt: () => new Date(), idx: () => 0 }; }
+    const eng = this._eng || (this._eng = E.create((n) => this.yen(n)));
+    this._d = (this._live && this._live.products.length) ? eng.buildLive(this._live.products, this._live.stores) : eng.buildFixtures();
     return this._d;
+  }
+
+  // The engine script is mounted from <helmet>, which can land a frame after the
+  // first render; re-render as soon as it is available.
+  waitForEngine() {
+    if (this._engineWait) return;
+    this._engineWait = setInterval(() => {
+      if (window.ChatakEngine) { clearInterval(this._engineWait); this._engineWait = null; this.forceUpdate(); }
+    }, 30);
   }
 
   // ---------- helpers ----------
@@ -900,13 +1033,14 @@ class Component extends DCLogic {
 
   seg(active) {
     return 'padding:7px 13px;border-radius:9px;border:0;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;transition:background .15s;' +
-      (active ? 'background:#1C1A17;color:#fff;' : 'background:transparent;color:#8A837A;');
+      (active ? 'background:#1C1A17;color:#fff;' : 'background:transparent;color:#6F6A62;');
   }
   pill(v) {
     const c = { buy: ['#E3F3EC', '#0F6B4F'], wait: ['#FBE7E4', '#B03A31'], watch: ['#FBEFD9', '#96620A'] }[v];
     return 'padding:5px 11px;border-radius:999px;background:' + c[0] + ';color:' + c[1] + ';font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;';
   }
-  vcolor(v) { return { buy: '#17916B', wait: '#C2453B', watch: '#C08A15' }[v]; }
+  // Fill token: white text sits on these (verdict light block, bars, chips).
+  vcolor(v) { return { buy: '#0E6B4E', wait: '#C2453B', watch: '#96620A' }[v]; }
   vlabel(v) { return { buy: 'Buy now', wait: 'Wait', watch: 'Watch' }[v]; }
   dot(color, size) { return 'width:' + (size || 8) + 'px;height:' + (size || 8) + 'px;border-radius:99px;background:' + color + ';flex-shrink:0;display:inline-block;'; }
 
@@ -914,8 +1048,9 @@ class Component extends DCLogic {
   startDrag = (e) => {
     e.preventDefault();
     this._drag = true;
-    window.addEventListener('mousemove', this.onDrag);
-    window.addEventListener('mouseup', this.endDrag);
+    window.addEventListener('pointermove', this.onDrag);
+    window.addEventListener('pointerup', this.endDrag);
+    window.addEventListener('pointercancel', this.endDrag);
   };
   onDrag = (e) => {
     const el = this.chartRef.current, sc = this._scale;
@@ -928,10 +1063,419 @@ class Component extends DCLogic {
   };
   endDrag = () => {
     this._drag = false;
-    window.removeEventListener('mousemove', this.onDrag);
-    window.removeEventListener('mouseup', this.endDrag);
+    window.removeEventListener('pointermove', this.onDrag);
+    window.removeEventListener('pointerup', this.endDrag);
+    window.removeEventListener('pointercancel', this.endDrag);
   };
-  componentWillUnmount() { this.endDrag(); }
+  componentWillUnmount() { this.endDrag(); if (this._resendTimer) clearInterval(this._resendTimer); if (this._engineWait) clearInterval(this._engineWait); }
+
+  // ---------- live data ----------
+  // Runs once on mount. With no Supabase config the app stays on generated
+  // fixtures and SAYS so; with config it loads the user's watchlist and hands
+  // each product to the same analyse() the fixtures use.
+  componentDidMount() {
+    // Printed so a stale cache or a server rooted in the wrong folder is
+    // identifiable at a glance instead of by comparing screenshots.
+    console.log('Chatak build ' + this.buildStamp);
+    let last = '';
+    try { last = localStorage.getItem('chatak.lastEmail') || ''; } catch (e) {}
+    if (last) this.setState({ authEmail: last });
+    this.loadLive();
+  }
+
+  async loadLive() {
+    // Hardcoded in js/chatak-config.js — the one file to edit to go live.
+    const cfg = window.CHATAK_CONFIG || {};
+    // chatak-config.js is gitignored, so the published copy has no credentials.
+    // On localhost that means "you forgot to fill it in" and the sign-in is the
+    // useful answer; anywhere else it means the public demo, which shows samples.
+    const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || /claudeusercontent\.com$/.test(location.hostname);
+    // signedOutView in chatak-config.js overrides the hostname rule: 'signin' or 'sample'.
+    const forced = cfg.signedOutView === 'signin' ? true : cfg.signedOutView === 'sample' ? false : null;
+    const url = String(cfg.url || '').trim();
+    const anonKey = String(cfg.anonKey || '').trim();
+    const days = Number(cfg.historyDays) || 365;
+    if (!url || !anonKey) { this.setState({ live: { status: (forced ?? isLocal) ? 'signin' : 'sample' } }); this.loadMatrix(); return; }
+    // The prefilled Seiko URL is a sample-mode demo; with a backend it would
+    // describe a fixture as if it were the user's own tracked product.
+    this.setState({ live: { status: 'loading' }, url: '', urlFetched: false });
+    try {
+      const api = await import('./js/chatak-api.js');
+      this._api = api;
+      // The watchlist is row-level-security locked to auth.uid(), so without a
+      // session it reads as empty rather than as an error. Ask for the sign-in
+      // instead of showing an empty watchlist the user cannot fill.
+      const sess = await api.session();
+      if (!sess) { this.setState({ live: { status: 'signin' } }); return; }
+      this._session = sess;
+      // The allow-list row carries the role. No row means the trigger let them
+      // in but nobody granted access, so treat it as signed out.
+      this._role = await api.getRole();
+      if (!this._role) { await api.signOut(); this.setState({ live: { status: 'signin' }, authError: 'That account does not have access.' }); return; }
+      // Independent of the watchlist: an empty watchlist must not hide the matrix.
+      this.loadMatrix();
+      const [stores, watch] = await Promise.all([api.getStores(), api.getWatchlist()]);
+      // Keep the store rows even with nothing tracked: build() cannot produce a
+      // live dataset from zero products, so the chrome reads them from here
+      // rather than falling back to the fixture store list.
+      // A brand-new account has an empty Home, so send it where the work starts —
+      // unless the role cannot add anything, in which case Home is the honest landing.
+      if (!watch.length) { this._live = { products: [], stores }; this.setState({ live: { status: 'empty' }, screen: this._role.role === 'viewer' ? 'home' : 'add' }); return; }
+      const hist = await Promise.all(watch.map((w) => api.getHistory(w.id, days)));
+      this._live = { products: watch.map((w, i) => this.adapt(w, hist[i], stores)).filter(Boolean), stores };
+      this._d = null;
+      this.setState({ live: { status: 'ready', count: this._live.products.length }, productId: this._live.products[0]?.dd.id ?? null });
+    } catch (e) {
+      this.setState({ live: { status: 'error', message: String(e.message || e) } });
+    }
+  }
+
+  // Supabase rate-limits one-time links, so the resend button stays locked for
+  // 30 seconds rather than letting the user earn an opaque 429.
+  startResendTimer() {
+    if (this._resendTimer) clearInterval(this._resendTimer);
+    this.setState({ resendIn: 30 });
+    this._resendTimer = setInterval(() => {
+      const left = (this.state.resendIn || 0) - 1;
+      if (left <= 0) { clearInterval(this._resendTimer); this._resendTimer = null; this.setState({ resendIn: 0 }); }
+      else this.setState({ resendIn: left });
+    }, 1000);
+  }
+
+  async signInWithGoogle() {
+    if (!this._api) return;
+    this.setState({ authGoogleBusy: true, authError: null });
+    try {
+      const { error } = await this._api.signInWithGoogle();
+      if (error) throw error;
+      // On success the browser leaves for Google, so nothing after this runs.
+    } catch (e) {
+      this.setState({ authGoogleBusy: false, authError: String(e.message || e) });
+    }
+  }
+
+  async sendMagicLink() {
+    const email = (this.state.authEmail || '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { this.setState({ authError: 'That does not look like an email address.' }); return; }
+    if (!this._api) return;
+    this.setState({ authBusy: true, authError: null });
+    try {
+      const { error } = await this._api.signIn(email);
+      if (error) throw error;
+      // Remembered so the next visit does not retype it; kept after sign out too.
+      try { localStorage.setItem('chatak.lastEmail', email); } catch (err) {}
+      this.setState({ authBusy: false, authSent: true });
+      this.startResendTimer();
+    } catch (e) {
+      // Deliberately generic: naming the reason would confirm to a stranger
+      // whether an address exists in the allow-list.
+      this.setState({ authBusy: false, authError: 'We could not send a link to that address.' });
+    }
+  }
+
+  async signOutLive() {
+    try { await this._api.signOut(); } catch (e) {}
+    this._live = null; this._d = null; this._session = null; this._role = null;
+    // The address stays prefilled — signing out is not a request to forget who you are.
+    let last = '';
+    try { last = localStorage.getItem('chatak.lastEmail') || ''; } catch (e) {}
+    this.setState({ live: { status: 'signin' }, authSent: false, authEmail: last, signOutAsking: false, screen: 'home', mx: null, mxOpen: null, mxDraft: {} });
+  }
+
+  async addLive(url) {
+    this.setState({ urlBusy: true, urlError: null, urlFetched: false, urlLive: null });
+    try {
+      const res = await this._api.addByUrl(url);
+      this.setState({ urlBusy: false, urlFetched: true, urlLive: res });
+    } catch (e) {
+      this.setState({ urlBusy: false, urlFetched: false, urlError: String(e.message || e) });
+    }
+  }
+  searchLive(q) {
+    clearTimeout(this._searchT);
+    if (!q || q.trim().length < 2) { this.setState({ searchLive: [] }); return; }
+    this._searchT = setTimeout(async () => {
+      try { this.setState({ searchLive: await this._api.searchCatalog(q.trim()) }); }
+      catch (e) { this.setState({ searchLive: [] }); }
+    }, 350);
+  }
+  async scanLive(jan) {
+    this.setState({ scanBusy: true });
+    try { this.setState({ scanBusy: false, scanLive: { jan, ...(await this._api.searchByJan(jan)) } }); }
+    catch (e) { this.setState({ scanBusy: false, scanLive: { jan, results: [], note: String(e.message || e) } }); }
+  }
+
+  // Supabase rows → the raw shape analyse() expects. One value per store per
+  // day, aligned on a shared day index; gaps are forward-filled, never invented
+  // before a store's first capture.
+  adapt(w, byStore, stores) {
+    const collected = byStore.filter((s) => !s.used && s.points.length);
+    if (!collected.length) return null;
+    const days = [...new Set(collected.flatMap((s) => s.points.map((p) => p.d)))].sort();
+    const D = days.length;
+    const dayIx = new Map(days.map((d, i) => [d, i]));
+    const fill = (points, key) => {
+      const arr = new Array(D).fill(null);
+      for (const p of points) arr[dayIx.get(p.d)] = p[key];
+      let last = null;
+      for (let i = 0; i < D; i++) { if (arr[i] == null) arr[i] = last; else last = arr[i]; }
+      const first = arr.find((v) => v != null);
+      return arr.map((v) => v == null ? first : v);
+    };
+    const liveAdapters = new Set(['rakuten_api', 'yahoo_api']);
+    const meta = (name) => stores.find((s) => s.name === name) || {};
+    const series = collected.map((s) => ({
+      name: s.name, color: s.color || meta(s.name).color || '#6F6A62',
+      live: liveAdapters.has(meta(s.name).adapter), values: fill(s.points, 'p'), refPts: s.points
+    }));
+    if (!series.some((s) => s.live)) series.forEach((s) => (s.live = true));
+    const usedSrc = byStore.find((s) => s.used && s.points.length);
+    const used = usedSrc
+      ? { name: usedSrc.name, color: usedSrc.color || '#6F6A62', used: true, live: false, values: fill(usedSrc.points, 'p') }
+      : { name: 'Mercari (used)', color: '#6F6A62', used: true, live: false, values: series[0].values.map((v) => Math.round((v * 0.8) / 100) * 100) };
+    const msrp = w.msrp || Math.max(...series.flatMap((s) => s.refPts.map((p) => p.ref || 0)), series[0].values[0]);
+    // The reference line is the accused store's — the one whose "was" price rose
+    // above MSRP. If nobody did, it is a flat MSRP and no flag can fire.
+    let refStore = null, refs = new Array(D).fill(msrp);
+    for (const s of series) {
+      const r = fill(s.refPts.filter((p) => p.ref != null), 'ref');
+      if (r.some((v) => v > msrp)) { refStore = s.name; refs = r.map((v) => v ?? msrp); break; }
+    }
+    const dd = {
+      id: w.id, name: w.name, short: w.name.length > 28 ? w.name.slice(0, 26) + '…' : w.name,
+      sub: w.subtitle || '', shot: 'product shot', msrp, refStore, imageUrl: w.image_url || null
+    };
+    return { dd, series, used, refs, D, startDate: new Date(days[0] + 'T00:00:00') };
+  }
+
+  // ---------- price matrix ----------
+  // Shops are Cost's, read through akatsuki_shops — never typed here. Items are
+  // Chatak's own curated list. Every save appends a row; the grid shows the
+  // latest per (shop, item). Cell keys are shop NAME + item id, because the name
+  // is what Cost carries on events and what a rename re-keys.
+  mxCur() {
+    const code = String((window.CHATAK_CONFIG || {}).matrixCurrency || 'JPY').toUpperCase();
+    return { code, sym: { JPY: '¥', INR: '₹' }[code] || code + ' ' };
+  }
+  mxKey(shopName, itemId) { return shopName + '|' + itemId; }
+  mxPatch(fn) { this.setState((s) => ({ mx: fn(s.mx) })); }
+
+  // Only reachable with no Supabase credentials; the data strip already says so.
+  mxSample() {
+    const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
+    const shops = [
+      { id: 's1', name: 'Gyomu Super', fav: true }, { id: 's2', name: 'Life Shinjuku', fav: true },
+      { id: 's3', name: 'OK Store' }, { id: 's4', name: 'Aeon Style' }, { id: 's5', name: 'Don Quijote' }
+    ];
+    const items = [
+      { id: 'milk', name: 'Milk', size: '1 L', cat: 'Dairy' }, { id: 'eggs', name: 'Eggs', size: '10 pc', cat: 'Dairy' },
+      { id: 'rice', name: 'Rice', size: '5 kg', cat: 'Staples' }, { id: 'natto', name: 'Natto', size: '3 pk', cat: 'Staples' },
+      { id: 'tofu', name: 'Tofu', size: '300 g', cat: 'Staples' }, { id: 'bread', name: 'Shokupan', size: '6 sl', cat: 'Bakery' },
+      { id: 'banana', name: 'Bananas', size: '1 bunch', cat: 'Produce' }, { id: 'chicken', name: 'Chicken thigh', size: '500 g', cat: 'Meat' },
+      { id: 'coffee', name: 'Coffee beans', size: '200 g', cat: 'Pantry' }
+    ];
+    // Maruetsu is not in the shop list: it stands in for a shop deleted in Cost.
+    const raw = {
+      'Gyomu Super': { milk: [168, 3], eggs: [238, 3], rice: [2980, 12], natto: [88, 3], tofu: [38, 3], chicken: [398, 12], coffee: [698, 50] },
+      'Life Shinjuku': { milk: [198, 8], eggs: [268, 8], rice: [3280, 41], natto: [98, 8], tofu: [58, 8], bread: [168, 8], banana: [198, 8, 1], chicken: [458, 22] },
+      'OK Store': { milk: [178, 19], eggs: [248, 19], rice: [3080, 19], natto: [79, 19], bread: [138, 42], banana: [158, 19], chicken: [418, 19], coffee: [598, 19] },
+      'Aeon Style': { milk: [208, 44], eggs: [278, 44], rice: [3480, 60], bread: [158, 5, 1], coffee: [648, 5] },
+      'Don Quijote': { eggs: [258, 30, 1], natto: [85, 30], coffee: [548, 2, 1] },
+      'Maruetsu Nakano': { milk: [188, 70], eggs: [258, 70], tofu: [48, 70] }
+    };
+    const cells = {};
+    for (const shop in raw) for (const id in raw[shop]) { const [p, d, s] = raw[shop][id]; cells[this.mxKey(shop, id)] = { p, at: at(d), shelf: !!s }; }
+    return { shops, items, cells, stars: { milk: true, eggs: true, rice: true, natto: true } };
+  }
+
+  async loadMatrix() {
+    if (!this._api) { this.setState({ mx: { status: 'sample', ...this.mxSample() } }); return; }
+    this.setState((s) => ({ mx: { ...(s.mx || {}), status: 'loading' } }));
+    try {
+      const [shops, m] = await Promise.all([this._api.getMatrixShops(), this._api.getMatrix()]);
+      const cells = {};
+      for (const r of m.latest) cells[this.mxKey(r.shop_name, r.item_id)] = { p: r.price, at: r.entered_at, shelf: r.shelf };
+      const stars = {};
+      for (const id of m.stars) stars[id] = true;
+      this.setState({ mx: {
+        status: 'ready', cells, stars,
+        shops: shops.map((s) => ({ id: s.id, name: s.name, fav: !!s.is_favorite })),
+        items: m.items.map((i) => ({ id: i.id, name: i.name, size: i.size || '', cat: i.category || 'Other' }))
+      } });
+    } catch (e) {
+      this.setState({ mx: { status: 'error', message: String(e.message || e), shops: [], items: [], cells: {}, stars: {} } });
+    }
+  }
+
+  async mxSaveRow() {
+    const S = this.state, shop = (S.mx.shops || []).find((s) => s.name === S.mxOpen);
+    const entries = Object.entries(S.mxDraft).map(([itemId, v]) => ({ itemId, price: parseInt(v, 10) })).filter((e) => e.price > 0);
+    if (!entries.length || !shop || S.mxBusy) return;
+    if (this._api) {
+      this.setState({ mxBusy: true, mxError: null });
+      try { await this._api.saveMatrixRow(shop, entries, { shelf: S.mxShelf, currency: this.mxCur().code }); }
+      catch (e) { this.setState({ mxBusy: false, mxError: 'Not saved: ' + (e.message || e) }); return; }
+      this.setState({ mxBusy: false, mxOpen: null, mxDraft: {} });
+      return this.loadMatrix();
+    }
+    const at = new Date().toISOString();
+    this.mxPatch((m) => { const cells = { ...m.cells }; for (const e of entries) cells[this.mxKey(shop.name, e.itemId)] = { p: e.price, at, shelf: S.mxShelf }; return { ...m, cells }; });
+    this.setState({ mxOpen: null, mxDraft: {} });
+  }
+
+  // "Still this price" appends a confirm row with the same figure, so the record
+  // shows the price was checked — not merely that nobody looked.
+  async mxConfirm(shop, itemId) {
+    const k = this.mxKey(shop.name, itemId), c = this.state.mx.cells[k];
+    if (!c) return;
+    if (this._api) {
+      try { await this._api.confirmMatrixPrice(shop, itemId, c.p, c.shelf, this.mxCur().code); }
+      catch (e) { this.setState({ mxError: 'Not confirmed: ' + (e.message || e) }); return; }
+      return this.loadMatrix();
+    }
+    this.mxPatch((m) => ({ ...m, cells: { ...m.cells, [k]: { ...c, at: new Date().toISOString() } } }));
+  }
+
+  async mxToggleStar(itemId) {
+    const on = !(this.state.mx.stars || {})[itemId];
+    this.mxPatch((m) => ({ ...m, stars: { ...m.stars, [itemId]: on } }));
+    if (!this._api) return;
+    try { await this._api.setMatrixStar(itemId, on); }
+    catch (e) { this.mxPatch((m) => ({ ...m, stars: { ...m.stars, [itemId]: !on } })); this.setState({ mxError: 'Star not saved: ' + (e.message || e) }); }
+  }
+
+  async mxAddItem() {
+    const S = this.state, n = S.mxNew, name = n.name.trim(), size = n.size.trim();
+    if (!name || S.mxBusy) return;
+    if (S.mx.items.some((i) => i.name.toLowerCase() === name.toLowerCase() && (i.size || '').toLowerCase() === size.toLowerCase())) {
+      this.setState({ mxError: name + (size ? ' ' + size : '') + ' is already on the list.' }); return;
+    }
+    const row = { name, size, category: n.cat.trim() || 'Other' };
+    if (this._api) {
+      this.setState({ mxBusy: true, mxError: null });
+      try { await this._api.addMatrixItem(row); }
+      catch (e) { this.setState({ mxBusy: false, mxError: 'Item not added: ' + (e.message || e) }); return; }
+      this.setState({ mxBusy: false, mxAdding: false, mxNew: { name: '', size: '', cat: '' } });
+      return this.loadMatrix();
+    }
+    this.mxPatch((m) => ({ ...m, items: m.items.concat([{ id: 'local-' + Date.now(), name: row.name, size: row.size, cat: row.category }]) }));
+    this.setState({ mxAdding: false, mxError: null, mxNew: { name: '', size: '', cat: '' } });
+  }
+
+  matrixVals(S, canEdit) {
+    const M = S.mx, cfg = window.CHATAK_CONFIG || {};
+    const reviewDays = Number(cfg.matrixReviewDays) || 40, staleDays = Number(cfg.matrixStaleDays) || 45;
+    const cur = this.mxCur(), money = (n) => cur.sym + Math.round(n).toLocaleString('en-US');
+    const notice = S.mxError || (M && M.status === 'error' ? 'Could not load the matrix: ' + M.message : null);
+    if (!M || !M.items) return { due: 0, vm: { loading: true, ready: false, notice, subtitle: 'Latest known price per shop.' } };
+
+    const ageOf = (at) => Math.max(0, Math.floor((Date.now() - new Date(at).getTime()) / 86400000));
+    const items = M.items.slice().sort((a, b) => {
+      const sa = M.stars[a.id] ? 0 : 1, sb = M.stars[b.id] ? 0 : 1;
+      return sa - sb || (sa ? a.cat.localeCompare(b.cat) : 0) || a.name.localeCompare(b.name);
+    });
+    // A name with prices but no Cost row is a shop deleted in Cost: kept, read-only.
+    const known = new Set(M.shops.map((s) => s.name));
+    const orphanNames = [...new Set(Object.keys(M.cells).map((k) => k.slice(0, k.lastIndexOf('|'))))].filter((n) => !known.has(n)).sort();
+    const shops = M.shops.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.name.localeCompare(b.name))
+      .concat(orphanNames.map((n) => ({ id: null, name: n, orphan: true })));
+    const cols = '210px' + (items.length ? ' repeat(' + items.length + ', minmax(104px, 1fr))' : '') + (canEdit ? ' 108px' : '');
+
+    const lowest = {};
+    for (const it of items) {
+      const ps = shops.filter((s) => !s.orphan).map((s) => M.cells[this.mxKey(s.name, it.id)]).filter(Boolean).map((c) => c.p);
+      lowest[it.id] = ps.length > 1 ? Math.min(...ps) : null;
+    }
+    const queue = [];
+    const rows = shops.map((s) => {
+      const open = S.mxOpen === s.name, editable = canEdit && !s.orphan;
+      return {
+        name: s.name, fav: !!s.fav, orphan: !!s.orphan, open,
+        toggle: editable ? () => this.setState(open ? { mxOpen: null } : { mxOpen: s.name, mxFocus: null, mxDraft: {}, mxShelf: false }) : null,
+        headStyle: 'position:sticky;left:0;z-index:1;padding:12px 16px;border:0;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:3px;justify-content:center;min-width:0;background:' + (open ? '#F3F9F6' : '#fff') + ';cursor:' + (editable ? 'pointer' : 'default') + ';' + (open ? 'box-shadow:inset 3px 0 0 #0E6B4E;' : ''),
+        nameStyle: 'font-size:13px;font-weight:700;' + (s.orphan ? 'color:#8C877E;text-decoration:line-through;text-decoration-color:#C9C1B6;' : ''),
+        cells: items.map((it) => {
+          const c = M.cells[this.mxKey(s.name, it.id)];
+          const base = 'display:flex;flex-direction:column;justify-content:center;gap:3px;padding:11px 12px;border-left:1px solid #F2EEE7;min-width:0;';
+          if (!c) return { text: '—', sub: '', style: base, priceStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;color:#C9C1B6;", subStyle: 'display:none;' };
+          const d = ageOf(c.at), isDue = !s.orphan && d >= reviewDays, low = !s.orphan && lowest[it.id] === c.p;
+          if (isDue) queue.push({ s, it, c, d });
+          return {
+            text: money(c.p),
+            sub: (d === 0 ? 'today' : d + 'd') + (c.shelf ? ' · shelf' : ''),
+            style: base + (low ? 'background:#F0F8F4;' : ''),
+            priceStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;" + (low ? 'color:#0F6B4F;' : '') + (d >= staleDays ? 'opacity:0.45;' : ''),
+            subStyle: 'font-size:10px;font-weight:600;color:' + (isDue ? '#96620A' : '#8C877E') + ';'
+          };
+        })
+      };
+    });
+    queue.sort((a, b) => b.d - a.d);
+    const shown = S.mxAll ? queue : queue.slice(0, 6);
+
+    const openShop = S.mxOpen != null ? M.shops.find((s) => s.name === S.mxOpen) : null;
+    const filled = Object.values(S.mxDraft).filter((v) => parseInt(v, 10) > 0).length;
+    const cats = [...new Set(M.items.map((i) => i.cat))].sort();
+    const canAdd = S.mxNew.name.trim().length > 0 && !S.mxBusy;
+
+    return { due: queue.length, vm: {
+      loading: false, ready: true, notice, canEdit, reviewDays, staleDays,
+      subtitle: M.status === 'sample'
+        ? 'Sample shops and prices. With Supabase connected, shops are read from Cost.'
+        : 'Latest known price per shop, in ' + cur.code + '. Shops come from Cost — add one there and it appears here.',
+      staleSample: money(698),
+      hint: canEdit ? 'Click a shop to type its row. Click ★ to pin an item.' : 'Read-only for viewers. Click ★ to pin an item.',
+      emptyNote: !M.shops.length && !orphanNames.length ? 'No shops in Cost yet. Add a shop in Cost and it appears here as a row.'
+        : !items.length ? 'Your item list is empty. Add the things you buy most with + Item.' : null,
+      cols, rows,
+      hasDue: queue.length > 0,
+      dueTitle: queue.length + (queue.length === 1 ? ' price to review' : ' prices to review'),
+      queue: shown.map(({ s, it, c, d }) => ({
+        item: it.name + (it.size ? ' · ' + it.size : ''), shop: s.name, ago: d + ' days ago', price: money(c.p),
+        confirm: () => this.mxConfirm(s, it.id),
+        change: () => this.setState({ mxOpen: s.name, mxFocus: it.id, mxDraft: {}, mxShelf: false })
+      })),
+      queueMore: queue.length > 6,
+      queueMoreLabel: S.mxAll ? 'Show fewer' : 'Show ' + (queue.length - 6) + ' more',
+      toggleQueue: () => this.setState({ mxAll: !S.mxAll }),
+      items: items.map((it, i) => {
+        const pinned = !!M.stars[it.id], prevPinned = i > 0 && !!M.stars[items[i - 1].id];
+        return {
+          name: it.name, size: it.size, cat: pinned ? 'Pinned' : it.cat,
+          headStyle: 'padding:8px 12px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;border-left:' + (prevPinned && !pinned ? '2px solid #E6DFD3' : '1px solid #F2EEE7') + ';',
+          toggleStar: () => this.mxToggleStar(it.id),
+          starStyle: 'padding:0;border:0;background:none;cursor:pointer;font-size:12px;line-height:1;color:' + (pinned ? '#C08A15' : '#D6CFC4') + ';'
+        };
+      }),
+      edits: openShop ? items.map((it) => {
+        const c = M.cells[this.mxKey(openShop.name, it.id)], v = S.mxDraft[it.id] ?? '', focus = S.mxFocus === it.id;
+        return {
+          value: v, focus, placeholder: c ? String(c.p) : '—',
+          hint: v ? 'new' : c ? 'unchanged' : 'not priced',
+          onChange: (e) => this.setState({ mxDraft: { ...S.mxDraft, [it.id]: e.target.value.replace(/[^\d]/g, '') } }),
+          style: "width:100%;padding:8px 9px;border-radius:9px;border:1px solid " + (focus ? '#0E6B4E' : '#C8DCD3') + ";background:#fff;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#1C1A17;outline:none;"
+        };
+      }) : [],
+      shelfOpts: [[false, 'Paid'], [true, 'Shelf']].map(([v, label]) => ({
+        label, go: () => this.setState({ mxShelf: v }),
+        style: 'padding:6px 10px;border-radius:8px;border:0;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;' + (S.mxShelf === v ? 'background:#1C1A17;color:#fff;' : 'background:transparent;color:#6F6A62;')
+      })),
+      closeRow: () => this.setState({ mxOpen: null, mxDraft: {} }),
+      saveRow: () => this.mxSaveRow(),
+      saveRowLabel: S.mxBusy ? 'Saving…' : filled ? 'Save ' + filled : 'Save',
+      saveRowStyle: 'padding:8px 14px;border-radius:10px;border:0;color:#fff;font-size:12px;font-weight:700;background:' + (filled && !S.mxBusy ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (filled && !S.mxBusy ? 'pointer' : 'default') + ';',
+      adding: S.mxAdding,
+      startAdd: () => this.setState({ mxAdding: true, mxError: null }),
+      cancelAdd: () => this.setState({ mxAdding: false, mxError: null, mxNew: { name: '', size: '', cat: '' } }),
+      newName: S.mxNew.name, newSize: S.mxNew.size, newCat: S.mxNew.cat,
+      onNewName: (e) => this.setState({ mxNew: { ...S.mxNew, name: e.target.value }, mxError: null }),
+      onNewSize: (e) => this.setState({ mxNew: { ...S.mxNew, size: e.target.value }, mxError: null }),
+      onNewCat: (e) => this.setState({ mxNew: { ...S.mxNew, cat: e.target.value } }),
+      catOptions: cats.map((c) => ({ value: c })),
+      addItem: () => this.mxAddItem(),
+      addStyle: 'padding:10px 16px;border-radius:11px;border:0;color:#fff;font-size:12px;font-weight:700;background:' + (canAdd ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (canAdd ? 'pointer' : 'default') + ';'
+    } };
+  }
 
   onChartMove = (e) => {
     if (this._drag) return;
@@ -945,33 +1489,69 @@ class Component extends DCLogic {
   };
   onChartLeave = () => { if (this.state.hover !== null) this.setState({ hover: null }); };
 
+  // Mirrors _shared/rakuten.ts itemCodeFromUrl: only Rakuten (and Yahoo) URLs resolve.
+  resolveUrl(raw) {
+    let u; try { u = new URL(raw.trim()); } catch { return { error: 'That is not a URL.' }; }
+    const host = u.hostname;
+    const isRakuten = /(^|\.)rakuten\.co\.jp$/.test(host);
+    const isYahoo = /(^|\.)shopping\.yahoo\.co\.jp$/.test(host);
+    if (!isRakuten && !isYahoo) {
+      return { error: 'Only Rakuten Ichiba and Yahoo Shopping URLs work today. ' + host + ' is not wired up yet.' };
+    }
+    const d = this.build();
+    const code = u.pathname.split('/').filter(Boolean).pop() || '';
+    const known = d.products.find((p) => code && p.id === 'seiko' && /spb507/i.test(code));
+    return { known: known || null, store: isRakuten ? 'Rakuten' : 'Yahoo Shopping', code };
+  }
+
+  submitHeader = () => {
+    const q = this.state.headerQuery.trim();
+    if (!q) return;
+    if (/^https?:\/\//i.test(q)) this.setState({ screen: 'add', addTab: 'url', url: q, urlFetched: true, headerQuery: '' });
+    else this.setState({ screen: 'add', addTab: 'search', search: q, headerQuery: '' });
+  };
+
   renderVals() {
     const S = this.state, d = this.build();
+    if (d.notReady) return {};
+    // Resolved per render: user override first, then the current prop, then default.
+    const homeMode = S.homeMode ?? this.props.defaultHome ?? 'watchlist';
+    const graphMode = S.graphMode ?? this.props.defaultGraph ?? 'overlay';
+    const verdictMode = S.verdictMode ?? this.props.verdictStyle ?? 'card';
     const p = d.products.find((x) => x.id === S.productId) || d.products[0];
     const screen = S.screen;
 
     // ---- nav ----
-    const navDefs = [
-      ['home', 'Home'], ['deals', 'Deal feed'], ['calendar', 'Season calendar'],
-      ['alerts', 'Alerts', 2], ['settings', 'Settings']
-    ];
-    const nav = navDefs.map(([id, label, badge]) => ({
+    const buildNav = (alertBadge, matrixBadge) => [
+      ['home', 'Home'], ['matrix', 'Price matrix', matrixBadge], ['deals', 'Deal feed'], ['calendar', 'Season calendar'],
+      ['alerts', 'Alerts', alertBadge], ['settings', 'Settings']
+    ].map(([id, label, badge]) => ({
       label, badge,
       go: () => this.setState({ screen: id, hover: null }),
       style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border-radius:12px;border:0;cursor:pointer;font-size:13px;font-weight:' +
         (screen === id ? '700' : '600') + ';text-align:left;background:' +
-        (screen === id ? '#F1EDE6' : 'transparent') + ';color:' + (screen === id ? '#1C1A17' : '#7E786F') + ';'
+        (screen === id ? '#F1EDE6' : 'transparent') + ';color:' + (screen === id ? '#1C1A17' : '#6F6A62') + ';'
     }));
 
+    // ---- this product's record ----
+    // Live products are shorter than the fixture year and start on their own
+    // first capture date, so every length, date and span label on this page
+    // comes from the product, never from d.D / d.dateAt / d.events.
+    const pD = p.historyDays;
+    const pAt = p.dateAt;
+    const pEvents = p.events;
+    const spanLabel = pD >= 330 ? '12-month' : pD >= 45 ? Math.round(pD / 30.4) + '-month' : pD + '-day';
+    const spanWords = pD >= 330 ? 'the last 12 months' : pD >= 45 ? 'the last ' + Math.round(pD / 30.4) + ' months' : 'our ' + pD + '-day record';
+
     // ---- range slice ----
-    const n = Math.min(S.range, d.D);
-    const off = d.D - n;
+    const n = Math.min(S.range, pD);
+    const off = pD - n;
     const mTop = 80, mBot = 246, mH = mBot - mTop;
     const x = (i) => (i / (n - 1)) * 920;
 
     const visibleStores = p.series.concat(S.showUsed ? [p.used] : []);
     let seriesForScale;
-    if (S.graphMode === 'best') seriesForScale = [{ name: 'Best price', color: '#17916B', values: p.best }].concat(S.showUsed ? [p.used] : []);
+    if (graphMode === 'best') seriesForScale = [{ name: 'Best price', color: '#17916B', values: p.best }].concat(S.showUsed ? [p.used] : []);
     else seriesForScale = visibleStores;
     const refSlice = p.refs.slice(off);
     const target = S.target != null ? S.target : Math.round((p.median * 0.93) / 100) * 100;
@@ -991,22 +1571,27 @@ class Component extends DCLogic {
     const pts = (vals, fy) => vals.slice(off).map((v, i) => x(i) + ',' + fy(v).toFixed(1)).join(' ');
 
     const lines = seriesForScale.map((s) => ({
-      points: pts(s.values, y), color: s.color, width: s.used ? 1.8 : (S.graphMode === 'best' ? 2.6 : 1.9),
+      points: pts(s.values, y), color: s.color, width: s.used ? 1.8 : (graphMode === 'best' ? 2.6 : 1.9),
       dash: s.used ? '4 4' : '0', opacity: 1
     }));
     const refPoints = pts(p.refs, yRef);
 
     const bands = [], bandLabels = [];
-    for (const e of d.events) {
-      if (e.i1 < off) continue;
-      const a = Math.max(e.i0, off) - off, b = Math.min(e.i1, d.D - 1) - off;
+    for (const e of pEvents) {
+      if (e.i1 < off || e.i0 > pD - 1) continue;
+      // An event is only "fake" for a product whose own reference price was
+      // inflated around it. e.fake describes the event's reputation; p.refs
+      // describes what this shop actually did to this item. Clean products still
+      // get the band — just not the accusation.
+      const fakeHere = p.flagIdx >= 0 && p.refs[Math.max(0, e.i0)] > p.msrp;
+      const a = Math.max(e.i0, off) - off, b = Math.min(e.i1, pD - 1) - off;
       const bx = x(a), bw = Math.max(x(b) - bx, 8);
-      bands.push({ x: bx, w: bw, fill: e.fake ? 'rgba(194,69,59,0.08)' : 'rgba(23,145,107,0.07)' });
+      bands.push({ x: bx, w: bw, fill: fakeHere ? 'rgba(194,69,59,0.08)' : 'rgba(23,145,107,0.07)' });
       if (bw > 42) {
-        const base = 'position:absolute;top:72px;font-size:10px;font-weight:700;white-space:nowrap;pointer-events:none;color:' + (e.fake ? '#C2453B' : '#5E8E7C') + ';';
+        const base = 'position:absolute;top:72px;font-size:10px;font-weight:700;white-space:nowrap;pointer-events:none;color:' + (fakeHere ? '#C2453B' : '#5E8E7C') + ';';
         const lp = (bx + 5) / 9.2;
         bandLabels.push({
-          label: e.fake ? '⚑ ' + e.label : e.label,
+          label: fakeHere ? '⚑ ' + e.label : e.label,
           style: base + (lp > 56
             ? 'right:' + Math.max(0, 100 - (bx + bw) / 9.2).toFixed(2) + '%;'
             : 'left:' + lp.toFixed(2) + '%;')
@@ -1019,18 +1604,18 @@ class Component extends DCLogic {
       const v = min + ((max - min) * k) / 4;
       grid.push({
         y: y(v).toFixed(1), label: this.yen(v),
-        style: "position:absolute;left:0;width:52px;text-align:right;top:" + y(v).toFixed(1) + "px;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A79F94;white-space:nowrap;pointer-events:none;"
+        style: "position:absolute;left:0;width:52px;text-align:right;top:" + y(v).toFixed(1) + "px;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F6A62;white-space:nowrap;pointer-events:none;"
       });
     }
 
     const xLabels = [];
     for (let k = 0; k < 5; k++) {
       const i = Math.round((k / 4) * (n - 1));
-      const dt = d.dateAt(off + i);
+      const dt = pAt(off + i);
       const lp = x(i) / 9.2;
       xLabels.push({
         label: dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-        style: 'position:absolute;top:256px;font-size:11px;color:#A79F94;white-space:nowrap;pointer-events:none;' +
+        style: 'position:absolute;top:256px;font-size:11px;color:#6F6A62;white-space:nowrap;pointer-events:none;' +
           (k === 0 ? 'left:0;' : k === 4 ? 'right:0;' : 'left:' + lp.toFixed(2) + '%;transform:translateX(-50%);')
       });
     }
@@ -1050,22 +1635,120 @@ class Component extends DCLogic {
     const targetY = y(Math.max(min, Math.min(max, target)));
 
     const legend = [{ name: 'Reference price (top strip)', swatch: 'width:16px;height:0;border-top:2px dashed #C9C1B6;display:inline-block;flex-shrink:0;' }]
-      .concat(seriesForScale.map((s) => ({ name: s.name, swatch: 'width:16px;height:3px;border-radius:2px;background:' + s.color + ';display:inline-block;flex-shrink:0;' })));
+      .concat(seriesForScale.map((s) => ({
+        name: s.name + (s.live === false && !s.used ? ' (planned)' : ''),
+        swatch: 'width:16px;height:3px;border-radius:2px;background:' + s.color + ';display:inline-block;flex-shrink:0;' + (s.live === false ? 'opacity:0.55;' : '')
+      })));
+
+    // Honest counts
+    const historyText = (days) => days >= 60
+      ? Math.round(days / 30.4) + ' months of history'
+      : days <= 1 ? 'tracking started today' : days + ' days of history';
+    // Two different store lists, and only one is right per state:
+    //   d.live  → buildLive() already put the real rows in d.stores, with "live"
+    //             meaning "has actually quoted one of these products". Use it.
+    //   !d.live → build() fell back to fixtures because nothing is tracked yet,
+    //             so read the project's own rows here and fall back to "a
+    //             collector exists for this shop", the only signal available.
+    // Never mix them: the adapter flag over-counts stores that never returned a price.
+    const liveStatus = (S.live || {}).status || 'sample';
+    const liveRows = (this._live && this._live.stores) || null;
+    const collectAdapters = ['rakuten_api', 'yahoo_api'];
+    // The list must describe whatever dataset is on screen. Rows only exist once
+    // a read succeeded, so on signin/error — where build() is showing fixtures —
+    // the fixture list is the consistent answer, not an empty one.
+    const storeList = d.live ? d.stores
+      : (liveStatus !== 'sample' && liveRows && liveRows.length)
+        ? liveRows.map((s) => ({ name: s.name, color: s.color || '#6F6A62', live: collectAdapters.includes(s.adapter) }))
+        : d.stores;
+    const liveStores = storeList.filter((s) => s.live), plannedStores = storeList.filter((s) => !s.live);
+    // The fixture set adds Mercari as a planned used-market source; a real project
+    // only has the stores in its own chatak_stores table.
+    const liveCount = liveStores.length, plannedCount = plannedStores.length + (d.live ? 0 : 1);
+    const storeTotal = liveCount + plannedCount;
+    const nStores = (k) => k + (k === 1 ? ' store' : ' stores');
+    // The watchlist can hold records of different lengths, so Home and the
+    // calendar describe the range rather than asserting one span.
+    const recDays = d.products.map((q) => q.historyDays);
+    const recMin = recDays.length ? Math.min(...recDays) : d.D, recMax = recDays.length ? Math.max(...recDays) : d.D;
+    const spanOf = (k) => k >= 330 ? '12 months' : k >= 45 ? Math.round(k / 30.4) + ' months' : k + (k === 1 ? ' day' : ' days');
+    const recordSpanWords = recMin === recMax ? spanOf(recMin) : spanOf(recMin) + ' to ' + spanOf(recMax);
+    const liveNames = liveStores.map((s) => s.name), plannedNames = plannedStores.map((s) => s.name).concat(d.live ? [] : ['Mercari']);
+    const flaggedIds = d.products.filter((q) => q.flagIdx >= 0).map((q) => q.id);
+    const flaggedCount = flaggedIds.length;
+    const buyList = d.products.filter((q) => q.verdict === 'buy');
+    const buyCount = buyList.length, buyNames = buyList.map((q) => q.short.split(' ').slice(0, 2).join(' '));
+    // Same forward list the verdict timeline uses, so "next real event" cannot
+    // disagree with the product page or the calendar.
+    const nextEv = d.upcoming.filter((e) => !e.bad).sort((a, b) => a.daysAway - b.daysAway)[0];
+    const nextEventDays = nextEv ? nextEv.daysAway : null;
+    const nextEventLabel = nextEv ? nextEv.label + ', ' + nextEv.dates : 'None scheduled';
+    const agoMin = Math.max(1, Math.round((new Date(2026, 8, 19, 5, 14) - S.lastCaptured) / 60000));
+    const refreshedAgoShort = agoMin < 60 ? agoMin + ' min ago' : Math.round(agoMin / 60) + ' h ago';
+    const refreshedAgo = agoMin < 60 ? agoMin + ' minutes ago' : agoMin < 1440 ? Math.round(agoMin / 60) + ' hours ago' : 'yesterday';
+    // Both of the above run off the fixture clock, so live data states the date of
+    // its own last capture rather than inventing a "minutes ago".
+    const capturedLabel = d.live
+      ? 'Captured ' + pAt(pD - 1).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      : 'Checked ' + refreshedAgoShort;
+    // Real count of days the best price was at or below the target in the visible year
+    const hitDays = p.best.filter((v) => v <= target).length;
+    const hitRuns = p.best.reduce((acc, v, i) => acc + (v <= target && (i === 0 || p.best[i - 1] > target) ? 1 : 0), 0);
 
     // ---- product view models ----
     const deltaPct = Math.round(Math.abs(p.delta) * 1000) / 10;
     const deltaText = (p.delta >= 0 ? '+' : '−') + deltaPct + '%';
-    const deltaStyle = 'font-size:12px;font-weight:700;color:' + (p.delta >= 0 ? '#C2453B' : '#17916B') + ';';
+    const deltaStyle = 'font-size:12px;font-weight:700;color:' + (p.delta >= 0 ? '#C2453B' : '#0F6B4F') + ';';
 
     const lowIdx = p.best.indexOf(p.low), highIdx = p.best.indexOf(p.high);
-    const mon = (i) => d.dateAt(i).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    const inEvent = (i) => { const e = d.events.find((ev) => i >= ev.i0 && i <= ev.i1); return e ? e.label : null; };
-    const lowNote = lowIdx >= d.D - 3
+    const mon = (i) => pAt(i).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const inEvent = (i) => { const e = pEvents.find((ev) => i >= ev.i0 && i <= ev.i1); return e ? e.label : null; };
+    const lowNote = lowIdx >= pD - 3
       ? 'Today — a new record'
       : (inEvent(lowIdx) ? 'Set during ' + inEvent(lowIdx) : 'Set ' + mon(lowIdx));
-    const highNote = highIdx >= d.D - 3
-      ? "Today — the year's highest"
+    const highNote = highIdx >= pD - 3
+      ? 'Today — the highest on record'
       : (inEvent(highIdx) ? 'Peaked during ' + inEvent(highIdx) : 'Peaked ' + mon(highIdx));
+
+    // An OFFER is one store's price for one product. Store, price, reference,
+    // advertised % and real % all come from that single pair, so no surface can
+    // mix one store's price with another store's reference. Used by the deal
+    // feed and by the forensics panel below.
+    const offer = (q, storeName, event) => {
+      // With live data the collected stores differ per product, so a named store
+      // may not exist here; fall back to one that does rather than throwing.
+      const s = q.series.find((x) => x.name === storeName) || q.series.find((x) => x.live) || q.series[0];
+      const n = q.historyDays || d.D;
+      const price = s.values[n - 1];
+      const isFlagStore = q.flagStore === s.name;
+      const ref = isFlagStore && q.flagRef ? q.flagRef : q.refs[n - 1] || q.msrp;
+      const dlt = (price - q.median) / q.median;
+      return {
+        q, store: s.name, event, price, ref, isFlagStore, dlt,
+        advPct: Math.round((1 - price / ref) * 100),
+        adv: Math.round((1 - price / ref) * 100) + '% OFF',
+        realPct: Math.abs(dlt * 100).toFixed(1),
+        real: (dlt >= 0 ? '+' : '−') + Math.abs(dlt * 100).toFixed(1) + '%',
+        good: dlt < -0.02
+      };
+    };
+
+    // Forensics for the inflated-reference-price panel: one store's fake discount,
+    // so every number is that store's — via offer(), same as its deal card.
+    const dayLabel = (i) => pAt(i).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    let fx = [];
+    if (p.flagIdx >= 0 && p.flagStore) {
+      const fo = offer(p, p.flagStore, '');
+      const raisePct = Math.round(((p.flagRef - p.msrp) / p.msrp) * 100);
+      const leadDays = p.flagEvent ? p.flagEvent.i0 - p.flagIdx : null;
+      const mono = "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:";
+      fx = [
+        { label: p.flagStore + ' reference on ' + dayLabel(p.flagIdx - 1), value: this.yen(p.msrp), note: 'Matches the manufacturer MSRP', valueStyle: mono + '600;' },
+        { label: p.flagStore + ' reference on ' + dayLabel(p.flagIdx), value: this.yen(p.flagRef), note: 'Raised ' + raisePct + '%' + (leadDays != null ? ' ' + leadDays + ' days before ' + p.flagEvent.label + ' began' : ''), valueStyle: mono + '700;color:#C2453B;' },
+        { label: p.flagStore + ' advertised discount', value: fo.advPct + '% OFF', note: this.yen(fo.price) + ' measured against the inflated figure', valueStyle: mono + "600;color:#6F6A62;text-decoration:line-through;" },
+        { label: p.flagStore + ' price vs. median', value: fo.real, note: 'At ' + p.flagStore + ' you pay ' + fo.realPct + '% ' + (fo.dlt >= 0 ? 'more' : 'less') + ' than the 90-day norm of ' + this.yen(p.median), valueStyle: mono + '700;color:' + (fo.dlt >= 0 ? '#C2453B' : '#0F6B4F') + ';' }
+      ];
+    }
 
     const productVM = {
       name: p.name, sub: p.sub, shotLabel: p.shot,
@@ -1074,36 +1757,40 @@ class Component extends DCLogic {
       verdictLabel: this.vlabel(p.verdict),
       headline: p.copy.headline, reason: p.copy.reason, shortReason: p.copy.shortReason,
       confidenceText: Math.round(p.copy.confidence * 100) + '%',
-      hasFlag: p.id === 'seiko',
-      tags: [{ text: '12 months of history' }, { text: '6 stores tracked' }, { text: 'Checked 14 min ago' }],
+      confidenceLabel: p.historyDays < 14 ? 'Evidence — thin' : 'Evidence',
+      confidenceNote: historyText(p.historyDays) + ' · ' + p.series.filter((s) => s.live).length + ' of ' + storeTotal + ' stores collected',
+      medianLabel: p.medianLabel,
+      hasFlag: p.flagIdx >= 0,
+      tags: [{ text: historyText(p.historyDays) }, { text: plannedCount ? nStores(liveCount) + ' checked · ' + plannedCount + ' planned' : nStores(liveCount) + ' checked daily' }, { text: capturedLabel }],
       timeline: p.copy.timeline,
       stats: [
-        { label: '90-day median', value: this.yen(p.median), note: 'What it normally costs' },
-        { label: '12-month low', value: this.yen(p.low), note: lowNote },
-        { label: '12-month high', value: this.yen(p.high), note: highNote },
+        { label: p.medianLabel, value: this.yen(p.median), note: 'What it normally costs' },
+        { label: spanLabel + ' low', value: this.yen(p.low), note: lowNote },
+        { label: spanLabel + ' high', value: this.yen(p.high), note: highNote },
         { label: 'Today vs. median', value: deltaText, note: p.delta >= 0 ? 'More expensive than usual' : 'Cheaper than usual' }
       ],
       storeRows: p.series.concat([p.used]).map((s) => {
-        const cur = s.values[d.D - 1], prev = s.values[d.D - 31];
-        const ch = ((cur - prev) / prev) * 100;
+        // A 20-day record has no 30-day-ago price; compare against its oldest.
+        const cur = s.values[pD - 1], prev = s.values[Math.max(0, pD - 31)];
+        const ch = prev ? ((cur - prev) / prev) * 100 : 0;
         const isBest = !s.used && cur === p.current;
-        const inflated = !s.used && s.name === 'Rakuten' && p.id === 'seiko';
+        // The cell shows TODAY's reference, so the flag must describe today —
+        // not "this shop inflated at some point in the last year".
+        const inflated = !s.used && s.name === p.flagStore && p.refs[pD - 1] > p.msrp;
+        const wasInflated = !s.used && s.name === p.flagStore && !inflated && p.flagIdx >= 0;
+        const planned = !s.live;
         return {
-          name: s.name, dot: this.dot(s.color),
+          name: s.name, dot: this.dot(s.color), planned,
           price: this.yen(cur),
-          priceStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:" + (isBest ? '700' : '500') + ';color:' + (isBest ? '#17916B' : '#1C1A17') + ';',
+          priceStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:" + (isBest ? '700' : '500') + ';color:' + (isBest ? '#0F6B4F' : planned ? '#6F6A62' : '#1C1A17') + ';',
           change: (ch >= 0 ? '+' : '−') + Math.abs(ch).toFixed(1) + '%',
-          changeStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:" + (ch >= 0 ? '#C2453B' : '#17916B') + ';',
-          ref: s.used ? '—' : this.yen(p.refs[d.D - 1]) + (inflated ? ' ⚑' : ''),
-          refStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:" + (inflated ? '700' : '500') + ';color:' + (inflated ? '#C2453B' : '#9A938A') + ';'
+          changeStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:" + (ch >= 0 ? '#C2453B' : '#0F6B4F') + ';',
+          ref: s.used ? '—' : this.yen(p.refs[pD - 1]) + (inflated ? ' ⚑' : ''),
+          refStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:" + (inflated ? '700' : '500') + ';color:' + (inflated ? '#C2453B' : '#6F6A62') + ';',
+          refNote: wasInflated ? 'was ' + this.yen(p.flagRef) + ' during the sale' : null
         };
       }),
-      forensics: [
-        { label: 'Reference price on 20 Aug', value: this.yen(p.msrp), note: 'Matches the manufacturer MSRP', valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;" },
-        { label: 'Reference price on 4 Sep', value: this.yen(Math.round((p.msrp * 1.175) / 1000) * 1000), note: 'Raised 17% eight days before the sale', valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#C2453B;" },
-        { label: 'Advertised discount', value: '33% OFF', note: 'Measured against the inflated figure', valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#6F6A62;text-decoration:line-through;" },
-        { label: 'Real change vs. median', value: deltaText, note: 'You pay ' + deltaPct + '% more than the 90-day norm of ' + this.yen(p.median), valueStyle: "font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:" + (p.delta >= 0 ? '#C2453B' : '#17916B') + ';' }
-      ]
+      forensics: fx
     };
 
     // ---- lists ----
@@ -1111,7 +1798,7 @@ class Component extends DCLogic {
       name: q.short, shotLabel: q.shot, open: this.open(q.id),
       currentText: this.yen(q.current),
       deltaText: (q.delta >= 0 ? '+' : '−') + (Math.round(Math.abs(q.delta) * 1000) / 10) + '%',
-      deltaStyle: 'font-size:11px;font-weight:700;color:' + (q.delta >= 0 ? '#C2453B' : '#17916B') + ';',
+      deltaStyle: 'font-size:11px;font-weight:700;color:' + (q.delta >= 0 ? '#C2453B' : '#0F6B4F') + ';',
       pill: this.pill(q.verdict), verdictLabel: this.vlabel(q.verdict),
       storeLine: 'Best at ' + q.bestStore + ' · ' + (q.verdict === 'wait' ? 'flagged sale' : 'clean pricing'),
       sparkColor: this.vcolor(q.verdict),
@@ -1123,21 +1810,25 @@ class Component extends DCLogic {
     });
     const products = d.products.map(pvm);
 
-    const realOf = (q) => ({
-      real: (q.delta >= 0 ? '+' : '−') + (Math.round(Math.abs(q.delta) * 1000) / 10) + '%',
-      good: q.delta < -0.02
-    });
-    const dealSrc = [
-      { q: d.products[1], store: 'Yodobashi', event: 'Autumn clearance', adv: '30% OFF' },
-      { q: d.products[0], store: 'Rakuten', event: 'Super Sale (ended)', adv: '33% OFF' },
-      { q: d.products[4], store: 'Amazon JP', event: 'Daily deal', adv: '19% OFF' },
-      { q: d.products[3], store: 'Bic Camera', event: 'Point campaign', adv: '20% OFF' },
-      { q: d.products[2], store: 'Yahoo Shopping', event: 'PayPay boost', adv: '25% OFF' }
-    ].map((s) => ({ ...s, ...realOf(s.q) }));
+    // realOf/advOf/refOf deleted: they computed an advertised percentage from the
+    // cross-store minimum against one store's reference — the mispairing removed
+    // from six surfaces. Anything needing those figures uses offer() instead.
+    // Deals are offers (see offer() above). Events are named by the store that
+    // runs them: Super SALE is Rakuten's, PayPay boost is Yahoo's.
+    const dealSrc = d.live
+      ? d.products.flatMap((q) => q.series.filter((s) => s.live).map((s) => offer(q, s.name, '')))
+          .sort((a, b) => a.dlt - b.dlt)
+      : [
+        offer(d.products[1], 'Rakuten', 'Autumn clearance'),
+        offer(d.products[0], 'Rakuten', 'Super SALE (ended)'),
+        offer(d.products[4], 'Rakuten', 'Daily deal'),
+        offer(d.products[3], 'Yahoo Shopping', 'PayPay boost'),
+        offer(d.products[2], 'Yahoo Shopping', 'PayPay boost')
+      ];
     const deals = dealSrc.map((s) => ({
-      name: s.q.short, store: s.store, priceText: this.yen(s.q.current) + ' · ' + s.event,
+      name: s.q.short, store: s.store, priceText: this.yen(s.price) + (s.event ? ' · ' + s.event : ''),
       advertised: s.adv, real: s.real,
-      realStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:" + (s.good ? '#17916B' : '#C2453B') + ';',
+      realStyle: "font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:" + (s.good ? '#0F6B4F' : '#C2453B') + ';',
       pill: this.pill(s.q.verdict), verdictLabel: this.vlabel(s.q.verdict), open: this.open(s.q.id)
     }));
     const dealFiltered = dealSrc.filter((s) =>
@@ -1146,7 +1837,9 @@ class Component extends DCLogic {
           : s.store === S.dealFilter);
     const dealCards = dealFiltered.map((s) => ({
       name: s.q.short, store: s.store, event: s.event,
-      priceText: this.yen(s.q.current), wasText: this.yen(s.q.msrp),
+      priceText: this.yen(s.price), wasText: this.yen(s.ref) + (s.isFlagStore ? ' ⚑' : ''),
+      wasStyle: "font-size:12px;text-decoration:line-through;font-family:'IBM Plex Mono',monospace;color:" + (s.isFlagStore ? '#C2453B' : '#6F6A62') + ';',
+      wasNote: s.isFlagStore ? s.store + ' raised this from ' + this.yen(s.q.msrp) + ' before the sale' : null,
       advertised: s.adv, real: s.real,
       realBoxStyle: 'padding:10px 12px;border-radius:12px;display:flex;flex-direction:column;gap:2px;background:' +
         (s.good ? '#E3F3EC' : '#FBE7E4') + ';color:' + (s.good ? '#0F6B4F' : '#B03A31') + ';',
@@ -1157,7 +1850,7 @@ class Component extends DCLogic {
     const evByMonth = {
       'Sep2026': [{ label: 'Rakuten Super Sale', dates: '4–11 Sep · ended', drop: '+1%', bad: true }],
       'Oct2026': [],
-      'Nov2026': [{ label: 'Amazon Black Friday', dates: '27–30 Nov', drop: '−12%', bad: false }],
+      'Nov2026': [{ label: 'Late-November sales', dates: '27–30 Nov', drop: '−12%', bad: false }],
       'Dec2026': [{ label: 'Rakuten Super Sale', dates: '4–11 Dec', drop: '−2%', bad: true }, { label: 'Year-end clearance', dates: '26–31 Dec', drop: '−6%', bad: false }],
       'Jan2027': [{ label: 'New Year sale', dates: '1–5 Jan', drop: '−7%', bad: false }],
       'Feb2027': [],
@@ -1165,7 +1858,7 @@ class Component extends DCLogic {
       'Apr2027': [{ label: 'Golden Week', dates: '29 Apr–6 May', drop: '−4%', bad: false }],
       'May2027': [],
       'Jun2027': [{ label: 'Rakuten Super Sale', dates: '4–11 Jun', drop: '−5%', bad: false }],
-      'Jul2027': [{ label: 'Amazon Prime Day', dates: '14–16 Jul', drop: '−12%', bad: false }],
+      'Jul2027': [{ label: 'Mid-July sale week', dates: '14–16 Jul', drop: '−12%', bad: false }],
       'Aug2027': []
     };
     const monthOrder = ['Sep2026', 'Oct2026', 'Nov2026', 'Dec2026', 'Jan2027', 'Feb2027', 'Mar2027', 'Apr2027', 'May2027', 'Jun2027', 'Jul2027', 'Aug2027'];
@@ -1179,7 +1872,7 @@ class Component extends DCLogic {
           (big ? '#F3F9F6' : '#fff') + ';border:1px solid ' + (big ? '#D6E9E0' : '#EAE5DD') + ';' + (i === 0 ? 'box-shadow:0 0 0 2px #1C1A17;' : ''),
         events: evs.map((e) => ({
           label: e.label, dates: e.dates, drop: e.drop,
-          dropStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:" + (e.bad ? '#C2453B' : '#17916B') + ';'
+          dropStyle: "font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:" + (e.bad ? '#C2453B' : '#0F6B4F') + ';'
         }))
       };
     });
@@ -1205,12 +1898,18 @@ class Component extends DCLogic {
     const orientTarget = 63000, seikoTarget = 102000;
     const progress = (q, gap) => Math.max(0.06, Math.min(0.94, 1 - gap / (q.median * 0.25)));
 
-    const alerts = [
-      { id: 'seiko', kind: 'target', target: seikoTarget },
-      { id: 'orient', kind: 'target', target: orientTarget },
-      { id: 'sony', kind: 'low' },
-      { id: 'citizen', kind: 'fake' }
-    ].map((a) => {
+    // Sample data shows a curated set of four rules. Live data has UUIDs and no
+    // curation, so every tracked product gets a record-low watch, plus a fake-
+    // discount row whenever its reference price has moved above MSRP.
+    const alertDefs = d.live
+      ? d.products.flatMap((q) => [{ id: q.id, kind: 'low' }].concat(q.flagIdx >= 0 ? [{ id: q.id, kind: 'fake' }] : []))
+      : [
+        { id: 'seiko', kind: 'target', target: seikoTarget },
+        { id: 'orient', kind: 'target', target: orientTarget },
+        { id: 'sony', kind: 'low' },
+        { id: 'citizen', kind: 'fake' }
+      ];
+    const alerts = alertDefs.filter((a) => P(a.id)).map((a) => {
       const q = P(a.id);
       let rule, distance, bar, status, v;
       if (a.kind === 'target') {
@@ -1228,7 +1927,7 @@ class Component extends DCLogic {
         distance = hit ? 'New record today' : this.yen(q.current - q.low) + ' above record';
         bar = hit ? 1 : progress(q, q.current - q.low);
       } else {
-        const flagged = a.id === 'seiko';
+        const flagged = q.flagIdx >= 0;
         rule = 'Fake discount watch';
         status = flagged ? 'Flagged' : 'Clean';
         v = flagged ? 'wait' : 'buy';
@@ -1241,12 +1940,36 @@ class Component extends DCLogic {
       };
     });
 
-    const oq = P('orient'), sq = P('seiko');
-    const alertLog = [
-      { title: 'Orient Star hit your ' + this.yen(orientTarget) + ' target', body: oq.bestStore + ' dropped to ' + this.yen(oq.current) + ' — a 12-month low, below the previous best of ' + this.yen(oq.minBefore) + '. Sent to email and push.', when: '2d ago', dot: this.dot('#17916B', 9) },
-      { title: 'Fake discount: Seiko SPB507J1 at Rakuten', body: 'Reference price raised ' + this.yen(sq.msrp) + ' → ' + this.yen(Math.round((sq.msrp * 1.175) / 1000) * 1000) + ' before the Super Sale, while the price you pay stayed at ' + this.yen(sq.current) + '.', when: '15d ago', dot: this.dot('#C2453B', 9) },
-      { title: 'Rakuten Super Sale starts in 3 days', body: 'We are watching 5 of your products across the event window.', when: '18d ago', dot: this.dot('#3E7BB6', 9) }
-    ];
+    // The badge means "needs your attention", so it counts the rows the Alerts
+    // screen itself marks Triggered or Flagged — one array, one number. The
+    // "N running" line next to it counts every active rule, which is why they differ.
+    // A badge means "needs your attention", which only a successful live read —
+    // or sample mode — can honestly claim.
+    const navStatus = (S.live || {}).status || 'sample';
+    // Viewers read the matrix; editors and admins type into it.
+    const mxv = this.matrixVals(S, this._role ? this._role.role !== 'viewer' : true);
+    const nav = buildNav(
+      navStatus !== 'sample' && navStatus !== 'ready' ? 0 : alerts.filter((a) => a.status === 'Triggered' || a.status === 'Flagged').length,
+      mxv.due
+    );
+
+    let alertLog;
+    if (d.live) {
+      alertLog = [];
+      for (const q of d.products) {
+        if (q.flagIdx >= 0) alertLog.push({ title: 'Fake discount: ' + q.short + ' at ' + q.flagStore, body: 'Reference price raised ' + this.yen(q.msrp) + ' → ' + this.yen(q.flagRef) + ' while the price you pay there is ' + this.yen(q.flagPrice) + '.', when: 'today', dot: this.dot('#C2453B', 9) });
+        if (q.historyDays >= 14 && q.current <= q.minBefore) alertLog.push({ title: q.short + ' is at its lowest recorded price', body: q.bestStore + ' is at ' + this.yen(q.current) + ', at or below the previous low of ' + this.yen(q.minBefore) + ' across ' + q.historyDays + ' days of record.', when: 'today', dot: this.dot('#17916B', 9) });
+      }
+    } else {
+      const oq = P('orient'), sq = P('seiko');
+      // The accusation names one store, so its price must be that store's.
+      const sqOffer = offer(sq, sq.flagStore, '');
+      alertLog = [
+        { title: 'Orient Star hit your ' + this.yen(orientTarget) + ' target', body: oq.bestStore + ' dropped to ' + this.yen(oq.current) + ' — a 12-month low, below the previous best of ' + this.yen(oq.minBefore) + '. Sent to email and push.', when: '2d ago', dot: this.dot('#17916B', 9) },
+        { title: 'Fake discount: ' + sq.short + ' at ' + sq.flagStore, body: 'Reference price raised ' + this.yen(sq.msrp) + ' → ' + this.yen(sqOffer.ref) + ' before the Super Sale, while the price you pay there stayed at ' + this.yen(sqOffer.price) + '.', when: '15d ago', dot: this.dot('#C2453B', 9) },
+        { title: 'Rakuten Super Sale starts in 3 days', body: 'We are watching ' + d.products.length + ' of your ' + (d.products.length === 1 ? 'product' : 'products') + ' across the event window.', when: '18d ago', dot: this.dot('#3E7BB6', 9) }
+      ];
+    }
 
     // ---- settings ----
     const choiceRow = (label, note, key, opts) => ({
@@ -1265,16 +1988,64 @@ class Component extends DCLogic {
         knobStyle: 'width:19px;height:19px;border-radius:99px;background:#fff;display:block;'
       };
     };
+    const role = (this._role && this._role.role) || null;
+    // viewer reads everything and changes nothing; editor curates the watchlist;
+    // admin also prunes it, edits settings and manages who may sign in.
+    const perms = {
+      role,
+      track: role !== 'viewer',
+      remove: role === 'admin',
+      settings: role === 'admin',
+      allowList: role === 'admin'
+    };
+    const acct = this._session && this._session.user ? this._session.user.email : null;
+    const roleWord = role ? role.charAt(0).toUpperCase() + role.slice(1) : null;
     const settingGroups = [
+      ...(acct ? [{ title: 'Account', rows: [
+        {
+          label: acct,
+          note: roleWord ? roleWord + (role === 'viewer' ? ' — you can read everything and change nothing' : role === 'editor' ? ' — you can track products; removing them and editing settings are admin-only' : ' — full access, including who may sign in') : 'Signed in',
+          isAction: true,
+          actLabel: S.signOutAsking ? 'Cancel' : 'Sign out',
+          actStyle: 'padding:9px 16px;border-radius:11px;border:0;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0;background:#F4F1EB;color:#6F6A62;',
+          act: () => this.setState({ signOutAsking: !S.signOutAsking })
+        },
+        ...(S.signOutAsking ? [{
+          label: 'Sign out of Chatak?',
+          note: 'Your watchlist stays where it is. We keep the address filled in for next time.',
+          isAction: true, actLabel: 'Yes, sign out',
+          actStyle: 'padding:9px 16px;border-radius:11px;border:0;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0;background:#C2453B;color:#fff;',
+          act: () => this.signOutLive()
+        }] : [])
+      ] }] : []),
       { title: 'Notifications', rows: [toggleRow('Email', 'kenji@example.com', 'email'), toggleRow('Push notifications', 'This browser and the mobile app', 'push')] },
       { title: 'Display', rows: [choiceRow('Language', 'Interface language', 'lang', ['EN', '日本語']), choiceRow('Price format', 'How amounts are written', 'fmt', ['¥12,800', '12,800円']), choiceRow('Default graph range', 'Applied to every product', 'range', ['30d', '90d', '1y'])] },
       { title: 'Data', rows: [toggleRow('Include Mercari used prices', 'Shown as a separate dashed line', 'used')] }
     ];
 
     // ---- onboarding ----
+    // Step 2 teaches the core idea, so its example must be the flagged product
+    // itself — same reference price and same advertised % the deal feed and the
+    // forensics panel compute. No literals, or the lesson drifts from the app.
+    const ex = d.products.find((q) => q.flagIdx >= 0);
+    // The teaching example must price the accusation the way the product page and
+    // the deal card do — through offer(), against the accusing store's own price.
+    // Using ex.current here paired Rakuten's reference with Yahoo's price.
+    const exOffer = ex ? offer(ex, ex.flagStore, '') : null;
+    const exPct = exOffer ? Number(exOffer.realPct) : 0;
+    const exOutcome = !exOffer ? '' : exPct < 1
+      ? 'the answer is: nothing changed — ' + this.yen(exOffer.price) + ' today is the ' + ex.medianLabel + '.'
+      : exOffer.dlt >= 0
+        ? 'you would pay ' + exOffer.realPct + '% more than the ' + ex.medianLabel + ' of ' + this.yen(ex.median) + '. The sale moved the sticker, not the price.'
+        : 'you would save ' + exOffer.realPct + '% against the ' + ex.medianLabel + ' of ' + this.yen(ex.median) + ' — real, but a fraction of what the sticker claims.';
+    const exBody = exOffer
+      ? 'When ' + ex.flagStore + ' raises its reference price to ' + this.yen(exOffer.ref) + ' and takes ' +
+        exOffer.advPct + '% off, we compare the result to what you would normally have paid. For the ' +
+        ex.short + ' on your watchlist right now, ' + exOutcome
+      : 'When a shop raises its reference price and advertises a percentage off it, we compare the result to what you would normally have paid. Usually the answer is: nothing changed.';
     const steps = [
-      { title: 'Retailers rewrite the past. We do not.', body: 'Chatak records the price of everything you track, every day, at six Japanese stores. That record cannot be edited by a seller before a sale.', shot: 'illustration — calendar of recorded prices' },
-      { title: 'A discount is only real against the median', body: 'When a shop raises its reference price to ¥168,000 and takes 33% off, we compare the result to what you would normally have paid. Usually the answer is: nothing changed.', shot: 'illustration — inflated list price vs. flat street price' },
+      { title: 'Retailers rewrite the past. We do not.', body: 'Chatak records the price of everything you track, every day, at ' + liveNames.join(' and ') + '. That record cannot be edited by a seller before a sale.', shot: 'illustration — calendar of recorded prices' },
+      { title: 'A discount is only real against the median', body: exBody, shot: 'illustration — inflated list price vs. flat street price' },
       { title: 'Green, amber, red. That is the whole app.', body: 'Buy now, watch, or wait. Set a target price and we will email and push you the moment any store crosses it.', shot: 'illustration — traffic light verdict card' }
     ];
     const step = steps[S.onboardStep];
@@ -1286,33 +2057,112 @@ class Component extends DCLogic {
 
     const targetDist = ((target - p.current) / p.current) * 100;
 
+
+    // ---- data source strip ----
+    const L = S.live || { status: 'sample' };
+    const stripBase = 'display:flex;align-items:center;gap:12px;padding:9px 32px;font-size:12px;border-bottom:1px solid ';
+    const strips = {
+      sample:  { title: 'Sample data', body: 'Every price on this screen is generated for the prototype. Put your Supabase URL and anon key in js/chatak-config.js to see real Rakuten and Yahoo prices.', bg: '#FBEFD9', fg: '#6E4A08', dot: '#C08A15' },
+      loading: { title: 'Loading', body: 'Fetching your watchlist and price history…', bg: '#EEF2F5', fg: '#3B4D5C', dot: '#3E7BB6' },
+      error:   { title: 'Could not load live data', body: (L.message || 'Unknown error') + ' — showing sample data instead.', bg: '#FBE7E4', fg: '#8C2E27', dot: '#C2453B', retryLabel: 'Retry', retry: () => this.loadLive() },
+      empty:   null,
+      ready:   null
+    };
+    const sd = L.status === 'signin' ? null : strips[L.status];
+    const dataStrip = sd ? {
+      title: sd.title, body: sd.body, retry: sd.retry || null, retryLabel: sd.retryLabel || 'Retry',
+      style: stripBase + sd.bg + ';background:' + sd.bg + ';color:' + sd.fg + ';',
+      dotStyle: this.dot(sd.dot, 8)
+    } : null;
+    const emptyLive = L.status === 'empty';
+    const dataScreen = ['home', 'product', 'alerts', 'deals', 'calendar'].includes(screen);
+    // An error before a session exists is an auth failure, not a data failure:
+    // no form could succeed, so the page says so instead of inviting a try.
+    const isAuthDown = L.status === 'error' && !this._session;
+    const isSignIn = L.status === 'signin';
+    const noBackend = isSignIn && !this._api;
+    const isEmptyLive = emptyLive && dataScreen && !isSignIn;
+    // Any status but 'sample' means credentials exist, so the chrome must stop
+    // quoting fixture stores, the fixture clock and fixture alert counts — even
+    // while signing in, loading or erroring.
+    const isLiveData = L.status !== 'sample';
+
     return {
-      nav,
+      nav, dataStrip, isEmptyLive, isSignIn, isAuthDown, perms,
+      mx: mxv.vm, isMatrix: screen === 'matrix' && !isSignIn && !isAuthDown,
+      showApp: !isSignIn && !isAuthDown,
+      authDownMessage: L.message || 'No response from the server.',
+      retryLive: () => this.loadLive(),
+      auth: {
+        showForm: !S.authSent, sent: S.authSent, busy: S.authBusy, error: S.authError,
+        email: S.authEmail,
+        sentNote: 'We sent a sign-in link to ' + (S.authEmail || 'your address') + '. Open it on this device and you will land back here, signed in.',
+        onEmail: (e) => this.setState({ authEmail: e.target.value, authError: null }),
+        onKey: (e) => { if (e.key === 'Enter') this.sendMagicLink(); },
+        send: () => this.sendMagicLink(),
+        reset: () => this.setState({ authSent: false, authError: null }),
+        google: () => this.signInWithGoogle(),
+        googleBusy: S.authGoogleBusy,
+        googleLabel: S.authGoogleBusy ? 'Opening Google…' : 'Continue with Google',
+        googleStyle: 'display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 18px;border-radius:12px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:14px;font-weight:700;cursor:' + (noBackend || S.authGoogleBusy ? 'default' : 'pointer') + ';opacity:' + (noBackend || S.authGoogleBusy ? '0.5' : '1') + ';',
+        // No credentials means no sign-in can possibly work. Say it once, up
+        // front, instead of letting the buttons look live and fail on click.
+        demo: noBackend,
+        hasBackend: !noBackend,
+        demoNote: 'This copy has no server attached, so neither option can sign you in. Fill in js/chatak-config.js to make it live.',
+        disabled: noBackend,
+        resend: () => this.sendMagicLink(),
+        resendLocked: (S.resendIn || 0) > 0 || S.authBusy,
+        resendLabel: (S.resendIn || 0) > 0 ? 'Resend in ' + S.resendIn + 's' : S.authBusy ? 'Sending…' : 'Resend the link',
+        resendStyle: 'align-self:flex-start;padding:10px 15px;border-radius:11px;border:1px solid ' + ((S.resendIn || 0) > 0 ? '#C8DCD3' : '#0E6B4E') + ';background:transparent;color:' + ((S.resendIn || 0) > 0 ? '#7C9C90' : '#0E6B4E') + ';font-size:12px;font-weight:700;cursor:' + ((S.resendIn || 0) > 0 ? 'default' : 'pointer') + ';',
+        buttonLabel: S.authBusy ? 'Sending…' : 'Send sign-in link',
+        buttonStyle: 'margin-top:2px;padding:13px 18px;border-radius:13px;border:0;font-size:14px;font-weight:700;background:' +
+          (noBackend || S.authBusy ? '#8FB9A9' : '#0E6B4E') + ';color:#fff;cursor:' + (noBackend || S.authBusy ? 'default' : 'pointer') + ';opacity:' + (noBackend ? '0.65' : '1') + ';'
+      },
       goHome: () => this.setState({ screen: 'home' }),
       goAdd: () => this.setState({ screen: 'add' }),
       goOnboarding: () => this.setState({ screen: 'onboarding', onboardStep: 0 }),
-      isHome: screen === 'home', isProduct: screen === 'product', isAdd: screen === 'add',
-      isAlerts: screen === 'alerts', isDeals: screen === 'deals', isCalendar: screen === 'calendar',
-      isSettings: screen === 'settings', isOnboarding: screen === 'onboarding',
+      isHome: screen === 'home' && !isEmptyLive && !isSignIn, isProduct: screen === 'product' && !isEmptyLive && !isSignIn, isAdd: screen === 'add' && !isSignIn,
+      isAlerts: screen === 'alerts' && !isEmptyLive && !isSignIn, isDeals: screen === 'deals' && !isEmptyLive && !isSignIn, isCalendar: screen === 'calendar' && !isEmptyLive && !isSignIn,
+      isSettings: screen === 'settings' && !isSignIn, isOnboarding: screen === 'onboarding' && !isSignIn,
 
-      homeModes: [['watchlist', 'Watchlist first'], ['deals', 'Deals first']].map(([k, label]) => ({
-        label, go: () => this.set('homeMode', k), style: this.seg(S.homeMode === k)
-      })),
-      homeSections: S.homeMode === 'watchlist'
+      homeSections: homeMode === 'watchlist'
         ? [{ isWatchlist: true }, { isDeals: true }]
         : [{ isDeals: true }, { isWatchlist: true }],
 
       summary: [
-        { label: 'Ready to buy', value: '1', note: 'Orient Star is at a 12-month low', dot: this.dot('#17916B', 9) },
-        { label: 'Fake discounts flagged', value: '2', note: 'Reference price raised before a sale', dot: this.dot('#C2453B', 9) },
-        { label: 'Next real event', value: '69 days', note: 'Amazon Black Friday, 27 Nov', dot: this.dot('#C08A15', 9) }
+        { label: 'Ready to buy', value: String(buyCount), note: buyCount === 0 ? 'Nothing is at its lowest recorded price' : buyCount === 1 ? buyNames[0] + ' is at its lowest recorded price' : buyCount + ' products at their lowest recorded price', dot: this.dot('#17916B', 9) },
+        { label: 'Fake discounts flagged', value: String(flaggedCount), note: 'Reference price raised before a sale', dot: this.dot('#C2453B', 9) },
+        { label: 'Next real event', value: nextEventDays + ' days', note: nextEventLabel, dot: this.dot('#C08A15', 9) }
       ],
+      homeSubtitle: (buyCount === 0 ? 'Nothing is genuinely cheap today' : buyCount === 1 ? 'One thing is genuinely cheap today' : buyCount + ' things are genuinely cheap today') +
+        '. ' + (flaggedCount === 0 ? 'No sale is pretending' : flaggedCount === 1 ? 'One sale is pretending' : flaggedCount + ' sales are pretending') + '.',
+      watchlistCount: d.products.length + (d.products.length === 1 ? ' product' : ' products') + ' · ' + nStores(liveCount) + ' checked daily',
+      statusTitle: L.status === 'signin' ? 'Not signed in'
+        : L.status === 'loading' ? 'Connecting…'
+        : L.status === 'error' ? 'Not connected'
+        : isLiveData ? 'Connected · ' + nStores(liveCount) + ' collected'
+        : 'Checking ' + liveCount + ' of ' + (liveCount + plannedCount) + ' stores',
+      buildStamp: this.buildStamp,
+      statusLine: L.status === 'signin' ? 'Sign in and your watchlist loads here.'
+        : L.status === 'loading' ? 'Fetching your watchlist and price history.'
+        : L.status === 'error' ? 'Live data could not load, so nothing here is your own yet.'
+        : emptyLive ? 'Nothing tracked yet. Prices are captured once a day from the moment you add a product.'
+        : isLiveData ? d.products.length + (d.products.length === 1 ? ' product' : ' products') + ' · prices captured once a day.'
+        : 'Last refreshed ' + refreshedAgo + '. ' + plannedCount + ' more planned.',
+      storeCoverageNote: (isLiveData && (emptyLive || !liveNames.length)) || L.status === 'signin' || L.status === 'loading' || L.status === 'error' ? '' : liveNames.join(' and ') + (liveNames.length === 1 ? ' is' : ' are') + ' collected daily.' +
+        (plannedNames.length ? ' ' + plannedNames.join(', ') + (plannedNames.length === 1 ? ' is' : ' are') + ' planned — those rows are illustrative and never set the best price.' : ''),
+      todayLabel: (isLiveData ? new Date() : d.dateAt(d.D - 1)).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }),
+      headerQuery: S.headerQuery,
+      onHeaderQuery: (e) => this.setState({ headerQuery: e.target.value }),
+      onHeaderKey: (e) => { if (e.key === 'Enter') this.submitHeader(); },
 
       dealEmpty: dealFiltered.length === 0,
       dealCountLabel: dealFiltered.length + (dealFiltered.length === 1 ? ' deal' : ' deals') + (S.dealFilter === 'All stores' ? '' : ' · ' + S.dealFilter),
       products, deals, dealCards, calendar, alertTypes, alerts, alertLog, settingGroups,
       activeAlertCount: alerts.length,
-      dealFilters: ['All stores', 'Rakuten', 'Amazon JP', 'Yodobashi', 'Real discounts only'].map((f) => ({
+      calendarNote: 'Expected drops are estimates from published sale history — not yet from our own record, which runs ' + recordSpanWords + ' for the products below and at zero for anything you add today.',
+      dealFilters: ['All stores', 'Rakuten', 'Yahoo Shopping', 'Real discounts only'].map((f) => ({
         label: f, go: () => this.set('dealFilter', f),
         style: 'padding:8px 14px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:700;border:1px solid ' +
           (S.dealFilter === f ? '#1C1A17' : '#EAE5DD') + ';background:' + (S.dealFilter === f ? '#1C1A17' : '#fff') +
@@ -1320,11 +2170,8 @@ class Component extends DCLogic {
       })),
 
       product: productVM,
-      verdictModes: [['card', 'Signal card'], ['banner', 'Banner strip']].map(([k, label]) => ({
-        label, go: () => this.set('verdictMode', k), style: this.seg(S.verdictMode === k)
-      })),
-      verdictIsCard: S.verdictMode === 'card',
-      verdictIsBanner: S.verdictMode === 'banner',
+      verdictIsCard: verdictMode === 'card',
+      verdictIsBanner: verdictMode === 'banner',
       verdictCardStyle: 'padding:24px 26px;border-radius:22px;background:' +
         ({ buy: '#EAF5F0', wait: '#FBEEEC', watch: '#FCF4E4' }[p.verdict]) + ';border:1px solid ' +
         ({ buy: '#D6E9E0', wait: '#F3DAD6', watch: '#F0E2C6' }[p.verdict]) + ';',
@@ -1338,11 +2185,11 @@ class Component extends DCLogic {
         label, go: () => this.set('range', v), style: this.seg(S.range === v)
       })),
       graphModes: [['overlay', 'All stores'], ['best', 'Best price']].map(([k, label]) => ({
-        label, go: () => this.set('graphMode', k), style: this.seg(S.graphMode === k)
+        label, go: () => this.set('graphMode', k), style: this.seg(graphMode === k)
       })),
       toggleUsed: () => this.set('showUsed', !S.showUsed),
       usedToggleStyle: 'padding:9px 14px;border-radius:11px;cursor:pointer;font-size:12px;font-weight:700;border:1px solid ' +
-        (S.showUsed ? '#1C1A17' : '#EAE5DD') + ';background:' + (S.showUsed ? '#1C1A17' : '#fff') + ';color:' + (S.showUsed ? '#fff' : '#8A837A') + ';',
+        (S.showUsed ? '#1C1A17' : '#EAE5DD') + ';background:' + (S.showUsed ? '#1C1A17' : '#fff') + ';color:' + (S.showUsed ? '#fff' : '#6F6A62') + ';',
 
       chartRef: this.chartRef,
       onChartMove: this.onChartMove,
@@ -1350,16 +2197,16 @@ class Component extends DCLogic {
       startDrag: this.startDrag,
       chart: {
         lines, bands, bandLabels, grid, xLabels, legend, refPoints,
-        refNow: this.yen(p.refs[d.D - 1]),
+        refNow: this.yen(p.refs[pD - 1]),
         refRange: this.yen(Math.min(...refSlice)) + ' → ' + this.yen(Math.max(...refSlice)),
         hasTarget: true, targetY: targetY.toFixed(1),
         hasHover: hi !== null, hoverX: hi !== null ? x(hi).toFixed(1) : 0,
-        hoverDate: hi !== null ? d.dateAt(off + hi).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '',
+        hoverDate: hi !== null ? pAt(off + hi).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '',
         hoverRows, hoverDots
       },
       tooltipStyle: 'position:absolute;top:8px;pointer-events:none;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;box-shadow:0 10px 30px rgba(28,26,23,0.13);min-width:190px;z-index:5;' +
         (hoverXf > 0.55 ? 'right:' + ((1 - hoverXf) * 100 + 2).toFixed(1) + '%;' : 'left:' + (hoverXf * 100 + 2).toFixed(1) + '%;'),
-      targetHandleStyle: 'position:absolute;left:0;display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:9px;background:#17916B;color:#fff;cursor:ns-resize;z-index:6;transform:translateY(-50%);top:' +
+      targetHandleStyle: 'position:absolute;left:0;display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:9px;background:#0E6B4E;color:#fff;cursor:ns-resize;z-index:6;transform:translateY(-50%);touch-action:none;top:' +
         ((targetY / 300) * 100) + '%;',
       targetText: this.yen(target),
       targetInput: target.toLocaleString('en-US'),
@@ -1368,35 +2215,111 @@ class Component extends DCLogic {
         this.setState({ target: isNaN(v) ? 0 : v, targetSaved: false });
       },
       targetPresets: [
-        { label: '90-day median', go: () => this.setState({ target: Math.round(p.median / 100) * 100, targetSaved: false }) },
+        { label: p.medianLabel, go: () => this.setState({ target: Math.round(p.median / 100) * 100, targetSaved: false }) },
         { label: 'Match 12-mo low', go: () => this.setState({ target: p.low, targetSaved: false }) },
         { label: 'Beat low by 5%', go: () => this.setState({ target: Math.round((p.low * 0.95) / 100) * 100, targetSaved: false }) }
       ],
       targetOdds: targetDist >= 0
         ? 'Already met — ' + p.bestStore + ' is ' + this.yen(p.current) + ' today.'
-        : 'That is ' + Math.abs(Math.round(targetDist * 10) / 10) + '% below today. Reached ' + (Math.abs(targetDist) > 10 ? '1 time' : '4 times') + ' in the last 12 months, always during a tracked sale event.',
+        : 'That is ' + Math.abs(Math.round(targetDist * 10) / 10) + '% below today. ' +
+          (hitRuns === 0 ? 'Never reached in ' + spanWords + '.' : 'Reached ' + hitRuns + (hitRuns === 1 ? ' time' : ' times') + ' in ' + spanWords + ', ' + hitDays + (hitDays === 1 ? ' day' : ' days') + ' in total.'),
       saveTarget: () => this.setState({ targetSaved: true }),
       saveTargetLabel: S.targetSaved ? '✓ Alert saved — email + push' : 'Save alert',
       saveTargetStyle: 'padding:12px 18px;border-radius:13px;border:0;cursor:pointer;font-size:13px;font-weight:700;background:' +
-        (S.targetSaved ? '#E3F3EC' : '#17916B') + ';color:' + (S.targetSaved ? '#0F6B4F' : '#fff') + ';',
+        (S.targetSaved ? '#E3F3EC' : '#0E6B4E') + ';color:' + (S.targetSaved ? '#0A5740' : '#fff') + ';',
       focusTarget: () => this.setState({ target: Math.round((p.median * 0.93) / 100) * 100 }),
 
       addTabs,
       addIsUrl: S.addTab === 'url', addIsBarcode: S.addTab === 'barcode',
       addIsSearch: S.addTab === 'search', addIsAuto: S.addTab === 'auto',
       urlValue: S.url,
-      onUrlInput: (e) => this.setState({ url: e.target.value, urlFetched: false }),
-      fetchUrl: () => this.setState({ urlFetched: true }),
-      urlMatched: S.urlFetched ? { name: d.products[0].name, priceText: this.yen(d.products[0].current), open: this.open('seiko') } : null,
+      onUrlInput: (e) => this.setState({ url: e.target.value, urlFetched: false, urlError: null }),
+      fetchUrl: () => {
+        const r = this.resolveUrl(S.url);
+        if (r.error) { this.setState({ urlFetched: false, urlError: r.error }); return; }
+        if (this._api) { this.addLive(S.url); return; }
+        this.setState({ urlFetched: true, urlError: null, urlLive: null });
+      },
+      urlError: S.urlError,
+      urlBusy: S.urlBusy || false,
+      urlMatched: (() => {
+        if (!S.urlFetched) return null;
+        // Live result from add-product: exact figures, exact history length.
+        if (S.urlLive) {
+          const u = S.urlLive;
+          return {
+            status: (u.history_days > 1 ? 'Tracked · ' : 'New · ') + 'Rakuten · ' + u.history_days + (u.history_days === 1 ? ' day' : ' days') + ' on file',
+            name: u.name, priceText: this.yen(u.price) + ' today' + (u.reference_price ? ' · shop reference ' + this.yen(u.reference_price) : ''),
+            note: u.note || '',
+            cta: 'Open', open: () => { this.loadLive().then(() => this.setState({ screen: 'product', productId: u.product_id, urlFetched: false, url: '', urlLive: null })); }
+          };
+        }
+        const r = this.resolveUrl(S.url);
+        if (r.error) return null;
+        if (r.known && !this._api) {
+          return {
+            status: 'Already tracked · ' + liveCount + ' stores checked daily · ' + historyText(r.known.historyDays),
+            name: r.known.name, priceText: this.yen(r.known.current) + ' today at ' + r.known.bestStore,
+            note: 'This one is in the catalog, so the history is real from day one.',
+            cta: 'Open', open: this.open(r.known.id)
+          };
+        }
+        return {
+          status: 'New · ' + r.store + ' · tracking starts today',
+          name: r.store + ' item ' + r.code,
+          priceText: 'First price captured on save',
+          note: 'No back history exists for this item and we will not invent one. The first verdict worth acting on is about two weeks away, and the median widens to a full 90 days after three months.',
+          cta: 'Start tracking', open: () => this.setState({ screen: 'home', urlFetched: false, url: '' })
+        };
+      })(),
       searchValue: S.search,
-      onSearchInput: (e) => this.setState({ search: e.target.value }),
-      searchResults: d.products.slice(0, 3).map((q) => ({ name: q.name, sub: q.sub, priceText: this.yen(q.current), open: this.open(q.id) })),
-      scans: [
-        { name: 'Seiko Alpinist SPB507J1', code: '4954628249104', where: 'Bic Camera Shinjuku', pill: this.pill('wait'), verdictLabel: 'Wait', open: this.open('seiko') },
-        { name: 'Sony WH-1000XM6', code: '4548736149328', where: 'Yodobashi Akiba', pill: this.pill('watch'), verdictLabel: 'Watch', open: this.open('sony') },
-        { name: 'G-Shock GMW-B5000D', code: '4549526283710', where: 'Bic Camera Shibuya', pill: this.pill('watch'), verdictLabel: 'Watch', open: this.open('gshock') }
-      ],
-      storeMeta: d.stores.concat([{ name: 'Mercari (used)', color: '#8A837A' }]).map((s) => ({ name: s.name, dot: this.dot(s.color, 9) })),
+      onSearchInput: (e) => { this.setState({ search: e.target.value }); if (this._api) this.searchLive(e.target.value); },
+      searchResults: this._api
+        ? (S.searchLive || []).map((r) => ({
+            name: r.name, sub: (r.source === 'rakuten' ? 'Rakuten · ' : '') + (r.subtitle || ''),
+            priceText: r.current != null ? this.yen(r.current) : (r.msrp ? 'List ' + this.yen(r.msrp) : ''),
+            open: r.id ? this.open(r.id) : () => { this.setState({ addTab: 'url', url: r.url, urlFetched: false }); this.addLive(r.url); }
+          }))
+        : d.products.slice(0, 3).map((q) => ({ name: q.name, sub: q.sub, priceText: this.yen(q.current), open: this.open(q.id) })),
+      scanInput: S.scanInput || '',
+      onScanInput: (e) => this.setState({ scanInput: e.target.value.replace(/\D/g, '') }),
+      runScan: () => { if (this._api && S.scanInput) this.scanLive(S.scanInput); },
+      scanBusy: S.scanBusy || false,
+      scan: (() => {
+        if (this._api) {
+          const sc = S.scanLive;
+          const exact = 'padding:3px 8px;border-radius:7px;background:#E3F3EC;color:#0F6B4F;font-size:10px;font-weight:700;letter-spacing:0.04em;white-space:nowrap;';
+          const loose = 'padding:3px 8px;border-radius:7px;background:#F1EDE6;color:#6F6A62;font-size:10px;font-weight:700;letter-spacing:0.04em;white-space:nowrap;';
+          if (!sc) return { code: S.scanInput || '—', where: 'type or scan a JAN code', note: 'Rakuten has no barcode index, so we search listings for the digits. Results are candidates — check the shop before tracking one.', candidates: [] };
+          return {
+            code: sc.jan, where: sc.results.length + (sc.results.length === 1 ? ' listing mentions it' : ' listings mention it'),
+            note: sc.note || '',
+            candidates: sc.results.map((r) => ({
+              name: r.name, shop: 'Rakuten · ' + r.shop, priceText: this.yen(r.price),
+              matchLabel: r.jan_match ? 'JAN MATCH' : 'IN LISTING', matchStyle: r.jan_match ? exact : loose,
+              open: () => { this.setState({ addTab: 'url', url: r.url, urlFetched: false }); this.addLive(r.url); }
+            }))
+          };
+        }
+        const q = d.products[0], code = '4954628249104';
+        const exact = 'padding:3px 8px;border-radius:7px;background:#E3F3EC;color:#0F6B4F;font-size:10px;font-weight:700;letter-spacing:0.04em;white-space:nowrap;';
+        const loose = 'padding:3px 8px;border-radius:7px;background:#F1EDE6;color:#6F6A62;font-size:10px;font-weight:700;letter-spacing:0.04em;white-space:nowrap;';
+        return {
+          code, where: 'scanned at Bic Camera Shinjuku',
+          note: 'Rakuten has no barcode index, so we search listings for the digits. These are candidates — check the shop before tracking one.',
+          // Each candidate's price comes from the store named in its own shop
+          // label, via offer() — never the cross-store minimum.
+          candidates: [
+            { name: q.name, shop: 'Rakuten · watch-store', priceText: this.yen(offer(q, 'Rakuten', '').price), matchLabel: 'JAN IN TITLE', matchStyle: exact, open: this.open(q.id) },
+            { name: q.name + ' (parallel import)', shop: 'Rakuten · tokei-honpo', priceText: this.yen(Math.round((offer(q, 'Rakuten', '').price * 0.94) / 100) * 100), matchLabel: 'JAN IN TITLE', matchStyle: exact, open: this.open(q.id) },
+            { name: q.short + ' strap bundle', shop: 'Yahoo Shopping · watch-outlet', priceText: this.yen(Math.round((offer(q, 'Yahoo Shopping', '').price * 1.08) / 100) * 100), matchLabel: 'LOOSE MATCH', matchStyle: loose, open: this.open(q.id) }
+          ]
+        };
+      })(),
+      storeMeta: d.stores.concat([{ name: 'Mercari (used)', color: '#6F6A62', live: false }]).map((s) => ({
+        name: s.name + (s.live ? '' : ' · planned'), dot: this.dot(s.color, 9),
+        style: 'display:flex;align-items:center;gap:9px;padding:13px 15px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;' + (s.live ? '' : 'opacity:0.72;')
+      })),
 
       onboard: step,
       onboardStepLabel: (S.onboardStep + 1) + ' of 3',

@@ -1,0 +1,101 @@
+// supabase/functions/evaluate-alerts/index.ts
+// Deploy: supabase functions deploy evaluate-alerts --no-verify-jwt
+// Secrets: supabase secrets set RESEND_API_KEY=... APP_URL=https://you.github.io/chatak
+//
+// Runs straight after collection. Evaluates every active rule against the
+// freshly written prices and sends at most one message per rule per day.
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const db = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
+const yen = (n: number) => '¥' + n.toLocaleString('en-US');
+// chatak_product_stats takes the last 90 recorded days, so a young product has a
+// shorter median than 90 days. Never claim a span the record cannot support.
+const medianLabel = (s: any) => {
+  const d = Number(s?.history_days ?? 0);
+  return d >= 90 ? '90-day median' : d + '-day median';
+};
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const key = Deno.env.get('RESEND_API_KEY');
+  if (!key) return;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: 'Chatak <alerts@yourdomain.jp>', to, subject, html })
+  });
+}
+
+Deno.serve(async () => {
+  const { data: rules } = await db
+    .from('chatak_alert_rules')
+    .select('id, user_id, product_id, kind, target_price, product:chatak_products(name)')
+    .eq('active', true);
+
+  // chatak_alert_rules.user_id references auth.users, not chatak_profiles, so
+  // PostgREST cannot embed the profile — fetch them once and index by id.
+  const userIds = [...new Set((rules ?? []).map((r) => r.user_id).filter(Boolean))];
+  const { data: profileRows } = userIds.length
+    ? await db.from('chatak_profiles').select('id, email, notify_email, notify_push').in('id', userIds)
+    : { data: [] as any[] };
+  const profiles = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
+
+  const sent: any[] = [];
+
+  for (const r of rules ?? []) {
+    if (!r.product_id) continue;
+    const { data: st } = await db.rpc('chatak_product_stats', { p_product: r.product_id, p_days: 90 });
+    const s = st?.[0];
+    if (!s?.current_price) continue;
+
+    const name = (r.product as any)?.name ?? 'Your product';
+    let title = '', body = '';
+
+    if (r.kind === 'target' && r.target_price && s.current_price <= r.target_price) {
+      title = name + ' hit your ' + yen(r.target_price) + ' target';
+      body = 'Now ' + yen(s.current_price) + ' at ' + s.best_store + ', ' + s.pct_vs_median + '% vs the ' + medianLabel(s) + '.';
+    } else if (r.kind === 'lowest_ever' && s.is_record_low) {
+      title = name + ' is at its lowest recorded price';
+      body = yen(s.current_price) + ' at ' + s.best_store + ' — below every price in our ' + (s.history_days ?? 0) + '-day record.';
+    } else if (r.kind === 'fake_discount') {
+      const { data: flags } = await db.rpc('chatak_fake_discount_flags', { p_product: r.product_id });
+      const f = flags?.[0];
+      if (f && new Date(f.raised_on).getTime() > Date.now() - 3 * 86400000) {
+        title = 'Fake discount: ' + name + ' at ' + f.store;
+        body = 'Reference price raised ' + yen(f.ref_before) + ' → ' + yen(f.ref_after)
+             + ' (advertised ' + f.advertised_pct + '% off, real change ' + f.real_pct + '% vs the ' + medianLabel(s) + ').';
+      }
+    } else if (r.kind === 'event_soon') {
+      const { data: ev } = await db.from('chatak_sale_events').select('name, starts_on')
+        .gte('starts_on', new Date().toISOString().slice(0, 10))
+        .lte('starts_on', new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10))
+        .limit(1);
+      if (ev?.[0]) {
+        title = ev[0].name + ' starts in 3 days';
+        body = 'We are watching ' + name + ' across the event window.';
+      }
+    }
+
+    if (!title) continue;
+
+    // one message per rule per day
+    const { count } = await db.from('chatak_alert_events').select('id', { count: 'exact', head: true })
+      .eq('rule_id', r.id).gte('sent_at', new Date(Date.now() - 20 * 3600000).toISOString());
+    if (count) continue;
+
+    const prof: any = profiles.get(r.user_id);
+    const channels: string[] = [];
+    if (prof?.notify_email && prof?.email) { await sendEmail(prof.email, title, '<p>' + body + '</p>'); channels.push('email'); }
+
+    await db.from('chatak_alert_events').insert({
+      rule_id: r.id, user_id: r.user_id, product_id: r.product_id,
+      kind: r.kind, title, body, channels
+    });
+    sent.push(title);
+  }
+
+  return Response.json({ sent: sent.length, titles: sent });
+});

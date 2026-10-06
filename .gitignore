@@ -1,0 +1,18 @@
+# Design source — edited in the design tool; index.html is the built app.
+*.dc.html
+.thumbnail
+uploads/
+
+# Secrets — add these before there is anything in them to leak.
+js/chatak-config.js
+supabase/functions/.env
+.env
+.env.*
+!.env.example
+
+# Supabase CLI
+.branches
+.temp
+
+node_modules/
+.DS_Store
