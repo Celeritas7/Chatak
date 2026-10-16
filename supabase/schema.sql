@@ -409,6 +409,16 @@ create table if not exists public.chatak_matrix_stars (
   primary key (user_id, item_id)
 );
 
+-- Which Cost shops each person shows in the matrix. Keyed by shop NAME, like
+-- prices, so a rename in Cost re-keys it (chatak_matrix_rename_shop). A shop
+-- with no row here stays hidden: new Cost shops start switched off.
+create table if not exists public.chatak_matrix_shop_picks (
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  shop_name  text not null,
+  added_at   timestamptz not null default now(),
+  primary key (user_id, shop_name)
+);
+
 -- Append-only record. kind='confirm' re-states an unchanged price after review.
 create table if not exists public.chatak_matrix_prices (
   id            bigserial primary key,
@@ -434,6 +444,7 @@ order by shop_name, item_id, entered_at desc;
 alter table public.chatak_matrix_items  enable row level security;
 alter table public.chatak_matrix_stars  enable row level security;
 alter table public.chatak_matrix_prices enable row level security;
+alter table public.chatak_matrix_shop_picks enable row level security;
 
 drop policy if exists chatak_mx_items_read  on public.chatak_matrix_items;
 drop policy if exists chatak_mx_items_add   on public.chatak_matrix_items;
@@ -442,6 +453,7 @@ drop policy if exists chatak_mx_items_del   on public.chatak_matrix_items;
 drop policy if exists chatak_mx_stars_own   on public.chatak_matrix_stars;
 drop policy if exists chatak_mx_prices_read on public.chatak_matrix_prices;
 drop policy if exists chatak_mx_prices_add  on public.chatak_matrix_prices;
+drop policy if exists chatak_mx_picks_own   on public.chatak_matrix_shop_picks;
 
 -- Anyone on the allow-list reads; editors and admins add; only admins rename or remove items.
 create policy chatak_mx_items_read  on public.chatak_matrix_items for select using (public.chatak_role() is not null);
@@ -449,6 +461,9 @@ create policy chatak_mx_items_add   on public.chatak_matrix_items for insert wit
 create policy chatak_mx_items_admin on public.chatak_matrix_items for update using (public.chatak_role() = 'admin');
 create policy chatak_mx_items_del   on public.chatak_matrix_items for delete using (public.chatak_role() = 'admin');
 create policy chatak_mx_stars_own   on public.chatak_matrix_stars for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy chatak_mx_picks_own   on public.chatak_matrix_shop_picks for all
+  using (auth.uid() = user_id and public.chatak_role() is not null)
+  with check (auth.uid() = user_id and public.chatak_role() is not null);
 create policy chatak_mx_prices_read on public.chatak_matrix_prices for select using (public.chatak_role() is not null);
 -- No update or delete policy: the record is append-only from the browser.
 create policy chatak_mx_prices_add  on public.chatak_matrix_prices for insert
@@ -463,6 +478,11 @@ declare n integer;
 begin
   update public.chatak_matrix_prices set shop_name = p_to where shop_name = p_from;
   get diagnostics n = row_count;
+  -- Someone who picked both names keeps one pick, not a key collision.
+  delete from public.chatak_matrix_shop_picks a
+    using public.chatak_matrix_shop_picks b
+    where a.shop_name = p_from and b.shop_name = p_to and a.user_id = b.user_id;
+  update public.chatak_matrix_shop_picks set shop_name = p_to where shop_name = p_from;
   return n;
 end; $$;
 revoke all on function public.chatak_matrix_rename_shop(text, text) from public, anon, authenticated;

@@ -834,10 +834,61 @@
       <!-- ============ MATRIX ============ -->
       <sc-if value="{{ isMatrix }}">
         <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <h1 style="margin:0;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Price matrix</h1>
-            <p style="margin:0;font-size:13px;color:#6F6A62;">{{ mx.subtitle }}</p>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:min(260px,100%);">
+              <h1 style="margin:0;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Price matrix</h1>
+              <p style="margin:0;font-size:13px;color:#6F6A62;">{{ mx.subtitle }}</p>
+            </div>
+            <sc-if value="{{ mx.canPick }}">
+              <button onClick="{{ mx.togglePicker }}" aria-expanded="{{ mx.pickerOpen }}" style="{{ mx.pickButtonStyle }}">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v1a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0V9M5 13v7h14v-7"></path></svg>
+                <span>{{ mx.pickLabel }}</span>
+              </button>
+            </sc-if>
           </div>
+
+          <sc-if value="{{ mx.pickNote }}">
+            <div style="padding:10px 14px;border-radius:12px;background:#FBFAF7;border:1px dashed #E2DCD2;font-size:12px;color:#6F6A62;line-height:1.5;">{{ mx.pickNote }}</div>
+          </sc-if>
+
+          <sc-if value="{{ mx.pickerOpen }}">
+            <section style="border-radius:18px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;display:flex;flex-direction:column;">
+              <div style="padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                  <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;">Shops from Cost</h2>
+                  <span style="font-size:11px;color:#6F6A62;">Switch on the shops you compare. Just for you.</span>
+                </div>
+                <sc-if value="{{ mx.pickSearch }}">
+                  <input value="{{ mx.pickQuery }}" onChange="{{ mx.onPickQuery }}" placeholder="Filter shops…" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                </sc-if>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <sc-if value="{{ mx.canPickAll }}">
+                    <button onClick="{{ mx.pickAll }}" style="padding:7px 12px;border-radius:10px;border:1px solid #CFE3DA;background:#F3F9F6;color:#0E6B4E;font-size:12px;font-weight:700;cursor:pointer;">{{ mx.pickAllLabel }}</button>
+                  </sc-if>
+                  <sc-if value="{{ mx.canPickNone }}">
+                    <button onClick="{{ mx.pickNone }}" style="padding:7px 12px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">{{ mx.pickNoneLabel }}</button>
+                  </sc-if>
+                </div>
+              </div>
+              <div style="max-height:360px;overflow-y:auto;">
+                <sc-for list="{{ mx.pickList }}" as="r" hint-placeholder-count="5">
+                  <button onClick="{{ r.toggle }}" role="switch" aria-checked="{{ r.on }}" style="{{ r.rowStyle }}">
+                    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                      <span style="{{ r.nameStyle }}">{{ r.name }}</span>
+                      <sc-if value="{{ r.note }}"><span style="font-size:10px;font-weight:700;color:#96620A;">{{ r.note }}</span></sc-if>
+                    </span>
+                    <span style="{{ r.switchStyle }}"><span style="{{ r.knobStyle }}"></span></span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ mx.pickEmpty }}">
+                  <div style="padding:16px 14px;border-top:1px solid #F2EEE7;font-size:12px;color:#6F6A62;">{{ mx.pickEmptyText }}</div>
+                </sc-if>
+              </div>
+              <div style="padding:10px 14px;border-top:1px solid #EFEAE2;background:#FBFAF7;display:flex;justify-content:flex-end;">
+                <button onClick="{{ mx.togglePicker }}" style="padding:9px 18px;border-radius:11px;border:0;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Done</button>
+              </div>
+            </section>
+          </sc-if>
 
           <sc-if value="{{ mx.notice }}">
             <div style="padding:12px 16px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;color:#8C2E27;font-weight:600;">{{ mx.notice }}</div>
@@ -908,7 +959,12 @@
             </sc-if>
 
             <sc-if value="{{ mx.emptyNote }}">
-              <div style="padding:14px 18px;border-radius:14px;background:#fff;border:1px dashed #E2DCD2;font-size:12px;color:#6F6A62;">{{ mx.emptyNote }}</div>
+              <div style="padding:14px 18px;border-radius:14px;background:#fff;border:1px dashed #E2DCD2;font-size:12px;color:#6F6A62;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <span>{{ mx.emptyNote }}</span>
+                <sc-if value="{{ mx.showOpenPicker }}">
+                  <button onClick="{{ mx.openPicker }}" style="padding:8px 14px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Choose shops</button>
+                </sc-if>
+              </div>
             </sc-if>
 
             <div style="border-radius:18px;background:#fff;border:1px solid #EAE5DD;overflow-x:auto;">
@@ -1070,7 +1126,8 @@ class Component extends DCLogic {
     authEmail: '', authSent: false, authBusy: false, authError: null,
     authGoogleBusy: false, resendIn: 0, signOutAsking: false,
     mx: null, mxOpen: null, mxFocus: null, mxDraft: {}, mxShelf: false, mxAll: false,
-    mxAdding: false, mxNew: { name: '', size: '', cat: '' }, mxBusy: false, mxError: null
+    mxAdding: false, mxNew: { name: '', size: '', cat: '' }, mxBusy: false, mxError: null,
+    mxPicker: false, mxPickQuery: ''
   };
 
   chartRef = React.createRef();
@@ -1338,8 +1395,12 @@ class Component extends DCLogic {
     const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
     const shops = [
       { id: 's1', name: 'Gyomu Super', fav: true }, { id: 's2', name: 'Life Shinjuku', fav: true },
-      { id: 's3', name: 'OK Store' }, { id: 's4', name: 'Aeon Style' }, { id: 's5', name: 'Don Quijote' }
+      { id: 's3', name: 'OK Store' }, { id: 's4', name: 'Aeon Style' }, { id: 's5', name: 'Don Quijote' },
+      { id: 's6', name: 'Seiyu' }, { id: 's7', name: 'Summit' }, { id: 's8', name: 'My Basket' }
     ];
+    // Seiyu, Summit and My Basket are in Cost but not switched on yet.
+    const picks = {};
+    for (const n of ['Gyomu Super', 'Life Shinjuku', 'OK Store', 'Aeon Style', 'Don Quijote', 'Maruetsu Nakano']) picks[n] = true;
     const items = [
       { id: 'milk', name: 'Milk', size: '1 L', cat: 'Dairy' }, { id: 'eggs', name: 'Eggs', size: '10 pc', cat: 'Dairy' },
       { id: 'rice', name: 'Rice', size: '5 kg', cat: 'Staples' }, { id: 'natto', name: 'Natto', size: '3 pk', cat: 'Staples' },
@@ -1358,7 +1419,7 @@ class Component extends DCLogic {
     };
     const cells = {};
     for (const shop in raw) for (const id in raw[shop]) { const [p, d, s] = raw[shop][id]; cells[this.mxKey(shop, id)] = { p, at: at(d), shelf: !!s }; }
-    return { shops, items, cells, stars: { milk: true, eggs: true, rice: true, natto: true } };
+    return { shops, items, cells, picks, stars: { milk: true, eggs: true, rice: true, natto: true } };
   }
 
   async loadMatrix() {
@@ -1370,13 +1431,16 @@ class Component extends DCLogic {
       for (const r of m.latest) cells[this.mxKey(r.shop_name, r.item_id)] = { p: r.price, at: r.entered_at, shelf: r.shelf };
       const stars = {};
       for (const id of m.stars) stars[id] = true;
+      // null = the picks table is missing, so every shop shows (the old behaviour).
+      let picks = null;
+      if (m.picks) { picks = {}; for (const n of m.picks) picks[n] = true; }
       this.setState({ mx: {
-        status: 'ready', cells, stars,
+        status: 'ready', cells, stars, picks,
         shops: shops.map((s) => ({ id: s.id, name: s.name, fav: !!s.is_favorite })),
         items: m.items.map((i) => ({ id: i.id, name: i.name, size: i.size || '', cat: i.category || 'Other' }))
       } });
     } catch (e) {
-      this.setState({ mx: { status: 'error', message: String(e.message || e), shops: [], items: [], cells: {}, stars: {} } });
+      this.setState({ mx: { status: 'error', message: String(e.message || e), shops: [], items: [], cells: {}, stars: {}, picks: null } });
     }
   }
 
@@ -1417,6 +1481,19 @@ class Component extends DCLogic {
     catch (e) { this.mxPatch((m) => ({ ...m, stars: { ...m.stars, [itemId]: !on } })); this.setState({ mxError: 'Star not saved: ' + (e.message || e) }); }
   }
 
+  // Show or hide shops in this person's matrix. Optimistic, like stars.
+  async mxSetPicks(names, on) {
+    const before = (this.state.mx || {}).picks;
+    if (!before || !names.length) return;
+    const after = { ...before };
+    for (const n of names) { if (on) after[n] = true; else delete after[n]; }
+    this.mxPatch((m) => ({ ...m, picks: after }));
+    if (!on && names.includes(this.state.mxOpen)) this.setState({ mxOpen: null, mxDraft: {} });
+    if (!this._api) return;
+    try { await this._api.setMatrixShopPicks(names, on); }
+    catch (e) { this.mxPatch((m) => ({ ...m, picks: before })); this.setState({ mxError: 'Shop choice not saved: ' + (e.message || e) }); }
+  }
+
   async mxAddItem() {
     const S = this.state, n = S.mxNew, name = n.name.trim(), size = n.size.trim();
     if (!name || S.mxBusy) return;
@@ -1450,8 +1527,12 @@ class Component extends DCLogic {
     // A name with prices but no Cost row is a shop deleted in Cost: kept, read-only.
     const known = new Set(M.shops.map((s) => s.name));
     const orphanNames = [...new Set(Object.keys(M.cells).map((k) => k.slice(0, k.lastIndexOf('|'))))].filter((n) => !known.has(n)).sort();
-    const shops = M.shops.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.name.localeCompare(b.name))
-      .concat(orphanNames.map((n) => ({ id: null, name: n, orphan: true })));
+    const byFav = (a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.name.localeCompare(b.name);
+    const costShops = M.shops.slice().sort(byFav);
+    // picks null = no picks table yet: show everything, the picker is unavailable.
+    const picks = M.picks || null, shown = (n) => !picks || !!picks[n];
+    const shops = costShops.filter((s) => shown(s.name))
+      .concat(orphanNames.filter(shown).map((n) => ({ id: null, name: n, orphan: true })));
     const cols = '210px' + (items.length ? ' repeat(' + items.length + ', minmax(104px, 1fr))' : '') + (canEdit ? ' 108px' : '');
 
     const lowest = {};
@@ -1484,7 +1565,28 @@ class Component extends DCLogic {
       };
     });
     queue.sort((a, b) => b.d - a.d);
-    const shown = S.mxAll ? queue : queue.slice(0, 6);
+    const shownQueue = S.mxAll ? queue : queue.slice(0, 6);
+
+    // ---- shop picker ----
+    const q = S.mxPickQuery.trim().toLowerCase();
+    const pickRow = (name, fav, orphan) => {
+      const on = !!(picks && picks[name]);
+      return {
+        name, fav, orphan, on,
+        note: orphan ? 'Removed in Cost' : fav ? '★ Cost favourite' : '',
+        toggle: () => this.mxSetPicks([name], !on),
+        rowStyle: 'display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:11px 14px;border:0;border-top:1px solid #F2EEE7;background:' + (on ? '#F3F9F6' : '#fff') + ';cursor:pointer;text-align:left;font:inherit;color:inherit;',
+        nameStyle: 'font-size:13px;font-weight:' + (on ? '700' : '600') + ';' + (orphan ? 'color:#8C877E;text-decoration:line-through;' : ''),
+        switchStyle: 'flex-shrink:0;width:38px;height:22px;border-radius:999px;padding:2px;display:flex;background:' + (on ? '#17916B' : '#DDD7CE') + ';justify-content:' + (on ? 'flex-end' : 'flex-start') + ';',
+        knobStyle: 'width:18px;height:18px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.2);'
+      };
+    };
+    const pickList = costShops.map((s) => pickRow(s.name, !!s.fav, false))
+      .concat(orphanNames.filter((n) => picks && picks[n]).map((n) => pickRow(n, false, true)))
+      .filter((r) => !q || r.name.toLowerCase().includes(q));
+    const onCount = costShops.filter((s) => shown(s.name)).length;
+    const visibleOff = pickList.filter((r) => !r.on && !r.orphan).map((r) => r.name);
+    const visibleOn = pickList.filter((r) => r.on).map((r) => r.name);
 
     const openShop = S.mxOpen != null ? M.shops.find((s) => s.name === S.mxOpen) : null;
     const filled = Object.values(S.mxDraft).filter((v) => parseInt(v, 10) > 0).length;
@@ -1493,17 +1595,35 @@ class Component extends DCLogic {
 
     return { due: queue.length, vm: {
       loading: false, ready: true, notice, canEdit, reviewDays, staleDays,
+      canPick: !!picks,
+      pickNote: picks ? null : 'Choosing shops needs the chatak_matrix_shop_picks table — re-run supabase/schema.sql. Until then every Cost shop shows.',
+      pickerOpen: !!picks && S.mxPicker,
+      pickLabel: picks ? 'Shops · ' + onCount + ' of ' + M.shops.length : 'Shops',
+      togglePicker: () => this.setState({ mxPicker: !S.mxPicker, mxPickQuery: '' }),
+      pickButtonStyle: 'display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid ' + (S.mxPicker ? '#1C1A17' : '#DDD7CE') + ';background:' + (S.mxPicker ? '#1C1A17' : '#fff') + ';color:' + (S.mxPicker ? '#fff' : '#1C1A17') + ';',
+      pickQuery: S.mxPickQuery,
+      onPickQuery: (e) => this.setState({ mxPickQuery: e.target.value }),
+      pickSearch: M.shops.length > 8,
+      pickList, pickEmpty: pickList.length === 0,
+      pickEmptyText: q ? 'No Cost shop matches “' + S.mxPickQuery.trim() + '”.' : 'No shops in Cost yet.',
+      pickAllLabel: q ? 'Show these ' + visibleOff.length : 'Show all',
+      pickAll: () => this.mxSetPicks(visibleOff, true), canPickAll: visibleOff.length > 0,
+      pickNoneLabel: q ? 'Hide these' : 'Hide all',
+      pickNone: () => this.mxSetPicks(visibleOn, false), canPickNone: visibleOn.length > 0,
+      openPicker: () => this.setState({ mxPicker: true, mxPickQuery: '' }),
+      showOpenPicker: !!picks && !shops.length && M.shops.length > 0,
       subtitle: M.status === 'sample'
         ? 'Sample shops and prices. With Supabase connected, shops are read from Cost.'
-        : 'Latest known price per shop, in ' + cur.code + '. Shops come from Cost — add one there and it appears here.',
+        : 'Latest known price per shop, in ' + cur.code + '. Shops come from Cost — choose which ones appear with Shops.',
       staleSample: money(698),
       hint: canEdit ? 'Click a shop to type its row. Click ★ to pin an item.' : 'Read-only for viewers. Click ★ to pin an item.',
       emptyNote: !M.shops.length && !orphanNames.length ? 'No shops in Cost yet. Add a shop in Cost and it appears here as a row.'
+        : !shops.length ? 'No shops in your matrix yet. Tap Shops to choose from your ' + M.shops.length + ' Cost shop' + (M.shops.length === 1 ? '' : 's') + '.'
         : !items.length ? 'Your item list is empty. Add the things you buy most with + Item.' : null,
       cols, rows,
       hasDue: queue.length > 0,
       dueTitle: queue.length + (queue.length === 1 ? ' price to review' : ' prices to review'),
-      queue: shown.map(({ s, it, c, d }) => ({
+      queue: shownQueue.map(({ s, it, c, d }) => ({
         item: it.name + (it.size ? ' · ' + it.size : ''), shop: s.name, ago: d + ' days ago', price: money(c.p),
         confirm: () => this.mxConfirm(s, it.id),
         change: () => this.setState({ mxOpen: s.name, mxFocus: it.id, mxDraft: {}, mxShelf: false })

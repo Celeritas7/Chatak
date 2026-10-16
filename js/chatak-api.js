@@ -182,15 +182,35 @@ export async function getMatrixShops() {
   return data ?? [];
 }
 
-// Items (shared list), the latest price per (shop, item), and this user's stars.
+// Items (shared list), the latest price per (shop, item), this user's stars and
+// the shops this user chose to show. picks is null when chatak_matrix_shop_picks
+// does not exist yet (schema.sql not re-run): the caller then shows every shop.
 export async function getMatrix() {
-  const [items, latest, stars] = await Promise.all([
+  const [items, latest, stars, picks] = await Promise.all([
     db.from('chatak_matrix_items').select('id, name, size, category').order('name'),
     db.from('chatak_matrix_latest').select('shop_name, item_id, price, currency, shelf, entered_at'),
-    db.from('chatak_matrix_stars').select('item_id')
+    db.from('chatak_matrix_stars').select('item_id'),
+    db.from('chatak_matrix_shop_picks').select('shop_name')
   ]);
   for (const r of [items, latest, stars]) if (r.error) throw r.error;
-  return { items: items.data ?? [], latest: latest.data ?? [], stars: (stars.data ?? []).map((s) => s.item_id) };
+  const noPicksTable = picks.error && (picks.error.code === '42P01' || picks.error.code === 'PGRST205');
+  if (picks.error && !noPicksTable) throw picks.error;
+  return {
+    items: items.data ?? [], latest: latest.data ?? [], stars: (stars.data ?? []).map((s) => s.item_id),
+    picks: noPicksTable ? null : (picks.data ?? []).map((p) => p.shop_name)
+  };
+}
+
+// Show or hide shops in this user's matrix. Takes several names so "Show all"
+// is one request.
+export async function setMatrixShopPicks(names, on) {
+  if (!names.length) return;
+  const uid = (await session())?.user?.id;
+  const q = on
+    ? db.from('chatak_matrix_shop_picks').upsert(names.map((shop_name) => ({ user_id: uid, shop_name })))
+    : db.from('chatak_matrix_shop_picks').delete().eq('user_id', uid).in('shop_name', names);
+  const { error } = await q;
+  if (error) throw error;
 }
 
 // Append-only: every save is a new row, the view picks the latest.
