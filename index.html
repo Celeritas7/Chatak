@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -20,13 +20,70 @@
   a:hover{color:#0A5740;text-decoration:underline;}
   input,button,select,textarea{font-family:inherit;}
   ::selection{background:#D8EFE4;}
+
+  /* ---- Phone layout. Markup styles are inline, so overrides need !important. ---- */
+  .ck-mobile-only{display:none;}
+  @media (max-width:760px){
+    html,body{overflow-x:hidden;}
+    .ck-desktop-only,.ck-side,.ck-deal-head{display:none !important;}
+    .ck-shell{display:block !important;}
+
+    .ck-header{padding:10px 16px !important;gap:10px !important;}
+    .ck-header > div{max-width:none !important;padding:9px 12px !important;}
+    .ck-header input{font-size:16px !important;}
+    .ck-mlogo,.ck-madd{display:flex;flex:0 0 38px;width:38px;height:38px;align-items:center;justify-content:center;border:0;border-radius:12px;cursor:pointer;color:#fff;font-weight:700;line-height:1;padding:0;}
+    .ck-mlogo{background:#17916B;font-size:17px;}
+    .ck-madd{background:#1C1A17;font-size:22px;}
+
+    .ck-strip{padding:10px 16px !important;align-items:flex-start !important;flex-wrap:wrap;gap:4px 10px !important;line-height:1.45;}
+    .ck-strip > span:first-child{margin-top:5px;}
+
+    .ck-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,0.97);backdrop-filter:blur(8px);border-top:1px solid #EAE5DD;padding:4px 4px calc(4px + env(safe-area-inset-bottom));}
+    .ck-tab{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:0;background:none;cursor:pointer;font-size:10px;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+    .ck-tab span{overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    .ck-tab-badge{position:absolute;top:2px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#C2453B;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+    .ck-content{padding:18px 16px calc(88px + env(safe-area-inset-bottom)) !important;}
+    .ck-content h1{font-size:22px !important;}
+    .ck-content > * > div{gap:16px !important;}
+
+    .ck-stack{grid-template-columns:minmax(0,1fr) !important;}
+    .ck-prod-hero{grid-template-columns:minmax(0,1fr) !important;gap:14px !important;}
+    .ck-prod-shot{aspect-ratio:auto !important;height:120px;}
+    .ck-chart{padding:0 4px 0 52px !important;}
+    .ck-verdict{gap:14px !important;}
+    .ck-verdict > :first-child{width:auto !important;height:auto !important;aspect-ratio:auto !important;justify-self:start;padding:8px 14px !important;}
+    .ck-reflabel{display:none;}
+    .ck-stores{overflow-x:auto !important;}
+    .ck-stores > div{min-width:460px;}
+
+    .ck-deal-row{grid-template-columns:minmax(0,1fr) auto auto !important;row-gap:6px !important;padding:12px 14px !important;}
+    .ck-deal-row > :nth-child(1){grid-column:1 / 3;grid-row:1;}
+    .ck-deal-row > :nth-child(5){grid-column:3;grid-row:1;justify-self:end;}
+    .ck-deal-row > :nth-child(2){grid-column:1;grid-row:2;}
+    .ck-deal-row > :nth-child(3){grid-column:2;grid-row:2;}
+    .ck-deal-row > :nth-child(4){grid-column:3;grid-row:2;justify-self:end;}
+
+    .ck-alert-row{grid-template-columns:minmax(0,1fr) auto !important;row-gap:8px !important;padding:14px 16px !important;}
+    .ck-alert-row > :nth-child(1){grid-column:1;grid-row:1;}
+    .ck-alert-row > :nth-child(4){grid-column:2;grid-row:1;justify-self:end;}
+    .ck-alert-row > :nth-child(2){grid-column:1 / -1;grid-row:2;}
+    .ck-alert-row > :nth-child(3){grid-column:1 / -1;grid-row:3;}
+
+    .ck-match{grid-template-columns:64px minmax(0,1fr) !important;gap:14px !important;}
+    .ck-match > button{grid-column:1 / -1;}
+
+    .ck-setrow{flex-wrap:wrap;}
+    .ck-onboard{padding:26px 18px !important;}
+    .ck-onboard h1{font-size:23px !important;}
+  }
 </style>
 </helmet>
 
-<div style="display:flex;min-height:100vh;background:#F6F4F0;">
+<div class="ck-shell" style="display:flex;min-height:100vh;background:#F6F4F0;">
 
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
-  <aside style="width:236px;flex:0 0 236px;padding:22px 16px;display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border-right:1px solid #EAE5DD;position:sticky;top:0;height:100vh;">
+  <aside class="ck-side" style="width:236px;flex:0 0 236px;padding:22px 16px;display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border-right:1px solid #EAE5DD;position:sticky;top:0;height:100vh;">
     <div style="display:flex;align-items:center;gap:10px;padding:0 8px;">
       <div style="width:30px;height:30px;border-radius:10px;background:#17916B;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;line-height:1;">चा</div>
       <div style="display:flex;flex-direction:column;">
@@ -66,12 +123,16 @@
   <main style="flex:1;min-width:0;display:flex;flex-direction:column;">
 
     <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
-    <header style="display:flex;align-items:center;gap:16px;padding:18px 32px;border-bottom:1px solid #EAE5DD;background:rgba(246,244,240,0.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;">
+    <header class="ck-header" style="display:flex;align-items:center;gap:16px;padding:18px 32px;border-bottom:1px solid #EAE5DD;background:rgba(246,244,240,0.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;">
+      <button class="ck-mobile-only ck-mlogo" onClick="{{ goOnboarding }}" title="How it works" aria-label="Chatak — how it works">चा</button>
       <div style="flex:1;max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;">
         <span style="color:#6F6A62;font-size:13px;">⌕</span>
         <input value="{{ headerQuery }}" onChange="{{ onHeaderQuery }}" onKeyDown="{{ onHeaderKey }}" placeholder="Search a product, paste a store URL…" style="flex:1;border:0;outline:0;font-size:13px;background:transparent;color:#1C1A17;" />
       </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <sc-if value="{{ perms.track }}" hint-placeholder-val="{{ true }}">
+        <button class="ck-mobile-only ck-madd" onClick="{{ goAdd }}" aria-label="Track a product">+</button>
+      </sc-if>
+      <div class="ck-desktop-only" style="margin-left:auto;display:flex;align-items:center;gap:10px;">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;border:1px solid #EAE5DD;font-size:12px;font-weight:600;color:#6F6A62;">
           <span style="width:7px;height:7px;border-radius:99px;background:#17916B;"></span>{{ todayLabel }}
         </div>
@@ -80,7 +141,7 @@
     </header>
 
     <sc-if value="{{ dataStrip }}" hint-placeholder-val="{{ false }}">
-      <div style="{{ dataStrip.style }}">
+      <div class="ck-strip" style="{{ dataStrip.style }}">
         <span style="{{ dataStrip.dotStyle }}"></span>
         <span style="font-weight:700;">{{ dataStrip.title }}</span>
         <span style="flex:1;min-width:0;">{{ dataStrip.body }}</span>
@@ -89,6 +150,18 @@
         </sc-if>
       </div>
     </sc-if>
+
+    <nav class="ck-mobile-only ck-tabbar" aria-label="Sections">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="6">
+        <button class="ck-tab" onClick="{{ item.go }}" style="{{ item.tabStyle }}">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="{{ item.icon }}"></path></svg>
+          <span>{{ item.short }}</span>
+          <sc-if value="{{ item.badge }}">
+            <span class="ck-tab-badge">{{ item.badge }}</span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </nav>
 
     </sc-if>
 
@@ -160,7 +233,7 @@
       </div>
     </sc-if>
 
-    <div style="flex:1;padding:28px 32px 56px;">
+    <div class="ck-content" style="flex:1;padding:28px 32px 56px;">
 
       <!-- ============ HOME ============ -->
       <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
@@ -173,7 +246,7 @@
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:14px;">
             <sc-for list="{{ summary }}" as="s" hint-placeholder-count="3">
               <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:9px;">
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -194,7 +267,7 @@
                   <h2 style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.01em;">Your watchlist</h2>
                   <span style="font-size:12px;color:#6F6A62;">{{ watchlistCount }}</span>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:14px;">
                   <sc-for list="{{ products }}" as="p" hint-placeholder-count="5">
                     <button onClick="{{ p.open }}" style="text-align:left;padding:0;border:1px solid #EAE5DD;border-radius:20px;background:#fff;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
                       <div style="height:116px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);display:flex;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;">
@@ -227,11 +300,11 @@
                   <span style="font-size:12px;color:#6F6A62;">Advertised vs. real discount, across every store we track</span>
                 </div>
                 <div style="border:1px solid #EAE5DD;border-radius:20px;background:#fff;overflow:hidden;">
-                  <div style="display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;padding:11px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6F6A62;">
+                  <div class="ck-deal-head" style="display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;padding:11px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6F6A62;">
                     <span>Product</span><span>Store</span><span>Advertised</span><span>Real</span><span>Verdict</span>
                   </div>
                   <sc-for list="{{ deals }}" as="d" hint-placeholder-count="5">
-                    <button onClick="{{ d.open }}" style="width:100%;text-align:left;display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:14px 18px;border:0;border-bottom:1px solid #F2EEE7;background:#fff;cursor:pointer;" style-hover="background:#FBFAF7;">
+                    <button class="ck-deal-row" onClick="{{ d.open }}" style="width:100%;text-align:left;display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:14px 18px;border:0;border-bottom:1px solid #F2EEE7;background:#fff;cursor:pointer;" style-hover="background:#FBFAF7;">
                       <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
                         <span style="font-size:13px;font-weight:700;">{{ d.name }}</span>
                         <span style="font-size:11px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ d.priceText }}</span>
@@ -256,8 +329,8 @@
 
           <button onClick="{{ goHome }}" style="align-self:flex-start;padding:0;border:0;background:none;font-size:12px;font-weight:700;color:#6F6A62;cursor:pointer;">← Watchlist</button>
 
-          <div style="display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;">
-            <div style="aspect-ratio:1;border-radius:20px;border:1px solid #EAE5DD;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 9px,#F8F5F0 9px 18px);display:flex;align-items:center;justify-content:center;">
+          <div class="ck-prod-hero" style="display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;">
+            <div class="ck-prod-shot" style="aspect-ratio:1;border-radius:20px;border:1px solid #EAE5DD;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 9px,#F8F5F0 9px 18px);display:flex;align-items:center;justify-content:center;">
               <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F6A62;letter-spacing:0.05em;text-align:center;padding:0 16px;text-wrap:pretty;">{{ product.shotLabel }}</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:14px;">
@@ -286,7 +359,7 @@
           <!-- Verdict take A: signal card -->
           <sc-if value="{{ verdictIsCard }}">
             <div style="{{ verdictCardStyle }}">
-              <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+              <div class="ck-stack ck-verdict" style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
                 <div style="{{ verdictLightStyle }}">
                   <span style="font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;">{{ product.verdictLabel }}</span>
                 </div>
@@ -304,7 +377,7 @@
                   </div>
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(28,26,23,0.08);">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(28,26,23,0.08);">
                 <sc-for list="{{ product.timeline }}" as="e" hint-placeholder-count="3">
                   <div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.72);">
                     <span style="font-size:11px;font-weight:700;color:#6F6A62;">{{ e.when }}</span>
@@ -347,7 +420,7 @@
                 <span style="width:8px;height:8px;border-radius:99px;background:#C2453B;"></span>
                 <h3 style="margin:0;font-size:14px;font-weight:800;letter-spacing:-0.01em;color:#C2453B;">Inflated list price detected</h3>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:14px;">
                 <sc-for list="{{ product.forensics }}" as="f" hint-placeholder-count="4">
                   <div style="display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
                     <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">{{ f.label }}</span>
@@ -378,7 +451,7 @@
               </div>
             </div>
 
-            <div style="position:relative;width:100%;padding:0 26px 0 62px;user-select:none;">
+            <div class="ck-chart" style="position:relative;width:100%;padding:0 26px 0 62px;user-select:none;">
               <sc-for list="{{ chart.grid }}" as="g" hint-placeholder-count="5">
                 <div style="{{ g.style }}">{{ g.label }}</div>
               </sc-for>
@@ -407,7 +480,7 @@
                 </sc-for>
               </svg>
 
-              <div style="position:absolute;top:21px;left:10px;font-size:10px;font-weight:700;letter-spacing:0.08em;color:#6F6A62;pointer-events:none;">RETAILER REFERENCE PRICE</div>
+              <div class="ck-reflabel" style="position:absolute;top:21px;left:10px;font-size:10px;font-weight:700;letter-spacing:0.08em;color:#6F6A62;pointer-events:none;">RETAILER REFERENCE PRICE</div>
               <div style="position:absolute;top:20px;right:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#6F6A62;pointer-events:none;">{{ chart.refRange }}</div>
               <sc-for list="{{ chart.xLabels }}" as="x" hint-placeholder-count="5">
                 <div style="{{ x.style }}">{{ x.label }}</div>
@@ -447,7 +520,7 @@
           </div>
 
           <!-- Stats -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(168px,100%),1fr));gap:14px;">
             <sc-for list="{{ product.stats }}" as="s" hint-placeholder-count="4">
               <div style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:6px;">
                 <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">{{ s.label }}</span>
@@ -458,7 +531,7 @@
           </div>
 
           <!-- Target + stores -->
-          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;align-items:start;">
+          <div class="ck-stack" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;align-items:start;">
             <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
               <h3 style="margin:0;font-size:14px;font-weight:800;letter-spacing:-0.01em;">Price target</h3>
               <p style="margin:0;font-size:12px;line-height:1.5;color:#6F6A62;">Drag the green line on the chart, or type a number. We'll email and push you the moment any store crosses it.</p>
@@ -475,7 +548,7 @@
               <button onClick="{{ saveTarget }}" style="{{ saveTargetStyle }}">{{ saveTargetLabel }}</button>
             </div>
 
-            <div style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
+            <div class="ck-stores" style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
               <div style="display:grid;grid-template-columns:1.3fr 1fr 0.9fr 1fr;gap:10px;padding:12px 18px;background:#FBFAF7;border-bottom:1px solid #EFEAE2;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">
                 <span>Store</span><span>Today</span><span>30-day</span><span>Reference price</span>
               </div>
@@ -522,7 +595,7 @@
               <div style="padding:22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
                 <label style="font-size:12px;font-weight:700;color:#6F6A62;">Product URL</label>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                  <input value="{{ urlValue }}" onChange="{{ onUrlInput }}" placeholder="https://item.rakuten.co.jp/…" style="flex:1;min-width:240px;padding:13px 15px;border-radius:14px;border:1px solid #EAE5DD;outline:0;font-size:13px;font-family:'IBM Plex Mono',monospace;" />
+                  <input value="{{ urlValue }}" onChange="{{ onUrlInput }}" placeholder="https://item.rakuten.co.jp/…" style="flex:1;min-width:min(240px,100%);padding:13px 15px;border-radius:14px;border:1px solid #EAE5DD;outline:0;font-size:13px;font-family:'IBM Plex Mono',monospace;" />
                   <button onClick="{{ fetchUrl }}" style="padding:13px 22px;border-radius:14px;border:0;background:#1C1A17;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Fetch</button>
                 </div>
                 <span style="font-size:11px;color:#6F6A62;">Works with Rakuten Ichiba and Yahoo Shopping today. More stores as we add them.</span>
@@ -532,7 +605,7 @@
                 <div style="padding:14px 18px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;color:#B03A31;font-weight:600;">{{ urlError }}</div>
               </sc-if>
               <sc-if value="{{ urlMatched }}">
-                <div style="padding:20px;border-radius:20px;background:#fff;border:1px solid #E1EDE8;display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:center;">
+                <div style="padding:20px;border-radius:20px;background:#fff;border:1px solid #E1EDE8;display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:center;" class="ck-match">
                   <div style="aspect-ratio:1;border-radius:14px;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F8F5F0 8px 16px);border:1px solid #EFEAE2;"></div>
                   <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
                     <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#0F6B4F;">{{ urlMatched.status }}</span>
@@ -547,7 +620,7 @@
           </sc-if>
 
           <sc-if value="{{ addIsBarcode }}">
-            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
+            <div class="ck-stack" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
               <div style="padding:22px;border-radius:20px;background:#1C1A17;display:flex;flex-direction:column;gap:14px;">
                 <div style="aspect-ratio:4/3;border-radius:16px;background:#2A2723;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
                   <div style="width:72%;height:44%;border:2px solid #17916B;border-radius:10px;"></div>
@@ -603,7 +676,7 @@
                 <h3 style="margin:0;font-size:16px;font-weight:800;letter-spacing:-0.01em;">Catch fake discounts while you shop</h3>
                 <p style="margin:0;font-size:13px;line-height:1.55;color:#6F6A62;max-width:62ch;">Install the Chatak browser add-on and a small verdict badge appears on every product page you visit — no need to come back here first.</p>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;">
                 <sc-for list="{{ storeMeta }}" as="s" hint-placeholder-count="6">
                   <div style="{{ s.style }}">
                     <span style="{{ s.dot }}"></span>
@@ -625,7 +698,7 @@
             <p style="margin:0;font-size:14px;color:#6F6A62;">Four kinds of nudge. All of them arrive by email and push.</p>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(215px,100%),1fr));gap:14px;">
             <sc-for list="{{ alertTypes }}" as="a" hint-placeholder-count="4">
               <button onClick="{{ a.toggle }}" style="{{ a.cardStyle }}">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -644,7 +717,7 @@
               <span style="font-size:11px;color:#6F6A62;">{{ activeAlertCount }} running</span>
             </div>
             <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="4">
-              <div style="display:grid;grid-template-columns:1.8fr 1.1fr 1fr auto;gap:14px;align-items:center;padding:15px 20px;border-bottom:1px solid #F2EEE7;">
+              <div class="ck-alert-row" style="display:grid;grid-template-columns:1.8fr 1.1fr 1fr auto;gap:14px;align-items:center;padding:15px 20px;border-bottom:1px solid #F2EEE7;">
                 <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
                   <span style="font-size:13px;font-weight:700;">{{ a.product }}</span>
                   <span style="font-size:11px;color:#6F6A62;">{{ a.rule }}</span>
@@ -693,7 +766,7 @@
           <sc-if value="{{ dealEmpty }}">
             <div style="padding:34px;border-radius:20px;background:#fff;border:1px dashed #E2DCD2;text-align:center;font-size:13px;color:#6F6A62;">No deals match that filter right now.</div>
           </sc-if>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:14px;">
             <sc-for list="{{ dealCards }}" as="d" hint-placeholder-count="5">
               <button onClick="{{ d.open }}" style="text-align:left;padding:18px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;cursor:pointer;display:flex;flex-direction:column;gap:13px;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
@@ -733,7 +806,7 @@
             <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Sale season calendar</h1>
             <p style="margin:0;font-size:14px;color:#6F6A62;">{{ calendarNote }}</p>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:14px;">
             <sc-for list="{{ calendar }}" as="m" hint-placeholder-count="12">
               <div style="{{ m.cardStyle }}">
                 <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
@@ -781,7 +854,7 @@
                   <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;color:#5E3E06;">{{ mx.dueTitle }}</h2>
                   <span style="font-size:12px;color:#7A5A20;">Confirmed more than {{ mx.reviewDays }} days ago. Still the same? One tap resets the clock.</span>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:10px;">
                   <sc-for list="{{ mx.queue }}" as="q" hint-placeholder-count="4">
                     <div style="padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #F0E2C6;display:flex;flex-direction:column;gap:9px;">
                       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
@@ -917,7 +990,7 @@
             <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
               <h3 style="margin:0;font-size:13px;font-weight:800;letter-spacing:0.02em;">{{ g.title }}</h3>
               <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid #F5F2EC;">
+                <div class="ck-setrow" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid #F5F2EC;">
                   <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
                     <span style="font-size:13px;font-weight:600;">{{ r.label }}</span>
                     <span style="font-size:11px;color:#6F6A62;">{{ r.note }}</span>
@@ -945,7 +1018,7 @@
       <!-- ============ ONBOARDING ============ -->
       <sc-if value="{{ isOnboarding }}">
         <div style="max-width:720px;margin:32px auto 0;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center;">
-          <div style="width:100%;padding:38px 34px;border-radius:26px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:20px;align-items:center;">
+          <div class="ck-onboard" style="width:100%;padding:38px 34px;border-radius:26px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:20px;align-items:center;">
             <span style="padding:6px 13px;border-radius:999px;background:#F1EDE6;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6F6A62;">Step {{ onboardStepLabel }}</span>
             <h1 style="margin:0;font-size:29px;font-weight:800;letter-spacing:-0.025em;line-height:1.2;max-width:19ch;text-wrap:pretty;">{{ onboard.title }}</h1>
             <p style="margin:0;font-size:15px;line-height:1.6;color:#6F6A62;max-width:48ch;text-wrap:pretty;">{{ onboard.body }}</p>
@@ -1522,12 +1595,22 @@ class Component extends DCLogic {
     const screen = S.screen;
 
     // ---- nav ----
+    // Phone tab bar: short labels and 24px stroke icons.
+    const navIcons = {
+      home: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+      matrix: 'M4 4h16v16H4zM4 10h16M4 16h16M10 4v16',
+      deals: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01',
+      calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+      alerts: 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
+      settings: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4'
+    };
     const buildNav = (alertBadge, matrixBadge) => [
-      ['home', 'Home'], ['matrix', 'Price matrix', matrixBadge], ['deals', 'Deal feed'], ['calendar', 'Season calendar'],
-      ['alerts', 'Alerts', alertBadge], ['settings', 'Settings']
-    ].map(([id, label, badge]) => ({
-      label, badge,
-      go: () => this.setState({ screen: id, hover: null }),
+      ['home', 'Home', 0, 'Home'], ['matrix', 'Price matrix', matrixBadge, 'Matrix'], ['deals', 'Deal feed', 0, 'Deals'],
+      ['calendar', 'Season calendar', 0, 'Calendar'], ['alerts', 'Alerts', alertBadge, 'Alerts'], ['settings', 'Settings', 0, 'Settings']
+    ].map(([id, label, badge, short]) => ({
+      label, badge, short, icon: navIcons[id],
+      tabStyle: 'color:' + (screen === id ? '#0E6B4E' : '#6F6A62') + ';font-weight:' + (screen === id ? '700' : '600') + ';',
+      go: () => { this.setState({ screen: id, hover: null }); try { window.scrollTo(0, 0); } catch (e) {} },
       style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border-radius:12px;border:0;cursor:pointer;font-size:13px;font-weight:' +
         (screen === id ? '700' : '600') + ';text-align:left;background:' +
         (screen === id ? '#F1EDE6' : 'transparent') + ';color:' + (screen === id ? '#1C1A17' : '#6F6A62') + ';'
