@@ -409,12 +409,22 @@ create table if not exists public.chatak_matrix_stars (
   primary key (user_id, item_id)
 );
 
+-- Which Cost shops each person shows in the matrix. Keyed by shop NAME, like
+-- prices, so a rename in Cost re-keys it (chatak_matrix_rename_shop). A shop
+-- with no row here stays hidden: new Cost shops start switched off.
+create table if not exists public.chatak_matrix_shop_picks (
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  shop_name  text not null,
+  added_at   timestamptz not null default now(),
+  primary key (user_id, shop_name)
+);
+
 -- Append-only record. kind='confirm' re-states an unchanged price after review.
 create table if not exists public.chatak_matrix_prices (
   id            bigserial primary key,
   shop_name     text not null,
   cost_shop_id  text,                        -- akatsuki_shops.id at entry time, informational
-  item_id       uuid not null references public.chatak_matrix_items(id) on delete cascade,
+  item_id       uuid not null references public.chatak_matrix_items(id) on delete restrict,
   price         integer not null check (price > 0),
   currency      text not null default 'JPY', -- one app-wide currency until regions arrive
   shelf         boolean not null default false, -- seen on the shelf, not paid
@@ -424,16 +434,25 @@ create table if not exists public.chatak_matrix_prices (
 );
 create index if not exists chatak_matrix_prices_cell
   on public.chatak_matrix_prices (shop_name, item_id, entered_at desc);
+create index if not exists chatak_matrix_prices_shop_id
+  on public.chatak_matrix_prices (cost_shop_id, item_id, entered_at desc);
+-- An item with prices cannot be deleted: its history is the record (was cascade).
+alter table public.chatak_matrix_prices drop constraint if exists chatak_matrix_prices_item_id_fkey;
+alter table public.chatak_matrix_prices add constraint chatak_matrix_prices_item_id_fkey
+  foreign key (item_id) references public.chatak_matrix_items(id) on delete restrict;
 
-create or replace view public.chatak_matrix_latest with (security_invoker = on) as
-select distinct on (shop_name, item_id)
-  shop_name, item_id, price, currency, shelf, kind, entered_at
+-- Latest per (Cost shop id, item); rows with no id fall back to the name.
+drop view if exists public.chatak_matrix_latest;
+create view public.chatak_matrix_latest with (security_invoker = on) as
+select distinct on (coalesce(cost_shop_id, 'name:' || shop_name), item_id)
+  cost_shop_id, shop_name, item_id, price, currency, shelf, kind, entered_at
 from public.chatak_matrix_prices
-order by shop_name, item_id, entered_at desc;
+order by coalesce(cost_shop_id, 'name:' || shop_name), item_id, entered_at desc;
 
 alter table public.chatak_matrix_items  enable row level security;
 alter table public.chatak_matrix_stars  enable row level security;
 alter table public.chatak_matrix_prices enable row level security;
+alter table public.chatak_matrix_shop_picks enable row level security;
 
 drop policy if exists chatak_mx_items_read  on public.chatak_matrix_items;
 drop policy if exists chatak_mx_items_add   on public.chatak_matrix_items;
@@ -442,6 +461,7 @@ drop policy if exists chatak_mx_items_del   on public.chatak_matrix_items;
 drop policy if exists chatak_mx_stars_own   on public.chatak_matrix_stars;
 drop policy if exists chatak_mx_prices_read on public.chatak_matrix_prices;
 drop policy if exists chatak_mx_prices_add  on public.chatak_matrix_prices;
+drop policy if exists chatak_mx_picks_own   on public.chatak_matrix_shop_picks;
 
 -- Anyone on the allow-list reads; editors and admins add; only admins rename or remove items.
 create policy chatak_mx_items_read  on public.chatak_matrix_items for select using (public.chatak_role() is not null);
@@ -449,24 +469,36 @@ create policy chatak_mx_items_add   on public.chatak_matrix_items for insert wit
 create policy chatak_mx_items_admin on public.chatak_matrix_items for update using (public.chatak_role() = 'admin');
 create policy chatak_mx_items_del   on public.chatak_matrix_items for delete using (public.chatak_role() = 'admin');
 create policy chatak_mx_stars_own   on public.chatak_matrix_stars for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy chatak_mx_picks_own   on public.chatak_matrix_shop_picks for all
+  using (auth.uid() = user_id and public.chatak_role() is not null)
+  with check (auth.uid() = user_id and public.chatak_role() is not null);
 create policy chatak_mx_prices_read on public.chatak_matrix_prices for select using (public.chatak_role() is not null);
 -- No update or delete policy: the record is append-only from the browser.
 create policy chatak_mx_prices_add  on public.chatak_matrix_prices for insert
   with check (public.chatak_role() in ('editor', 'admin') and entered_by = auth.uid());
 
--- Cost renamed a shop (expense.recategorized {field:'shop', from, to}). Re-key
--- every row or the join to akatsuki_shops breaks silently. Called by the hub
--- consumer with the service role, never from the browser.
-create or replace function public.chatak_matrix_rename_shop(p_from text, p_to text)
-returns integer language plpgsql security definer set search_path = public as $$
-declare n integer;
-begin
-  update public.chatak_matrix_prices set shop_name = p_to where shop_name = p_from;
-  get diagnostics n = row_count;
-  return n;
-end; $$;
-revoke all on function public.chatak_matrix_rename_shop(text, text) from public, anon, authenticated;
-grant execute on function public.chatak_matrix_rename_shop(text, text) to service_role;
+-- STEP2 (Akatsuki R037). Shops are Cost's: Chatak reads them, never writes them.
+-- Renames need no event now that prices are keyed by Cost's shop id.
+drop function if exists public.chatak_matrix_rename_shop(text, text);
+drop function if exists public.chatak_add_cost_shop(text, text, text, text);
+drop function if exists public.chatak_add_cost_shop(text, text, text);
+drop function if exists public.chatak_shop_areas();
+drop table if exists public.chatak_shop_adds;
+
+-- One-time backfill by exact name; rows already carrying an id are untouched,
+-- so re-running changes nothing. Rows whose shop name is gone from Cost keep
+-- the name fallback.
+alter table public.chatak_matrix_shop_picks add column if not exists cost_shop_id text;
+do $$ begin
+  if to_regclass('public.akatsuki_shops') is not null then
+    update public.chatak_matrix_prices p set cost_shop_id = s.id::text
+      from public.akatsuki_shops s
+     where p.cost_shop_id is null and s.name = p.shop_name;
+    update public.chatak_matrix_shop_picks k set cost_shop_id = s.id::text
+      from public.akatsuki_shops s
+     where k.cost_shop_id is null and s.name = k.shop_name;
+  end if;
+end $$;
 
 -- 4. Only an admin may change who is allowed in. Uses chatak_role() (security
 --    definer) — a subquery on this same table here would recurse through its RLS.
