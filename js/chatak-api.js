@@ -61,7 +61,10 @@ export async function getRole() {
     .select('email, role, name, timezone')
     .or('auth_user_id.eq.' + s.user.id + ',email.eq.' + s.user.email)
     .limit(1);
-  return data?.[0] ?? null;
+  const row = data?.[0] ?? null;
+  // Shared allow-list: the Akatsuki apps' 'operator' is an editor in Chatak
+  // (the database's chatak_role() maps it the same way).
+  return row && row.role === 'operator' ? { ...row, role: 'editor' } : row;
 }
 
 // ── reads ──

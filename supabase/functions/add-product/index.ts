@@ -23,7 +23,8 @@ import * as rakuten from '../_shared/rakuten.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  // x-akatsuki-app rides on every request from the app's shared Supabase client.
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-akatsuki-app',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
