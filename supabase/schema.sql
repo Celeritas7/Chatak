@@ -382,10 +382,11 @@ create policy chatak_roles_self_read on public.authentication_mode_user_roles
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- The caller's role from the allow-list. security definer so policies can call
--- it without recursing through the roles table's own RLS.
+-- it without recursing through the roles table's own RLS. The allow-list is
+-- shared with the Akatsuki apps, whose 'operator' role means editor here.
 create or replace function public.chatak_role()
 returns text language sql stable security definer set search_path = public as $$
-  select role from public.authentication_mode_user_roles
+  select case role when 'operator' then 'editor' else role end from public.authentication_mode_user_roles
   where auth_user_id = auth.uid()
      or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   limit 1;
