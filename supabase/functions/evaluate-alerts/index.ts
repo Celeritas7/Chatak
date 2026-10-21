@@ -3,7 +3,9 @@
 // Secrets: supabase secrets set RESEND_API_KEY=... APP_URL=https://you.github.io/chatak
 //
 // Runs straight after collection. Evaluates every active rule against the
-// freshly written prices and sends at most one message per rule per day.
+// freshly written prices and records at most one alert per rule per day. The
+// alert row is the in-app inbox entry; send-push then delivers it to phones.
+// Email is sent too when RESEND_API_KEY is set (optional).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -38,15 +40,22 @@ Deno.serve(async () => {
   // chatak_alert_rules.user_id references auth.users, not chatak_profiles, so
   // PostgREST cannot embed the profile — fetch them once and index by id.
   const userIds = [...new Set((rules ?? []).map((r) => r.user_id).filter(Boolean))];
-  const { data: profileRows } = userIds.length
-    ? await db.from('chatak_profiles').select('id, email, notify_email, notify_push').in('id', userIds)
-    : { data: [] as any[] };
+  let profileRows: any[] = [];
+  if (userIds.length) {
+    const r = await db.from('chatak_profiles').select('id, email, notify_email, notify_push, muted_kinds').in('id', userIds);
+    // muted_kinds arrives with the notifier section of schema.sql; before that, read without it.
+    profileRows = r.error
+      ? ((await db.from('chatak_profiles').select('id, email, notify_email, notify_push').in('id', userIds)).data ?? [])
+      : (r.data ?? []);
+  }
   const profiles = new Map((profileRows ?? []).map((p: any) => [p.id, p]));
 
   const sent: any[] = [];
 
   for (const r of rules ?? []) {
     if (!r.product_id) continue;
+    // Switched off on the Alerts screen: no event, so no inbox entry and no push.
+    if ((profiles.get(r.user_id) as any)?.muted_kinds?.includes(r.kind)) continue;
     const { data: st } = await db.rpc('chatak_product_stats', { p_product: r.product_id, p_days: 90 });
     const s = st?.[0];
     if (!s?.current_price) continue;
@@ -87,15 +96,27 @@ Deno.serve(async () => {
     if (count) continue;
 
     const prof: any = profiles.get(r.user_id);
-    const channels: string[] = [];
-    if (prof?.notify_email && prof?.email) { await sendEmail(prof.email, title, '<p>' + body + '</p>'); channels.push('email'); }
+    const channels: string[] = ['inbox'];
+    if (prof?.notify_email && prof?.email && Deno.env.get('RESEND_API_KEY')) { await sendEmail(prof.email, title, '<p>' + body + '</p>'); channels.push('email'); }
 
     await db.from('chatak_alert_events').insert({
       rule_id: r.id, user_id: r.user_id, product_id: r.product_id,
-      kind: r.kind, title, body, channels
+      kind: r.kind, title, body, channels,
+      payload: { screen: 'alerts', product_id: r.product_id, price: s.current_price }
     });
     sent.push(title);
   }
 
-  return Response.json({ sent: sent.length, titles: sent });
+  // Phone notifications for everything recorded above (and anything missed).
+  let push: unknown = null;
+  try {
+    const res = await fetch(Deno.env.get('SUPABASE_URL') + '/functions/v1/send-push', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'), 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    push = await res.json().catch(() => res.status);
+  } catch (e) { push = String(e); }
+
+  return Response.json({ sent: sent.length, titles: sent, push });
 });

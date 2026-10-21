@@ -130,15 +130,112 @@ export async function track(productId) {
   return db.from('chatak_watchlist').insert({ user_id: uid, product_id: productId });
 }
 
+// One rule per (person, product, kind) — chatak_alert_rules_one makes upsert safe.
 export async function setTarget(productId, targetPrice) {
   const uid = (await session())?.user?.id;
-  return db.from('chatak_alert_rules')
-    .upsert({ user_id: uid, product_id: productId, kind: 'target', target_price: targetPrice, active: true });
+  const { error } = await db.from('chatak_alert_rules')
+    .upsert({ user_id: uid, product_id: productId, kind: 'target', target_price: targetPrice, active: true },
+            { onConflict: 'user_id,product_id,kind' });
+  if (error) throw error;
 }
 
 export async function setRule(productId, kind, active = true) {
   const uid = (await session())?.user?.id;
-  return db.from('chatak_alert_rules').upsert({ user_id: uid, product_id: productId, kind, active });
+  const { error } = await db.from('chatak_alert_rules')
+    .upsert({ user_id: uid, product_id: productId, kind, active }, { onConflict: 'user_id,product_id,kind' });
+  if (error) throw error;
+}
+
+export async function removeRule(ruleId) {
+  const { error } = await db.from('chatak_alert_rules').delete().eq('id', ruleId);
+  if (error) throw error;
+}
+
+// ── price notifier ──
+// Everything the Alerts screen needs in one read. ready=false means the
+// notifier section of schema.sql has not been run yet, and says which part.
+export async function getNotifier(limit = 40) {
+  const uid = (await session())?.user?.id;
+  const [rules, mx, events, prof] = await Promise.all([
+    db.from('chatak_alert_rules').select('id, kind, target_price, active, product_id, product:chatak_products(id, name)').eq('active', true),
+    db.from('chatak_matrix_alerts').select('id, item_id, target_price, active').eq('active', true),
+    db.from('chatak_alert_events').select('id, kind, title, body, payload, channels, sent_at, read_at, product_id, matrix_alert_id, shop_name')
+      .order('sent_at', { ascending: false }).limit(limit),
+    db.from('chatak_profiles').select('notify_push, muted_kinds').eq('id', uid).maybeSingle()
+  ]);
+  const missing = [mx, events, prof].find((r) => r.error && ['42P01', 'PGRST205', '42703', 'PGRST204'].includes(r.error.code));
+  if (missing) return { ready: false, reason: missing.error.message };
+  for (const r of [rules, mx, events, prof]) if (r.error) throw r.error;
+  return {
+    ready: true, rules: rules.data ?? [], matrix: mx.data ?? [], events: events.data ?? [],
+    notifyPush: prof.data?.notify_push ?? true, muted: prof.data?.muted_kinds ?? []
+  };
+}
+
+export async function setMatrixAlert(itemId, targetPrice) {
+  const uid = (await session())?.user?.id;
+  const { error } = await db.from('chatak_matrix_alerts')
+    .upsert({ user_id: uid, item_id: itemId, target_price: targetPrice, active: true }, { onConflict: 'user_id,item_id' });
+  if (error) throw error;
+}
+
+export async function removeMatrixAlert(itemId) {
+  const uid = (await session())?.user?.id;
+  const { error } = await db.from('chatak_matrix_alerts').delete().eq('user_id', uid).eq('item_id', itemId);
+  if (error) throw error;
+}
+
+// ids omitted = everything unread.
+export async function markAlertsRead(ids) {
+  let q = db.from('chatak_alert_events').update({ read_at: new Date().toISOString() }).is('read_at', null);
+  if (ids) q = q.in('id', ids);
+  const { error } = await q;
+  if (error) throw error;
+}
+
+export async function setMutedKinds(kinds) {
+  const uid = (await session())?.user?.id;
+  const { error } = await db.from('chatak_profiles').update({ muted_kinds: kinds }).eq('id', uid);
+  if (error) throw error;
+}
+
+export async function setNotifyPush(on) {
+  const uid = (await session())?.user?.id;
+  const { error } = await db.from('chatak_profiles').update({ notify_push: on }).eq('id', uid);
+  if (error) throw error;
+}
+
+// A PushSubscription.toJSON() from this browser. The endpoint is unique, so a
+// re-subscribe on the same device replaces its row.
+export async function savePushSubscription(sub) {
+  const uid = (await session())?.user?.id;
+  const { error } = await db.from('chatak_push_subscriptions').upsert(
+    { user_id: uid, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+    { onConflict: 'endpoint' });
+  if (error) throw error;
+}
+
+export async function deletePushSubscription(endpoint) {
+  const { error } = await db.from('chatak_push_subscriptions').delete().eq('endpoint', endpoint);
+  if (error) throw error;
+}
+
+// Deliver anything pending now (a matrix save may just have created alerts).
+// Fire-and-forget from the caller: failure only delays the push to the next run.
+export async function sendPushNow() {
+  const { data, error } = await db.functions.invoke('send-push', { body: {} });
+  if (error) throw new Error(data?.error ?? error.message);
+  return data;
+}
+
+export async function testPush() {
+  const { data, error } = await db.functions.invoke('send-push', { body: { test: true } });
+  if (error) {
+    let msg = error.message;
+    try { msg = (await error.context.json()).error || msg; } catch (e) {}
+    throw new Error(msg);
+  }
+  return data;
 }
 
 // Paste-a-URL flow: the add-product edge function resolves the Rakuten item

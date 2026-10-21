@@ -47,5 +47,10 @@ window.CHATAK_CONFIG = {
 
   // Where "Add shop in Cost" sends you. Cost owns shops; Chatak re-reads the
   // list when you come back to this tab.
-  costShopsUrl: 'https://celeritas7.github.io/Cost_management/'
+  costShopsUrl: 'https://celeritas7.github.io/Cost_management/',
+
+  // Phone notifications. The PUBLIC half of the VAPID key pair — the same value
+  // as the VAPID_PUBLIC_KEY secret on the send-push function (docs/SETUP.md §8).
+  // Public by design; the private half lives only in Supabase secrets.
+  vapidPublicKey: ''
 };

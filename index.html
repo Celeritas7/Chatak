@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17916B">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Chatak">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -536,7 +542,13 @@
           <div class="ck-stack" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;align-items:start;">
             <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
               <h3 style="margin:0;font-size:14px;font-weight:800;letter-spacing:-0.01em;">Price target</h3>
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#6F6A62;">Drag the green line on the chart, or type a number. We'll email and push you the moment any store crosses it.</p>
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#6F6A62;">{{ targetNote }}</p>
+              <sc-if value="{{ targetCurrent }}">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:12px;background:#F3F9F6;border:1px solid #D6E9E0;font-size:12px;color:#14684E;font-weight:600;">
+                  <span>{{ targetCurrent }}</span>
+                  <button onClick="{{ removeTarget }}" style="padding:0;border:0;background:none;color:#A5322A;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">Remove</button>
+                </div>
+              </sc-if>
               <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:14px;border:1px solid #E1EDE8;background:#F5FAF8;">
                 <span style="font-size:15px;color:#0F6B4F;font-weight:700;font-family:'IBM Plex Mono',monospace;">¥</span>
                 <input value="{{ targetInput }}" onChange="{{ onTargetInput }}" style="flex:1;border:0;outline:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#1C1A17;min-width:0;" />
@@ -548,6 +560,17 @@
               </div>
               <div style="font-size:11px;color:#6F6A62;line-height:1.5;">{{ targetOdds }}</div>
               <button onClick="{{ saveTarget }}" style="{{ saveTargetStyle }}">{{ saveTargetLabel }}</button>
+              <sc-if value="{{ targetExtras }}">
+                <div style="display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid #F2EEE7;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;">Also tell me when</span>
+                  <sc-for list="{{ targetExtras }}" as="x" hint-placeholder-count="2">
+                    <button onClick="{{ x.toggle }}" role="switch" aria-checked="{{ x.on }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0;border:0;background:none;cursor:pointer;text-align:left;font:inherit;color:inherit;">
+                      <span style="font-size:12px;font-weight:600;">{{ x.label }}</span>
+                      <span style="{{ x.switchStyle }}"><span style="{{ x.knobStyle }}"></span></span>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
             </div>
 
             <div class="ck-stores" style="border-radius:20px;background:#fff;border:1px solid #EAE5DD;overflow:hidden;">
@@ -697,10 +720,29 @@
         <div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
           <div>
             <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Alerts</h1>
-            <p style="margin:0;font-size:14px;color:#6F6A62;">Four kinds of nudge. All of them arrive by email and push.</p>
+            <p style="margin:0;font-size:14px;color:#6F6A62;">{{ alertsSubtitle }}</p>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(215px,100%),1fr));gap:14px;">
+          <sc-if value="{{ alertsNotice }}">
+            <div style="padding:12px 16px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;line-height:1.5;color:#8C2E27;font-weight:600;">{{ alertsNotice }}</div>
+          </sc-if>
+
+          <sc-if value="{{ pushCard }}">
+            <div style="{{ pushCard.style }}">
+              <span style="flex-shrink:0;width:38px;height:38px;border-radius:12px;background:#fff;border:1px solid #D6E9E0;display:flex;align-items:center;justify-content:center;color:#0E6B4E;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2"></path></svg>
+              </span>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:min(200px,100%);">
+                <span style="font-size:13px;font-weight:700;">{{ pushCard.title }}</span>
+                <span style="font-size:12px;line-height:1.5;color:#5E6B66;">{{ pushCard.body }}</span>
+              </div>
+              <sc-if value="{{ pushCard.act }}">
+                <button onClick="{{ pushCard.act }}" disabled="{{ pushCard.busy }}" style="padding:10px 16px;border-radius:12px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">{{ pushCard.actLabel }}</button>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:12px;">
             <sc-for list="{{ alertTypes }}" as="a" hint-placeholder-count="4">
               <button onClick="{{ a.toggle }}" style="{{ a.cardStyle }}">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -731,23 +773,43 @@
                   </div>
                   <span style="font-size:10px;color:#6F6A62;font-weight:600;">{{ a.distance }}</span>
                 </div>
-                <span style="{{ a.pill }}">{{ a.status }}</span>
+                <span style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                  <span style="{{ a.pill }}">{{ a.status }}</span>
+                  <sc-if value="{{ a.remove }}">
+                    <button onClick="{{ a.remove }}" title="Remove this alert" aria-label="Remove this alert" style="width:26px;height:26px;border-radius:8px;border:1px solid #EAE5DD;background:#fff;color:#8C877E;font-size:14px;line-height:1;cursor:pointer;padding:0;" style-hover="border-color:#C2453B;color:#C2453B;">×</button>
+                  </sc-if>
+                </span>
               </div>
             </sc-for>
+            <sc-if value="{{ alertsEmpty }}">
+              <div style="padding:18px 20px;font-size:12px;line-height:1.55;color:#6F6A62;">{{ alertsEmpty }}</div>
+            </sc-if>
           </div>
 
           <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:12px;">
-            <h3 style="margin:0;font-size:14px;font-weight:800;">Recently sent</h3>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <h3 style="margin:0;font-size:14px;font-weight:800;">{{ inboxTitle }}</h3>
+              <sc-if value="{{ inboxUnreadLabel }}">
+                <span style="padding:2px 8px;border-radius:999px;background:#E3F3EC;color:#0E6B4E;font-size:11px;font-weight:700;">{{ inboxUnreadLabel }}</span>
+              </sc-if>
+              <sc-if value="{{ markAllRead }}">
+                <button onClick="{{ markAllRead }}" style="margin-left:auto;padding:0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">Mark all read</button>
+              </sc-if>
+            </div>
             <sc-for list="{{ alertLog }}" as="l" hint-placeholder-count="3">
-              <div style="display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid #F5F2EC;">
+              <button onClick="{{ l.open }}" style="{{ l.rowStyle }}">
                 <span style="{{ l.dot }}"></span>
                 <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
-                  <span style="font-size:12px;font-weight:700;">{{ l.title }}</span>
+                  <span style="{{ l.titleStyle }}">{{ l.title }}</span>
                   <span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ l.body }}</span>
+                  <sc-if value="{{ l.via }}"><span style="font-size:10px;color:#8C877E;font-weight:600;">{{ l.via }}</span></sc-if>
                 </div>
                 <span style="font-size:11px;color:#6F6A62;white-space:nowrap;font-weight:600;">{{ l.when }}</span>
-              </div>
+              </button>
             </sc-for>
+            <sc-if value="{{ inboxEmpty }}">
+              <div style="font-size:12px;line-height:1.55;color:#6F6A62;">{{ inboxEmpty }}</div>
+            </sc-if>
           </div>
         </div>
       </sc-if>
@@ -995,6 +1057,31 @@
             <div style="padding:28px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;font-size:13px;color:#6F6A62;">Reading shops from Cost…</div>
           </sc-if>
 
+          <sc-if value="{{ mx.bell }}">
+            <section style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="width:30px;height:30px;border-radius:10px;background:#E3F3EC;color:#0E6B4E;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"></path></svg></span>
+                <div style="display:flex;flex-direction:column;gap:1px;min-width:0;">
+                  <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;">Price alert · {{ mx.bell.item }}</h2>
+                  <span style="font-size:12px;color:#6F6A62;">Tell me when it's this price or less at one of my shops.</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:13px;border:1px solid #CFE3DA;background:#F5FAF8;flex:1;min-width:min(180px,100%);max-width:260px;">
+                  <span style="font-size:15px;color:#0F6B4F;font-weight:700;font-family:'IBM Plex Mono',monospace;">{{ mx.bell.sym }}</span>
+                  <input value="{{ mx.bell.value }}" onChange="{{ mx.bell.onChange }}" onKeyDown="{{ mx.bell.onKey }}" inputMode="numeric" autoFocus="{{ true }}" aria-label="Alert price" placeholder="{{ mx.bell.placeholder }}" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#1C1A17;" />
+                </div>
+                <button onClick="{{ mx.bell.save }}" style="{{ mx.bell.saveStyle }}">{{ mx.bell.saveLabel }}</button>
+                <sc-if value="{{ mx.bell.remove }}">
+                  <button onClick="{{ mx.bell.remove }}" style="padding:10px 14px;border-radius:12px;border:1px solid #F0D9D5;background:#fff;color:#A5322A;font-size:12px;font-weight:700;cursor:pointer;">Remove alert</button>
+                </sc-if>
+                <button onClick="{{ mx.bell.cancel }}" style="padding:10px 12px;border-radius:12px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+              </div>
+              <sc-if value="{{ mx.bell.hint }}"><span style="font-size:12px;color:#0F6B4F;font-weight:600;">{{ mx.bell.hint }}</span></sc-if>
+              <span style="font-size:11px;line-height:1.5;color:#6F6A62;">{{ mx.bell.note }}</span>
+            </section>
+          </sc-if>
+
           <sc-if value="{{ mx.hereChoose }}">
             <section style="padding:14px 16px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
@@ -1046,6 +1133,7 @@
                       </span>
                       <span style="font-size:11px;color:#6F6A62;">{{ e.last }}</span>
                       <sc-if value="{{ e.best }}"><span style="font-size:11px;font-weight:600;color:#0F6B4F;">{{ e.best }}</span></sc-if>
+                      <sc-if value="{{ e.alertText }}"><span style="font-size:11px;font-weight:700;color:#0E6B4E;">{{ e.alertText }}</span></sc-if>
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
                       <input value="{{ e.value }}" onChange="{{ e.onChange }}" placeholder="{{ e.placeholder }}" inputMode="numeric" enterKeyHint="next" aria-label="{{ e.label }}" style="{{ e.inputStyle }}" />
@@ -1164,8 +1252,9 @@
                       <div style="display:flex;align-items:center;gap:5px;">
                         <button onClick="{{ it.toggleStar }}" title="Pin to the front (just for you)" style="{{ it.starStyle }}">★</button>
                         <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ it.name }}</span>
+                        <button onClick="{{ it.openBell }}" title="{{ it.bellTitle }}" aria-label="{{ it.bellTitle }}" style="{{ it.bellStyle }}"><svg viewBox="0 0 24 24" width="13" height="13" fill="{{ it.bellFill }}" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"></path></svg></button>
                       </div>
-                      <span style="font-size:10px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ it.size }}</span>
+                      <span style="font-size:10px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ it.size }}<sc-if value="{{ it.alertText }}"><span style="color:#0E6B4E;font-weight:700;"> · {{ it.alertText }}</span></sc-if></span>
                     </div>
                   </sc-for>
                   <sc-if value="{{ mx.canEdit }}">
@@ -1309,7 +1398,13 @@ class Component extends DCLogic {
     dealFilter: 'All stores',
     onboardStep: 0,
     live: null,
-    alertOn: { target: true, fake: true, low: true, event: true },
+    alertOn: { target: true, fake: true, low: true, event: true, matrix: true },
+    // Price notifier. notif = the live read (getNotifier); sampleNotif = the
+    // same shape for the public demo, kept in memory only.
+    notif: null, nfError: null, nfBusy: false,
+    sampleNotif: { matrix: { eggs: { target: 250 } }, events: [], read: { fx2: true, fx3: true }, rules: { lowest_ever: true } },
+    push: { state: 'unknown' }, pushBusy: false, pushMsg: null,
+    mxBell: null, mxBellValue: '',
     settings: { email: true, push: true, used: false, lang: 'EN', fmt: '¥12,800', range: '90d' },
     authEmail: '', authSent: false, authBusy: false, authError: null,
     authGoogleBusy: false, resendIn: 0, signOutAsking: false,
@@ -1394,6 +1489,8 @@ class Component extends DCLogic {
     this.endDrag(); if (this._resendTimer) clearInterval(this._resendTimer); if (this._engineWait) clearInterval(this._engineWait);
     if (this._whereT) clearInterval(this._whereT);
     if (this._onBack) { document.removeEventListener('visibilitychange', this._onBack); window.removeEventListener('focus', this._onBack); }
+    if (this._openFromHash) window.removeEventListener('hashchange', this._openFromHash);
+    if (this._onSwMessage) navigator.serviceWorker.removeEventListener('message', this._onSwMessage);
   }
   componentDidUpdate() { this.mxSyncWherePoll(); }
 
@@ -1403,7 +1500,28 @@ class Component extends DCLogic {
   // each product to the same analyse() the fixtures use.
   componentDidMount() {
     // Back from Cost's shop screen: re-read the shop list (Cost owns shops).
-    this._onBack = () => { if (document.visibilityState === 'visible' && this._awaitCost) { this._awaitCost = false; this.mxBackFromCost(); } };
+    // Coming back to the tab also refreshes the alert inbox.
+    this._onBack = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (this._awaitCost) { this._awaitCost = false; this.mxBackFromCost(); }
+      if (this._api && this._session && (!this._nfAt || Date.now() - this._nfAt > 30000)) this.loadNotifier();
+    };
+    // A tapped notification opens the app at #alerts (or #matrix); an open tab
+    // gets the same request as a message from the service worker.
+    this._openFromHash = () => {
+      const h = (location.hash || '').slice(1);
+      if (['alerts', 'matrix', 'home', 'deals', 'calendar', 'settings'].includes(h)) {
+        this.setState({ screen: h });
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      }
+    };
+    this._openFromHash();
+    window.addEventListener('hashchange', this._openFromHash);
+    if ('serviceWorker' in navigator) {
+      this._onSwMessage = (e) => { if (e.data && e.data.chatak === 'open') { this.setState({ screen: e.data.screen || 'alerts' }); this.loadNotifier(); } };
+      navigator.serviceWorker.addEventListener('message', this._onSwMessage);
+      navigator.serviceWorker.register('./sw.js').then(() => this.pushRefresh()).catch(() => this.pushRefresh());
+    } else this.pushRefresh();
     document.addEventListener('visibilitychange', this._onBack); window.addEventListener('focus', this._onBack);
     // Printed so a stale cache or a server rooted in the wrong folder is
     // identifiable at a glance instead of by comparing screenshots.
@@ -1446,6 +1564,8 @@ class Component extends DCLogic {
       if (!this._role) { await api.signOut(); this.setState({ live: { status: 'signin' }, authError: 'That account does not have access.' }); return; }
       // Independent of the watchlist: an empty watchlist must not hide the matrix.
       this.loadMatrix();
+      this.loadNotifier();
+      this.pushRefresh();
       const [stores, watch] = await Promise.all([api.getStores(), api.getWatchlist()]);
       // Keep the store rows even with nothing tracked: build() cannot produce a
       // live dataset from zero products, so the chrome reads them from here
@@ -1461,6 +1581,265 @@ class Component extends DCLogic {
     } catch (e) {
       this.setState({ live: { status: 'error', message: String(e.message || e) } });
     }
+  }
+
+  // ---------- price notifier ----------
+  async loadNotifier() {
+    if (!this._api || !this._session) return;
+    this._nfAt = Date.now();
+    try {
+      const n = await this._api.getNotifier();
+      this.setState({ notif: n.ready ? { status: 'ready', ...n } : { status: 'missing', reason: n.reason } });
+    } catch (e) {
+      this.setState({ notif: { status: 'error', reason: String(e.message || e) } });
+    }
+  }
+
+  // One shape for the Alerts screen whichever mode we are in.
+  nfData() {
+    const S = this.state;
+    if (this._api && this._session) {
+      const n = S.notif;
+      if (!n || n.status !== 'ready') return { live: true, status: n ? n.status : 'loading', reason: n && n.reason, rules: [], matrix: {}, events: [], muted: [] };
+      const matrix = {};
+      for (const a of n.matrix) matrix[a.item_id] = { id: a.id, target: a.target_price };
+      return { live: true, status: 'ready', rules: n.rules, matrix, events: n.events, muted: n.muted || [], notifyPush: n.notifyPush };
+    }
+    const sn = S.sampleNotif;
+    return { live: false, status: 'ready', rules: [], matrix: sn.matrix, events: sn.events, muted: [], sample: sn };
+  }
+
+  // Run a live write, then re-read; any failure shows on the Alerts screen and the matrix.
+  async nfWrite(fn, label) {
+    this.setState({ nfBusy: true, nfError: null });
+    try { await fn(); }
+    catch (e) { this.setState({ nfBusy: false, nfError: label + ': ' + (e.message || e), mxError: label + ': ' + (e.message || e) }); return false; }
+    await this.loadNotifier();
+    this.setState({ nfBusy: false });
+    return true;
+  }
+
+  // Cheapest offer for an item among the shops this person shows in the matrix.
+  mxLowest(itemId) {
+    const M = this.state.mx;
+    if (!M || !M.shops) return null;
+    let best = null;
+    for (const sh of M.shops) {
+      if (M.picks && !M.picks[sh.name]) continue;
+      const c = M.cells[this.mxKey(sh.name, itemId)];
+      if (c && (!best || c.p < best.p)) best = { p: c.p, shop: sh.name };
+    }
+    return best;
+  }
+
+  mxOpenBell(itemId) {
+    const cur = this.nfData().matrix[itemId];
+    this.setState({ mxBell: itemId, mxBellValue: cur ? String(cur.target) : '', mxError: null, mxAdding: false, mxPicker: false });
+  }
+
+  async mxSaveBell() {
+    const S = this.state, itemId = S.mxBell, v = parseInt(S.mxBellValue, 10);
+    if (!itemId || !(v > 0) || S.nfBusy) return;
+    const it = (S.mx.items || []).find((i) => i.id === itemId), label = it ? it.name + (it.size ? ' · ' + it.size : '') : 'item';
+    const info = '✓ Alert set: ' + label + ' at ' + this.mxCur().sym + v.toLocaleString('en-US') + ' or less.';
+    if (this._api && this._session) {
+      if (!(await this.nfWrite(() => this._api.setMatrixAlert(itemId, v), 'Alert not saved'))) return;
+    } else {
+      this.setState((st) => ({ sampleNotif: { ...st.sampleNotif, matrix: { ...st.sampleNotif.matrix, [itemId]: { target: v } } } }));
+    }
+    this.setState({ mxBell: null, mxBellValue: '', mxInfo: info });
+  }
+
+  async mxRemoveBell(itemId) {
+    if (this._api && this._session) {
+      if (!(await this.nfWrite(() => this._api.removeMatrixAlert(itemId), 'Alert not removed'))) return;
+    } else {
+      this.setState((st) => { const m = { ...st.sampleNotif.matrix }; delete m[itemId]; return { sampleNotif: { ...st.sampleNotif, matrix: m } }; });
+    }
+    if (this.state.mxBell === itemId) this.setState({ mxBell: null, mxBellValue: '' });
+  }
+
+  // After prices are saved. Live: the database trigger has already written any
+  // alerts, so re-read the inbox and ask send-push to deliver them now. Sample:
+  // play the same rule in memory so the demo shows what would happen.
+  afterPriceSave(shop, entries, prev, shelf) {
+    if (this._api && this._session) {
+      this.loadNotifier();
+      this._api.sendPushNow().catch(() => {});
+      return;
+    }
+    const S = this.state, sn = S.sampleNotif, cur = this.mxCur(), money = (n) => cur.sym + Math.round(n).toLocaleString('en-US');
+    const fresh = [];
+    for (const e of entries) {
+      const a = sn.matrix[e.itemId], before = prev[e.itemId];
+      if (!a || !S.alertOn.matrix || e.price > a.target || (before != null && before <= a.target)) continue;
+      const it = (S.mx.items || []).find((i) => i.id === e.itemId);
+      fresh.push({
+        id: 's' + Date.now() + e.itemId, kind: 'matrix_target', sent_at: new Date().toISOString(), read_at: null,
+        title: (it ? it.name + (it.size ? ' · ' + it.size : '') : 'Item') + ' is ' + money(e.price) + ' at ' + shop.name,
+        body: 'At or under your ' + money(a.target) + ' target' + (shelf ? ' (seen on the shelf)' : '') + '.',
+        channels: ['inbox'], payload: { screen: 'matrix', self: true }
+      });
+    }
+    if (!fresh.length) return;
+    this.setState((st) => ({ sampleNotif: { ...st.sampleNotif, events: fresh.concat(st.sampleNotif.events) } }));
+    // The demo has no server to push from, so the phone notification is shown locally.
+    if (this.state.push.state === 'on') for (const f of fresh) this.pushLocal(f.title, f.body, 'matrix');
+  }
+
+  async nfMarkRead(ids) {
+    const n = this.nfData();
+    if (n.live) {
+      const now = new Date().toISOString();
+      this.setState((st) => st.notif && st.notif.events ? { notif: { ...st.notif, events: st.notif.events.map((e) => (!ids || ids.includes(e.id)) && !e.read_at ? { ...e, read_at: now } : e) } } : null);
+      try { await this._api.markAlertsRead(ids); } catch (e) { this.setState({ nfError: 'Could not mark read: ' + (e.message || e) }); }
+      return;
+    }
+    this.setState((st) => {
+      const read = { ...st.sampleNotif.read }, events = st.sampleNotif.events.map((e) => ((!ids || ids.includes(e.id)) ? { ...e, read_at: e.read_at || new Date().toISOString() } : e));
+      for (const k of ['fx1', 'fx2', 'fx3']) if (!ids || ids.includes(k)) read[k] = true;
+      return { sampleNotif: { ...st.sampleNotif, events, read } };
+    });
+  }
+
+  async nfToggleKind(k, kind) {
+    const n = this.nfData();
+    if (!n.live) { this.setState((st) => ({ alertOn: { ...st.alertOn, [k]: !st.alertOn[k] } })); return; }
+    if (n.status !== 'ready') return;
+    const muted = n.muted.includes(kind) ? n.muted.filter((x) => x !== kind) : n.muted.concat([kind]);
+    this.setState((st) => ({ notif: { ...st.notif, muted } }));
+    await this.nfWrite(() => this._api.setMutedKinds(muted), 'Setting not saved');
+  }
+
+  async saveTargetAlert(productId, target) {
+    if (!(target > 0)) return;
+    if (this.liveMode()) {
+      if (await this.nfWrite(() => this._api.setTarget(productId, target), 'Alert not saved')) this.setState({ target: null });
+      return;
+    }
+    this.setState((st) => ({ target: null, sampleNotif: { ...st.sampleNotif, targets: { ...(st.sampleNotif.targets || {}), [productId]: target } } }));
+  }
+
+  async removeTargetAlert(productId) {
+    if (this.liveMode()) {
+      const r = (this.state.notif && this.state.notif.rules || []).find((x) => x.product_id === productId && x.kind === 'target');
+      if (r) await this.nfWrite(() => this._api.removeRule(r.id), 'Alert not removed');
+      this.setState({ target: null });
+      return;
+    }
+    this.setState((st) => { const t = { ...(st.sampleNotif.targets || {}) }; delete t[productId]; return { target: null, sampleNotif: { ...st.sampleNotif, targets: t } }; });
+  }
+
+  async toggleProductRule(productId, kind, on) {
+    if (this.liveMode()) {
+      const r = (this.state.notif && this.state.notif.rules || []).find((x) => x.product_id === productId && x.kind === kind);
+      await this.nfWrite(() => (on && r ? this._api.removeRule(r.id) : this._api.setRule(productId, kind, true)), 'Alert not saved');
+      return;
+    }
+    this.setState((st) => ({ sampleNotif: { ...st.sampleNotif, rules: { ...st.sampleNotif.rules, [kind]: !on } } }));
+  }
+
+  // ---------- phone push ----------
+  // state: 'unknown' | 'on' | 'off' | 'denied' | 'ios-install' | 'unsupported' | 'no-key'
+  pushEnv() {
+    const ua = navigator.userAgent || '';
+    const ios = /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    if (ios && !standalone && !('PushManager' in window)) return 'ios-install';
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
+    return null;
+  }
+  vapidKey() { return String((window.CHATAK_CONFIG || {}).vapidPublicKey || '').trim(); }
+  liveMode() { return !!(this._api && this._session); }
+
+  async pushRefresh() {
+    const bad = this.pushEnv();
+    if (bad) { this.setState({ push: { state: bad } }); return; }
+    if (Notification.permission === 'denied') { this.setState({ push: { state: 'denied' } }); return; }
+    if (this.liveMode() && !this.vapidKey()) { this.setState({ push: { state: 'no-key' } }); return; }
+    let on = false;
+    try {
+      if (this.liveMode()) {
+        const reg = await navigator.serviceWorker.getRegistration('./');
+        on = Notification.permission === 'granted' && !!(reg && await reg.pushManager.getSubscription());
+      } else {
+        on = Notification.permission === 'granted' && localStorage.getItem('chatak.push.demo') === '1';
+      }
+    } catch (e) {}
+    this.setState({ push: { state: on ? 'on' : 'off' } });
+  }
+
+  async pushEnable() {
+    if (this.state.pushBusy) return;
+    this.setState({ pushBusy: true, pushMsg: null });
+    try {
+      const bad = this.pushEnv();
+      if (bad) { this.setState({ push: { state: bad } }); return; }
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { this.setState({ push: { state: perm === 'denied' ? 'denied' : 'off' }, pushMsg: perm === 'denied' ? null : 'Notifications were not allowed.' }); return; }
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      await navigator.serviceWorker.ready;
+      if (!this.liveMode()) {
+        // Sample site: nothing to subscribe to, so prove it with a local notification.
+        try { localStorage.setItem('chatak.push.demo', '1'); } catch (e) {}
+        this.setState({ push: { state: 'on' } });
+        this.pushLocal('Chatak notifications are on', 'Sample mode: alerts you trigger in the demo appear like this.', 'alerts');
+        return;
+      }
+      const key = this.vapidKey();
+      if (!key) { this.setState({ push: { state: 'no-key' } }); return; }
+      const raw = atob(key.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - key.length % 4) % 4));
+      const appKey = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+      const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey }));
+      await this._api.savePushSubscription(sub.toJSON());
+      if (this.state.notif && this.state.notif.notifyPush === false) await this._api.setNotifyPush(true);
+      this.setState({ push: { state: 'on' }, pushMsg: 'This device will get price alerts.' });
+      this.loadNotifier();
+    } catch (e) {
+      this.setState({ pushMsg: 'Could not turn on notifications: ' + (e.message || e) });
+    } finally {
+      this.setState({ pushBusy: false });
+    }
+  }
+
+  async pushDisable() {
+    if (this.state.pushBusy) return;
+    this.setState({ pushBusy: true, pushMsg: null });
+    try {
+      if (this.liveMode()) {
+        const reg = await navigator.serviceWorker.getRegistration('./');
+        const sub = reg && await reg.pushManager.getSubscription();
+        if (sub) { await this._api.deletePushSubscription(sub.endpoint).catch(() => {}); await sub.unsubscribe(); }
+      } else {
+        try { localStorage.removeItem('chatak.push.demo'); } catch (e) {}
+      }
+      this.setState({ push: { state: 'off' }, pushMsg: 'This device will no longer get notifications. Alerts still arrive in the inbox.' });
+    } catch (e) {
+      this.setState({ pushMsg: 'Could not turn off notifications: ' + (e.message || e) });
+    } finally {
+      this.setState({ pushBusy: false });
+    }
+  }
+
+  async pushTest() {
+    if (this.state.pushBusy) return;
+    if (!this.liveMode()) { this.pushLocal('Test from Chatak', 'This is how a price alert will look.', 'alerts'); this.setState({ pushMsg: 'Sent. It should appear in a moment.' }); return; }
+    this.setState({ pushBusy: true, pushMsg: null });
+    try {
+      const r = await this._api.testPush();
+      this.setState({ pushMsg: r.delivered ? 'Sent to ' + r.delivered + (r.delivered === 1 ? ' device.' : ' devices.') : 'The push service did not accept it. Turn notifications off and on again.' });
+    } catch (e) {
+      this.setState({ pushMsg: 'Test failed: ' + (e.message || e) });
+    } finally {
+      this.setState({ pushBusy: false });
+    }
+  }
+
+  async pushLocal(title, body, screen) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, { body, tag: 'chatak-local-' + Date.now(), icon: './icons/icon-192.png', badge: './icons/badge-96.png', data: { url: new URL('./#' + screen, location.href).href } });
+    } catch (e) {}
   }
 
   // Supabase rate-limits one-time links, so the resend button stays locked for
@@ -1774,16 +2153,20 @@ class Component extends DCLogic {
     if (!entries.length || !shop || S.mxBusy) return;
     // In a shop the list stays open for the next round; the grid row closes.
     const done = here ? { mxDraft: {}, mxInfo: '✓ Saved ' + entries.length + (entries.length === 1 ? ' price' : ' prices') + ' at ' + shop.name + '.' } : { mxOpen: null, mxDraft: {} };
+    const prev = {};
+    for (const e of entries) { const c = S.mx.cells[this.mxKey(shop.name, e.itemId)]; prev[e.itemId] = c ? c.p : null; }
     if (this._api) {
       this.setState({ mxBusy: true, mxError: null });
       try { await this._api.saveMatrixRow(shop, entries, { shelf: S.mxShelf, currency: this.mxCur().code }); }
       catch (e) { this.setState({ mxBusy: false, mxError: 'Not saved: ' + (e.message || e) }); return; }
       this.setState({ mxBusy: false, ...done });
+      this.afterPriceSave(shop, entries, prev, S.mxShelf);
       return this.loadMatrix();
     }
     const at = new Date().toISOString();
     this.mxPatch((m) => { const cells = { ...m.cells }; for (const e of entries) cells[this.mxKey(shop.name, e.itemId)] = { p: e.price, at, shelf: S.mxShelf }; return { ...m, cells }; });
     this.setState(done);
+    this.afterPriceSave(shop, entries, prev, S.mxShelf);
   }
 
   mxEnterShop(name) {
@@ -1953,6 +2336,7 @@ class Component extends DCLogic {
     const M = S.mx, cfg = window.CHATAK_CONFIG || {};
     const reviewDays = Number(cfg.matrixReviewDays) || 40, staleDays = Number(cfg.matrixStaleDays) || 45;
     const cur = this.mxCur(), money = (n) => cur.sym + Math.round(n).toLocaleString('en-US');
+    const nf = this.nfData(), mxAlerts = nf.matrix || {};
     const notice = S.mxError || (M && M.status === 'error' ? 'Could not load the matrix: ' + M.message : null);
     if (!M || !M.items) return { due: 0, vm: { loading: true, ready: false, notice, subtitle: 'Latest known price per shop.' } };
 
@@ -2060,6 +2444,7 @@ class Component extends DCLogic {
         placeholder: c ? String(c.p) : cur.sym.trim(),
         onChange: (e) => this.setState({ mxDraft: { ...S.mxDraft, [it.id]: e.target.value.replace(/[^\d]/g, '') } }),
         canSame: !!c && !v && d > 0, sameLabel: c ? 'Still ' + money(c.p) : '',
+        alertText: mxAlerts[it.id] ? 'Alert at ' + money(mxAlerts[it.id].target) + ' or less' : '',
         same: () => this.mxConfirm(hereShop, it.id),
         rowStyle: 'display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #F2EEE7;background:' + (v ? '#F3F9F6' : '#fff') + ';',
         inputStyle: "width:108px;padding:10px 11px;border-radius:10px;text-align:right;border:1px solid " + (v ? '#0E6B4E' : '#C8DCD3') + ";background:#fff;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#1C1A17;outline:none;"
@@ -2067,8 +2452,29 @@ class Component extends DCLogic {
     }) : [];
     const pricedHere = hereShop ? items.filter((it) => M.cells[this.mxKey(hereShop.name, it.id)]).length : 0;
 
+    // Price-alert panel for one item (the bell in its column header).
+    const bellItem = S.mxBell ? M.items.find((i) => i.id === S.mxBell) : null;
+    let bell = null;
+    if (bellItem) {
+      const al = mxAlerts[bellItem.id], low = this.mxLowest(bellItem.id), v = parseInt(S.mxBellValue, 10);
+      const canSave = v > 0 && !S.nfBusy && (!al || al.target !== v);
+      const pushOn = this.state.push.state === 'on';
+      bell = {
+        item: bellItem.name + (bellItem.size ? ' · ' + bellItem.size : ''), sym: cur.sym.trim(), value: S.mxBellValue,
+        placeholder: low ? String(Math.max(1, Math.round(low.p * 0.95))) : '',
+        onChange: (e) => this.setState({ mxBellValue: e.target.value.replace(/[^\d]/g, '') }),
+        onKey: (e) => { if (e.key === 'Enter') this.mxSaveBell(); if (e.key === 'Escape') this.setState({ mxBell: null }); },
+        hint: low ? 'Lowest now: ' + money(low.p) + ' at ' + low.shop + (v > 0 && low.p <= v ? ' — already at or under this price' : '') : 'Not priced at any of your shops yet.',
+        note: 'Checked every time anyone enters a price at a shop in your matrix. It lands in Alerts' + (pushOn ? ' and on this phone.' : '; turn on phone notifications on the Alerts screen to get it in your pocket.'),
+        save: () => this.mxSaveBell(), saveLabel: S.nfBusy ? 'Saving…' : al ? 'Update alert' : 'Set alert',
+        saveStyle: 'padding:10px 16px;border-radius:12px;border:0;color:#fff;font-size:12px;font-weight:700;background:' + (canSave ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (canSave ? 'pointer' : 'default') + ';',
+        remove: al ? () => this.mxRemoveBell(bellItem.id) : null,
+        cancel: () => this.setState({ mxBell: null, mxBellValue: '' })
+      };
+    }
+
     return { due: queue.length, vm: {
-      loading: false, ready: true, notice, info: S.mxInfo, infoTop: !!S.mxInfo && !(canEdit && S.mxHere), canEdit, reviewDays, staleDays,
+      loading: false, ready: true, notice, bell, info: S.mxInfo, infoTop: !!S.mxInfo && !(canEdit && S.mxHere), canEdit, reviewDays, staleDays,
       showGrid: !hereShop, here: !!hereShop, hereChoose: canEdit && !hereShop && hereChoices.length > 0,
       hereChoices, hereOther: () => this.setState({ mxPicker: true, mxPickQuery: '' }),
       hereName: hereShop ? hereShop.name : '',
@@ -2118,8 +2524,14 @@ class Component extends DCLogic {
       toggleQueue: () => this.setState({ mxAll: !S.mxAll }),
       items: items.map((it, i) => {
         const pinned = !!M.stars[it.id], prevPinned = i > 0 && !!M.stars[items[i - 1].id];
+        const al = mxAlerts[it.id], open = S.mxBell === it.id;
         return {
           name: it.name, size: it.size, cat: pinned ? 'Pinned' : it.cat,
+          alertText: al ? '≤' + money(al.target) : '',
+          openBell: () => (open ? this.setState({ mxBell: null }) : this.mxOpenBell(it.id)),
+          bellTitle: al ? 'Alert at ' + money(al.target) + ' or less — change or remove' : 'Alert me when ' + it.name + ' is cheap',
+          bellFill: al ? 'currentColor' : 'none',
+          bellStyle: 'display:flex;align-items:center;justify-content:center;padding:2px;margin-left:auto;border:0;border-radius:6px;cursor:pointer;flex-shrink:0;background:' + (open ? '#E3F3EC' : 'none') + ';color:' + (al || open ? '#0E6B4E' : '#C9C1B6') + ';',
           headStyle: 'padding:8px 12px 10px;display:flex;flex-direction:column;gap:2px;min-width:0;border-left:' + (prevPinned && !pinned ? '2px solid #E6DFD3' : '1px solid #F2EEE7') + ';',
           toggleStar: () => this.mxToggleStar(it.id),
           starStyle: 'padding:0;border:0;background:none;cursor:pointer;font-size:12px;line-height:1;color:' + (pinned ? '#C08A15' : '#D6CFC4') + ';'
@@ -2250,7 +2662,11 @@ class Component extends DCLogic {
     if (graphMode === 'best') seriesForScale = [{ name: 'Best price', color: '#17916B', values: p.best }].concat(S.showUsed ? [p.used] : []);
     else seriesForScale = visibleStores;
     const refSlice = p.refs.slice(off);
-    const target = S.target != null ? S.target : Math.round((p.median * 0.93) / 100) * 100;
+    // A saved target alert is the starting point; otherwise suggest 7% under the median.
+    const nfP = this.nfData();
+    const savedRule = (kind) => (nfP.live ? nfP.rules.find((r) => r.product_id === p.id && r.kind === kind) : null);
+    const savedTarget = nfP.live ? (savedRule('target') || {}).target_price : (S.sampleNotif.targets || {})[p.id];
+    const target = S.target != null ? S.target : savedTarget || Math.round((p.median * 0.93) / 100) * 100;
     const allVals = seriesForScale.flatMap((s) => s.values.slice(off)).concat([target]);
     let min = Math.min(...allVals), max = Math.max(...allVals);
     const pad = (max - min) * 0.12 || 1000;
@@ -2574,18 +2990,22 @@ class Component extends DCLogic {
     });
 
     // ---- alerts ----
+    // Five kinds. k = the sample toggle key, kind = the database value muted per person.
     const aDefs = [
-      ['target', 'Price hits my target', 'Any store crosses the number you set.', '#17916B'],
-      ['fake', 'Fake discount detected', 'A retailer raises its reference price before a sale.', '#C2453B'],
-      ['low', 'Lowest price ever', 'Beats every price we have on record.', '#C08A15'],
-      ['event', 'Sale event starting soon', 'Three days before a season we track.', '#3E7BB6']
+      ['target', 'target', 'Price hits my target', 'Any store crosses the number you set.', '#17916B'],
+      ['matrix', 'matrix_target', 'Grocery price drops', 'A shop in your matrix hits the price on an item bell.', '#0E6B4E'],
+      ['fake', 'fake_discount', 'Fake discount detected', 'A retailer raises its reference price before a sale.', '#C2453B'],
+      ['low', 'lowest_ever', 'Lowest price ever', 'Beats every price we have on record.', '#C08A15'],
+      ['event', 'event_soon', 'Sale event starting soon', 'Three days before a season we track.', '#3E7BB6']
     ];
-    const alertTypes = aDefs.map(([k, label, note, color]) => {
-      const on = S.alertOn[k];
+    const nf = this.nfData();
+    const kindOn = (k, kind) => (nf.live ? !nf.muted.includes(kind) : !!S.alertOn[k]);
+    const alertTypes = aDefs.map(([k, kind, label, note, color]) => {
+      const on = kindOn(k, kind);
       return {
         label, note, dot: this.dot(color, 10),
-        toggle: () => this.setState({ alertOn: { ...S.alertOn, [k]: !on } }),
-        cardStyle: 'padding:16px 18px;border-radius:18px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:9px;text-align:left;border:1px solid ' + (on ? '#D6E9E0' : '#EAE5DD') + ';',
+        toggle: () => this.nfToggleKind(k, kind),
+        cardStyle: 'padding:16px 18px;border-radius:18px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:9px;text-align:left;border:1px solid ' + (on ? '#D6E9E0' : '#EAE5DD') + ';' + (on ? '' : 'opacity:0.7;'),
         switchStyle: 'width:36px;height:20px;border-radius:99px;padding:2px;display:flex;background:' + (on ? '#17916B' : '#DDD7CE') + ';justify-content:' + (on ? 'flex-end' : 'flex-start') + ';transition:all .18s;',
         knobStyle: 'width:16px;height:16px;border-radius:99px;background:#fff;display:block;'
       };
@@ -2593,79 +3013,138 @@ class Component extends DCLogic {
     const P = (id) => d.products.find((q) => q.id === id);
     const orientTarget = 63000, seikoTarget = 102000;
     const progress = (q, gap) => Math.max(0.06, Math.min(0.94, 1 - gap / (q.median * 0.25)));
+    const kindKey = { target: 'target', lowest_ever: 'low', fake_discount: 'fake', event_soon: 'event', matrix_target: 'matrix' };
 
-    // Sample data shows a curated set of four rules. Live data has UUIDs and no
-    // curation, so every tracked product gets a record-low watch, plus a fake-
-    // discount row whenever its reference price has moved above MSRP.
-    const alertDefs = d.live
-      ? d.products.flatMap((q) => [{ id: q.id, kind: 'low' }].concat(q.flagIdx >= 0 ? [{ id: q.id, kind: 'fake' }] : []))
-      : [
+    // A product rule's row. q = the product's analysed record when it is on the
+    // watchlist we loaded; without it the rule still shows, just without numbers.
+    const productRow = (q, kind, target, name, remove) => {
+      let rule, distance = '', bar = 0.06, status = 'Waiting', v = 'watch', current = q ? this.yen(q.current) : '—';
+      if (kind === 'target') {
+        rule = 'Target ' + this.yen(target) + ' · any store';
+        if (q) {
+          const hit = q.current <= target;
+          status = hit ? 'Triggered' : 'Waiting'; v = hit ? 'buy' : 'watch';
+          distance = hit ? this.yen(target - q.current) + ' under target' : this.yen(q.current - target) + ' to go';
+          bar = hit ? 1 : progress(q, q.current - target);
+        }
+      } else if (kind === 'low') {
+        rule = 'Lowest price ever';
+        if (q) {
+          const hit = q.current <= q.low;
+          status = hit ? 'Triggered' : 'Waiting'; v = hit ? 'buy' : 'watch';
+          distance = hit ? 'New record today' : this.yen(q.current - q.low) + ' above record';
+          bar = hit ? 1 : progress(q, q.current - q.low);
+        }
+      } else if (kind === 'fake') {
+        rule = 'Fake discount watch';
+        if (q) {
+          const flagged = q.flagIdx >= 0;
+          status = flagged ? 'Flagged' : 'Clean'; v = flagged ? 'wait' : 'buy';
+          distance = flagged ? 'Reference price inflated' : 'Reference price stable';
+          bar = flagged ? 1 : 0.28;
+        }
+      } else {
+        rule = 'Sale event starting soon'; status = 'Watching';
+      }
+      return {
+        product: name, rule, current, distance, status, pill: this.pill(v), remove,
+        barStyle: 'height:100%;width:' + Math.round(bar * 100) + '%;border-radius:99px;background:' + this.vcolor(v) + ';'
+      };
+    };
+    // A grocery (matrix) alert's row, measured against the cheapest shop shown.
+    const matrixRow = (itemId, target, remove) => {
+      const it = S.mx && S.mx.items ? S.mx.items.find((i) => i.id === itemId) : null;
+      const cur = this.mxCur(), money = (n) => cur.sym + Math.round(n).toLocaleString('en-US');
+      const low = this.mxLowest(itemId), hit = !!low && low.p <= target, v = hit ? 'buy' : 'watch';
+      return {
+        product: it ? it.name + (it.size ? ' · ' + it.size : '') : 'Matrix item',
+        rule: 'Grocery · ' + money(target) + ' or less at your shops',
+        current: low ? money(low.p) : '—',
+        distance: !low ? 'Not priced at your shops yet' : hit ? 'At ' + low.shop + ' now' : money(low.p - target) + ' to go · ' + low.shop,
+        status: hit ? 'Triggered' : 'Waiting', pill: this.pill(v), remove,
+        barStyle: 'height:100%;width:' + (hit ? 100 : low ? Math.round(Math.max(0.06, Math.min(0.94, target / low.p)) * 100) : 6) + '%;border-radius:99px;background:' + this.vcolor(v) + ';'
+      };
+    };
+
+    let alerts;
+    if (nf.live) {
+      alerts = nf.rules.filter((r) => r.product_id).map((r) => productRow(
+        d.live ? P(r.product_id) : null, kindKey[r.kind] || r.kind, r.target_price,
+        (r.product && r.product.name) || 'Tracked product',
+        () => this.nfWrite(() => this._api.removeRule(r.id), 'Alert not removed')
+      )).concat(Object.entries(nf.matrix).map(([itemId, a]) => matrixRow(itemId, a.target, () => this.mxRemoveBell(itemId))));
+    } else {
+      // Sample data shows a curated set of four product rules plus the demo's grocery bells.
+      alerts = [
         { id: 'seiko', kind: 'target', target: seikoTarget },
         { id: 'orient', kind: 'target', target: orientTarget },
         { id: 'sony', kind: 'low' },
         { id: 'citizen', kind: 'fake' }
-      ];
-    const alerts = alertDefs.filter((a) => P(a.id)).map((a) => {
-      const q = P(a.id);
-      let rule, distance, bar, status, v;
-      if (a.kind === 'target') {
-        rule = 'Target ' + this.yen(a.target) + ' · any store';
-        const hit = q.current <= a.target;
-        status = hit ? 'Triggered' : 'Waiting';
-        v = hit ? 'buy' : 'watch';
-        distance = hit ? this.yen(a.target - q.current) + ' under target' : this.yen(q.current - a.target) + ' to go';
-        bar = hit ? 1 : progress(q, q.current - a.target);
-      } else if (a.kind === 'low') {
-        rule = 'Lowest price ever';
-        const hit = q.current <= q.low;
-        status = hit ? 'Triggered' : 'Waiting';
-        v = hit ? 'buy' : 'watch';
-        distance = hit ? 'New record today' : this.yen(q.current - q.low) + ' above record';
-        bar = hit ? 1 : progress(q, q.current - q.low);
-      } else {
-        const flagged = q.flagIdx >= 0;
-        rule = 'Fake discount watch';
-        status = flagged ? 'Flagged' : 'Clean';
-        v = flagged ? 'wait' : 'buy';
-        distance = flagged ? 'Reference price inflated' : 'Reference price stable';
-        bar = flagged ? 1 : 0.28;
-      }
-      return {
-        product: q.short, rule, current: this.yen(q.current), distance, status, pill: this.pill(v),
-        barStyle: 'height:100%;width:' + Math.round(bar * 100) + '%;border-radius:99px;background:' + this.vcolor(v) + ';'
-      };
-    });
+      ].filter((a) => P(a.id)).map((a) => productRow(P(a.id), a.kind, a.target, P(a.id).short, null))
+        .concat(Object.entries(nf.matrix).map(([itemId, a]) => matrixRow(itemId, a.target, () => this.mxRemoveBell(itemId))));
+    }
 
-    // The badge means "needs your attention", so it counts the rows the Alerts
-    // screen itself marks Triggered or Flagged — one array, one number. The
-    // "N running" line next to it counts every active rule, which is why they differ.
-    // A badge means "needs your attention", which only a successful live read —
-    // or sample mode — can honestly claim.
-    const navStatus = (S.live || {}).status || 'sample';
+    // ---- inbox ----
+    const ago = (iso) => {
+      const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+      return m < 1 ? 'just now' : m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago';
+    };
+    const kindColor = { target: '#17916B', matrix_target: '#0E6B4E', fake_discount: '#C2453B', lowest_ever: '#C08A15', event_soon: '#3E7BB6' };
+    const inboxRow = (e) => {
+      const unread = !e.read_at, ch = e.channels || [];
+      const via = ch.includes('push') ? 'Sent to your phone' : e.payload && e.payload.self ? 'In the app only, because you entered this price yourself' : nf.live ? 'In the app' : '';
+      const where = e.payload && e.payload.screen === 'matrix' ? 'matrix' : e.product_id ? 'product' : null;
+      return {
+        title: e.title, body: e.body, when: ago(e.sent_at), via,
+        dot: this.dot(unread ? (kindColor[e.kind] || '#17916B') : '#D6CFC4', 9),
+        titleStyle: 'font-size:12px;font-weight:' + (unread ? '800' : '600') + ';color:' + (unread ? '#1C1A17' : '#4A443C') + ';',
+        rowStyle: 'display:flex;align-items:flex-start;gap:12px;width:100%;padding:11px 10px;margin:0 -10px;border:0;border-bottom:1px solid #F5F2EC;border-radius:10px;background:' + (unread ? '#F3F9F6' : 'transparent') + ';cursor:' + (where || unread ? 'pointer' : 'default') + ';text-align:left;font:inherit;color:inherit;',
+        open: () => {
+          if (unread) this.nfMarkRead([e.id]);
+          if (where === 'matrix') this.setState({ screen: 'matrix' });
+          else if (where === 'product' && d.live && P(e.product_id)) this.setState({ screen: 'product', productId: e.product_id });
+        }
+      };
+    };
+    let inboxEvents;
+    if (nf.live) inboxEvents = nf.events;
+    else {
+      // The fixture log, as inbox rows, after anything the demo itself raised.
+      const oq = P('orient'), sq = P('seiko'), sqOffer = offer(sq, sq.flagStore, ''), day = 86400000, rd = nf.sample.read;
+      const at = (n) => new Date(Date.now() - n * day).toISOString();
+      inboxEvents = nf.events.concat([
+        { id: 'fx1', kind: 'target', sent_at: at(2), read_at: rd.fx1 ? at(1) : null, channels: ['inbox', 'push'], title: 'Orient Star hit your ' + this.yen(orientTarget) + ' target', body: oq.bestStore + ' dropped to ' + this.yen(oq.current) + ' — a 12-month low, below the previous best of ' + this.yen(oq.minBefore) + '.' },
+        { id: 'fx2', kind: 'fake_discount', sent_at: at(15), read_at: rd.fx2 ? at(14) : null, channels: ['inbox', 'push'], title: 'Fake discount: ' + sq.short + ' at ' + sq.flagStore, body: 'Reference price raised ' + this.yen(sq.msrp) + ' → ' + this.yen(sqOffer.ref) + ' before the Super Sale, while the price you pay there stayed at ' + this.yen(sqOffer.price) + '.' },
+        { id: 'fx3', kind: 'event_soon', sent_at: at(18), read_at: rd.fx3 ? at(17) : null, channels: ['inbox', 'push'], title: 'Rakuten Super Sale starts in 3 days', body: 'We are watching ' + d.products.length + ' of your ' + (d.products.length === 1 ? 'product' : 'products') + ' across the event window.' }
+      ]);
+    }
+    const alertLog = inboxEvents.map(inboxRow);
+    const unreadCount = inboxEvents.filter((e) => !e.read_at).length;
+
+    // Phone notifications, said plainly: what this device can do and the one step left.
+    const ps = S.push.state;
+    const pushCards = {
+      off: ['Get alerts on your phone', 'Turn on notifications for this device. Every alert lands in the inbox below either way.', 'Turn on'],
+      'ios-install': ['On iPhone, add Chatak to your Home Screen first', 'Tap Share, then Add to Home Screen, open Chatak from there and turn notifications on here. iOS 16.4 or later.', null],
+      denied: ['Notifications are blocked for this site', 'Allow them in your browser’s site settings (the icon beside the address), then come back. Alerts still arrive in the inbox.', null],
+      unsupported: ['This browser can’t receive push notifications', 'Alerts still arrive in the inbox below. Chrome on Android, or Safari on an iPhone Home Screen app, can.', null],
+      'no-key': ['Phone notifications aren’t set up yet', 'Add vapidPublicKey to js/chatak-config.js and the VAPID secrets to Supabase (docs/SETUP.md, step 8).', null]
+    };
+    const pc = pushCards[ps];
+    const pushCard = pc ? {
+      title: pc[0], body: S.pushMsg || pc[1], actLabel: S.pushBusy ? 'Turning on…' : pc[2],
+      act: pc[2] ? () => this.pushEnable() : null, busy: S.pushBusy,
+      style: 'display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;border-radius:16px;background:#F3F7F5;border:1px solid #E1EDE8;'
+    } : null;
+    const alertsNotice = S.nfError || (nf.live && nf.status === 'missing'
+      ? 'The notifier tables are not in your database yet. Run supabase/schema.sql in the Supabase SQL editor (safe to re-run); until then alerts cannot be saved.'
+      : nf.live && nf.status === 'error' ? 'Could not load alerts: ' + nf.reason : null);
+
+    // The badge counts unread inbox entries: things that happened you have not seen.
+    // A badge means "needs your attention", which only a successful read can claim.
     // Viewers read the matrix; editors and admins type into it.
     const mxv = this.matrixVals(S, this._role ? this._role.role !== 'viewer' : true);
-    const nav = buildNav(
-      navStatus !== 'sample' && navStatus !== 'ready' ? 0 : alerts.filter((a) => a.status === 'Triggered' || a.status === 'Flagged').length,
-      mxv.due
-    );
-
-    let alertLog;
-    if (d.live) {
-      alertLog = [];
-      for (const q of d.products) {
-        if (q.flagIdx >= 0) alertLog.push({ title: 'Fake discount: ' + q.short + ' at ' + q.flagStore, body: 'Reference price raised ' + this.yen(q.msrp) + ' → ' + this.yen(q.flagRef) + ' while the price you pay there is ' + this.yen(q.flagPrice) + '.', when: 'today', dot: this.dot('#C2453B', 9) });
-        if (q.historyDays >= 14 && q.current <= q.minBefore) alertLog.push({ title: q.short + ' is at its lowest recorded price', body: q.bestStore + ' is at ' + this.yen(q.current) + ', at or below the previous low of ' + this.yen(q.minBefore) + ' across ' + q.historyDays + ' days of record.', when: 'today', dot: this.dot('#17916B', 9) });
-      }
-    } else {
-      const oq = P('orient'), sq = P('seiko');
-      // The accusation names one store, so its price must be that store's.
-      const sqOffer = offer(sq, sq.flagStore, '');
-      alertLog = [
-        { title: 'Orient Star hit your ' + this.yen(orientTarget) + ' target', body: oq.bestStore + ' dropped to ' + this.yen(oq.current) + ' — a 12-month low, below the previous best of ' + this.yen(oq.minBefore) + '. Sent to email and push.', when: '2d ago', dot: this.dot('#17916B', 9) },
-        { title: 'Fake discount: ' + sq.short + ' at ' + sq.flagStore, body: 'Reference price raised ' + this.yen(sq.msrp) + ' → ' + this.yen(sqOffer.ref) + ' before the Super Sale, while the price you pay there stayed at ' + this.yen(sqOffer.price) + '.', when: '15d ago', dot: this.dot('#C2453B', 9) },
-        { title: 'Rakuten Super Sale starts in 3 days', body: 'We are watching ' + d.products.length + ' of your ' + (d.products.length === 1 ? 'product' : 'products') + ' across the event window.', when: '18d ago', dot: this.dot('#3E7BB6', 9) }
-      ];
-    }
+    const nav = buildNav(nf.status === 'ready' ? unreadCount : 0, mxv.due);
 
     // ---- settings ----
     const choiceRow = (label, note, key, opts) => ({
@@ -2684,6 +3163,31 @@ class Component extends DCLogic {
         knobStyle: 'width:19px;height:19px;border-radius:99px;background:#fff;display:block;'
       };
     };
+    // Push for THIS device: the switch subscribes or unsubscribes it for real.
+    const pst = S.push.state, pOn = pst === 'on';
+    const pushNote = {
+      on: 'On for this device. Alerts arrive even when Chatak is closed.',
+      off: 'Off for this device. Alerts still land in the Alerts inbox.',
+      denied: 'Blocked in this browser\u2019s site settings.',
+      'ios-install': 'On iPhone: add Chatak to the Home Screen, then open it from there.',
+      unsupported: 'This browser cannot receive push notifications.',
+      'no-key': 'Not set up yet: add vapidPublicKey to js/chatak-config.js.',
+      unknown: 'Checking this device…'
+    }[pst] || '';
+    const canSwitch = pst === 'on' || pst === 'off';
+    const notifyRows = [
+      {
+        label: 'Phone notifications', note: S.pushMsg || pushNote, isToggle: canSwitch,
+        toggle: () => (pOn ? this.pushDisable() : this.pushEnable()),
+        switchStyle: 'width:40px;height:23px;border-radius:99px;padding:2px;border:0;cursor:pointer;display:flex;flex-shrink:0;background:' + (pOn ? '#17916B' : '#DDD7CE') + ';justify-content:' + (pOn ? 'flex-end' : 'flex-start') + ';' + (S.pushBusy ? 'opacity:0.6;' : ''),
+        knobStyle: 'width:19px;height:19px;border-radius:99px;background:#fff;display:block;'
+      },
+      ...(pOn ? [{
+        label: 'Send a test notification', note: 'Checks that this device receives alerts.', isAction: true,
+        actLabel: S.pushBusy ? 'Sending…' : 'Send test', act: () => this.pushTest(),
+        actStyle: 'padding:9px 16px;border-radius:11px;border:0;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0;background:#F4F1EB;color:#1C1A17;'
+      }] : [])
+    ];
     const role = (this._role && this._role.role) || null;
     // viewer reads everything and changes nothing; editor curates the watchlist;
     // admin also prunes it, edits settings and manages who may sign in.
@@ -2714,7 +3218,7 @@ class Component extends DCLogic {
           act: () => this.signOutLive()
         }] : [])
       ] }] : []),
-      { title: 'Notifications', rows: [toggleRow('Email', 'kenji@example.com', 'email'), toggleRow('Push notifications', 'This browser and the mobile app', 'push')] },
+      { title: 'Notifications', rows: notifyRows },
       { title: 'Display', rows: [choiceRow('Language', 'Interface language', 'lang', ['EN', '日本語']), choiceRow('Price format', 'How amounts are written', 'fmt', ['¥12,800', '12,800円']), choiceRow('Default graph range', 'Applied to every product', 'range', ['30d', '90d', '1y'])] },
       { title: 'Data', rows: [toggleRow('Include Mercari used prices', 'Shown as a separate dashed line', 'used')] }
     ];
@@ -2771,7 +3275,7 @@ class Component extends DCLogic {
       dotStyle: this.dot(sd.dot, 8)
     } : null;
     const emptyLive = L.status === 'empty';
-    const dataScreen = ['home', 'product', 'alerts', 'deals', 'calendar'].includes(screen);
+    const dataScreen = ['home', 'product', 'deals', 'calendar'].includes(screen);
     // An error before a session exists is an auth failure, not a data failure:
     // no form could succeed, so the page says so instead of inviting a try.
     const isAuthDown = L.status === 'error' && !this._session;
@@ -2857,6 +3361,13 @@ class Component extends DCLogic {
       dealCountLabel: dealFiltered.length + (dealFiltered.length === 1 ? ' deal' : ' deals') + (S.dealFilter === 'All stores' ? '' : ' · ' + S.dealFilter),
       products, deals, dealCards, calendar, alertTypes, alerts, alertLog, settingGroups,
       activeAlertCount: alerts.length,
+      alertsSubtitle: 'Five kinds of nudge. Every alert lands in the inbox here, and on your phone once notifications are on.',
+      alertsNotice, pushCard,
+      alertsEmpty: alerts.length ? null : 'No alerts set yet. Tap the bell on an item in the price matrix, or save a price target on a product.',
+      inboxTitle: 'Inbox',
+      inboxUnreadLabel: unreadCount ? unreadCount + ' new' : null,
+      markAllRead: unreadCount ? () => this.nfMarkRead(null) : null,
+      inboxEmpty: alertLog.length ? null : 'Nothing yet. When a price you are waiting for arrives, it shows up here.',
       calendarNote: 'Expected drops are estimates from published sale history — not yet from our own record, which runs ' + recordSpanWords + ' for the products below and at zero for anything you add today.',
       dealFilters: ['All stores', 'Rakuten', 'Yahoo Shopping', 'Real discounts only'].map((f) => ({
         label: f, go: () => this.set('dealFilter', f),
@@ -2919,10 +3430,22 @@ class Component extends DCLogic {
         ? 'Already met — ' + p.bestStore + ' is ' + this.yen(p.current) + ' today.'
         : 'That is ' + Math.abs(Math.round(targetDist * 10) / 10) + '% below today. ' +
           (hitRuns === 0 ? 'Never reached in ' + spanWords + '.' : 'Reached ' + hitRuns + (hitRuns === 1 ? ' time' : ' times') + ' in ' + spanWords + ', ' + hitDays + (hitDays === 1 ? ' day' : ' days') + ' in total.'),
-      saveTarget: () => this.setState({ targetSaved: true }),
-      saveTargetLabel: S.targetSaved ? '✓ Alert saved — email + push' : 'Save alert',
+      saveTarget: () => this.saveTargetAlert(p.id, target),
+      saveTargetLabel: S.nfBusy ? 'Saving…' : savedTarget === target ? '✓ Alert saved' : savedTarget ? 'Update alert to ' + this.yen(target) : 'Save alert',
       saveTargetStyle: 'padding:12px 18px;border-radius:13px;border:0;cursor:pointer;font-size:13px;font-weight:700;background:' +
-        (S.targetSaved ? '#E3F3EC' : '#0E6B4E') + ';color:' + (S.targetSaved ? '#0A5740' : '#fff') + ';',
+        (savedTarget === target ? '#E3F3EC' : '#0E6B4E') + ';color:' + (savedTarget === target ? '#0A5740' : '#fff') + ';',
+      targetNote: 'Drag the green line on the chart, or type a number. You get an alert the moment any store crosses it, in Alerts and on your phone if notifications are on.',
+      targetCurrent: savedTarget ? 'Alert set at ' + this.yen(savedTarget) + ' · any store' : null,
+      removeTarget: () => this.removeTargetAlert(p.id),
+      targetExtras: (nfP.live && nfP.status !== 'ready') ? null : [['lowest_ever', 'It reaches its lowest recorded price'], ['fake_discount', 'A store inflates its reference price']].map(([kind, label]) => {
+        const on = nfP.live ? !!savedRule(kind) : !!S.sampleNotif.rules[kind];
+        return {
+          label, on,
+          toggle: () => this.toggleProductRule(p.id, kind, on),
+          switchStyle: 'flex-shrink:0;width:36px;height:20px;border-radius:99px;padding:2px;display:flex;background:' + (on ? '#17916B' : '#DDD7CE') + ';justify-content:' + (on ? 'flex-end' : 'flex-start') + ';',
+          knobStyle: 'width:16px;height:16px;border-radius:99px;background:#fff;display:block;'
+        };
+      }),
       focusTarget: () => this.setState({ target: Math.round((p.median * 0.93) / 100) * 100 }),
 
       addTabs,

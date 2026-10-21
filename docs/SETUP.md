@@ -163,6 +163,46 @@ only in Supabase secrets.
 fills in a row a day. A 90-day median needs 90 days. Start collecting now, even
 while the UI is unfinished — the data is the asset, the interface is replaceable.
 
+## 8. Price alerts and phone notifications
+
+Alerts land in the app's **Alerts → Inbox** with no extra setup once the schema
+is in. Phone notifications need one key pair and one more function.
+
+1. **Re-run `supabase/schema.sql`** in the SQL editor (safe to repeat). Its last
+   section adds `chatak_matrix_alerts`, inbox columns on `chatak_alert_events`,
+   per-kind mute switches, and the trigger that raises a grocery alert the
+   moment someone enters a matrix price at or under a target.
+2. **Make a VAPID key pair** (once, on any computer with Node):
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+3. **Give the private half to Supabase**, never to the browser:
+   ```bash
+   supabase secrets set VAPID_PUBLIC_KEY=<public> VAPID_PRIVATE_KEY=<private> \
+     VAPID_SUBJECT=mailto:you@example.com APP_URL=https://celeritas7.github.io/Chatak
+   supabase functions deploy send-push        # keeps JWT verification on
+   ```
+   `./scripts/deploy.sh PROJECT_REF` deploys it along with the others.
+4. **Give the public half to the app:** `vapidPublicKey: '<public>'` in
+   `js/chatak-config.js`. It is public by design.
+5. **Turn it on per device:** open Chatak on the phone → Alerts → *Turn on*,
+   then Settings → *Send test*. On iPhone, first add Chatak to the Home Screen
+   (Share → Add to Home Screen) and open it from there; iOS 16.4 or later.
+   Chrome on Android works straight from the browser.
+
+How alerts flow:
+
+| Alert | Raised by | When |
+| --- | --- | --- |
+| Grocery price drops (matrix bell) | database trigger on `chatak_matrix_prices` | the moment a price at one of your shops crosses your target |
+| Price target, lowest ever, fake discount, sale event | `evaluate-alerts` | daily, straight after `collect-prices` |
+
+Either way the alert row is the inbox entry, and `send-push` delivers it to every
+device that switched notifications on. The app also calls `send-push` right
+after a matrix save, so grocery alerts reach phones within seconds. A price you
+entered yourself goes to your inbox only, not your phone. Each alert fires once,
+when the price crosses the target, and at most once a day per rule and shop.
+
 ## Cost at small scale
 
 Supabase free tier covers this comfortably: one price row per offer per day is
