@@ -13,5 +13,6 @@ supabase link --project-ref "$PROJECT_REF"
 supabase functions deploy collect-prices  --no-verify-jwt
 supabase functions deploy evaluate-alerts --no-verify-jwt
 supabase functions deploy add-product                      # keeps JWT: it writes as a user
+supabase functions deploy send-push                        # keeps JWT: the app and evaluate-alerts call it
 
 echo "Deployed. supabase/schema.sql is NOT deployed by this script — run it in the SQL editor."

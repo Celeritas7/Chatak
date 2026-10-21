@@ -506,3 +506,119 @@ drop policy if exists chatak_roles_admin_write on public.authentication_mode_use
 create policy chatak_roles_admin_write on public.authentication_mode_user_roles
   for all using (public.chatak_role() = 'admin')
   with check (public.chatak_role() = 'admin');
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Price notifier: in-app inbox + phone push.
+--
+-- Every alert is a row in chatak_alert_events — that row IS the inbox entry.
+-- Product rules are evaluated daily by evaluate-alerts; matrix rules fire from
+-- the trigger below the moment someone enters a price. The send-push edge
+-- function then delivers every event with pushed_at null and stamps it.
+-- Safe to re-run.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- New kind for grocery (matrix) alerts. Used only as text inside the trigger
+-- body, so adding it in the same run as the trigger is fine.
+alter type chatak_alert_kind add value if not exists 'matrix_target';
+
+-- "Notify me when <item> is ¥X or less at one of my shops." One rule per item per person.
+create table if not exists public.chatak_matrix_alerts (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  item_id       uuid not null references public.chatak_matrix_items(id) on delete cascade,
+  target_price  integer not null check (target_price > 0),
+  active        boolean not null default true,
+  created_at    timestamptz not null default now(),
+  unique (user_id, item_id)
+);
+alter table public.chatak_matrix_alerts enable row level security;
+drop policy if exists chatak_mx_alerts_own on public.chatak_matrix_alerts;
+create policy chatak_mx_alerts_own on public.chatak_matrix_alerts for all
+  using (auth.uid() = user_id and public.chatak_role() is not null)
+  with check (auth.uid() = user_id and public.chatak_role() is not null);
+
+-- Inbox state on the event itself.
+alter table public.chatak_alert_events add column if not exists matrix_alert_id uuid references public.chatak_matrix_alerts(id) on delete cascade;
+alter table public.chatak_alert_events add column if not exists shop_name text;
+alter table public.chatak_alert_events add column if not exists read_at   timestamptz;
+alter table public.chatak_alert_events add column if not exists pushed_at timestamptz;
+create index if not exists chatak_alert_events_unpushed
+  on public.chatak_alert_events (sent_at) where pushed_at is null;
+
+-- The browser may only mark its own events read — no other column.
+revoke update on public.chatak_alert_events from anon, authenticated;
+grant update (read_at) on public.chatak_alert_events to authenticated;
+drop policy if exists "chatak own events read" on public.chatak_alert_events;
+create policy "chatak own events read" on public.chatak_alert_events for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Kinds a person switched off on the Alerts screen ('target', 'fake_discount',
+-- 'lowest_ever', 'event_soon', 'matrix_target'). Muted kinds create no events.
+alter table public.chatak_profiles add column if not exists muted_kinds text[] not null default '{}';
+
+-- One product rule per (person, product, kind), so the app can upsert. Older
+-- duplicate rows are collapsed to the newest first.
+delete from public.chatak_alert_rules a
+  using public.chatak_alert_rules b
+ where a.user_id = b.user_id and a.product_id is not distinct from b.product_id
+   and a.kind = b.kind and (a.created_at, a.id) < (b.created_at, b.id);
+create unique index if not exists chatak_alert_rules_one
+  on public.chatak_alert_rules (user_id, product_id, kind);
+
+-- A matrix price crossed someone's target. Fires only on the crossing (the
+-- cell's previous latest price was above target, or there was none), so a
+-- "Still ¥X" confirm never repeats an alert, and at most once per rule and
+-- shop per 20 hours. Only shops the person shows in their matrix count; a
+-- person with no picks saved sees every shop, so every shop counts.
+create or replace function public.chatak_matrix_price_alerts()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  a record;
+  prev integer;
+  item_label text;
+begin
+  -- Same cell key as chatak_matrix_latest: the Cost id when known, else the name.
+  select price into prev from public.chatak_matrix_prices
+   where item_id = new.item_id and id <> new.id
+     and coalesce(cost_shop_id, 'name:' || shop_name) = coalesce(new.cost_shop_id, 'name:' || new.shop_name)
+   order by entered_at desc, id desc limit 1;
+
+  select name || coalesce(' · ' || size, '') into item_label
+    from public.chatak_matrix_items where id = new.item_id;
+
+  for a in
+    select r.* from public.chatak_matrix_alerts r
+      left join public.chatak_profiles p on p.id = r.user_id
+     where r.item_id = new.item_id and r.active
+       and new.price <= r.target_price
+       and (prev is null or prev > r.target_price)
+       and not ('matrix_target' = any (coalesce(p.muted_kinds, '{}')))
+       and (
+         not exists (select 1 from public.chatak_matrix_shop_picks k where k.user_id = r.user_id)
+         or exists (select 1 from public.chatak_matrix_shop_picks k
+                     where k.user_id = r.user_id
+                       and (k.shop_name = new.shop_name
+                            or (k.cost_shop_id is not null and k.cost_shop_id = new.cost_shop_id)))
+       )
+       and not exists (select 1 from public.chatak_alert_events e
+                        where e.matrix_alert_id = r.id and e.shop_name = new.shop_name
+                          and e.sent_at > now() - interval '20 hours')
+  loop
+    insert into public.chatak_alert_events
+      (rule_id, user_id, product_id, matrix_alert_id, shop_name, kind, title, body, payload, channels)
+    values (
+      null, a.user_id, null, a.id, new.shop_name, 'matrix_target',
+      item_label || ' is ¥' || to_char(new.price, 'FM999,999,999') || ' at ' || new.shop_name,
+      'At or under your ¥' || to_char(a.target_price, 'FM999,999,999') || ' target'
+        || case when new.shelf then ' (seen on the shelf)' else '' end || '.',
+      jsonb_build_object('item_id', new.item_id, 'price', new.price, 'target', a.target_price,
+                         'self', new.entered_by = a.user_id, 'screen', 'matrix'),
+      '{inbox}'
+    );
+  end loop;
+  return new;
+end; $$;
+
+drop trigger if exists chatak_matrix_price_alerts on public.chatak_matrix_prices;
+create trigger chatak_matrix_price_alerts after insert on public.chatak_matrix_prices
+  for each row execute function public.chatak_matrix_price_alerts();

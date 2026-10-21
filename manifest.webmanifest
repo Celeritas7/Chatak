@@ -1,0 +1,15 @@
+{
+  "name": "Chatak · चातक",
+  "short_name": "Chatak",
+  "description": "Tells you whether a discount is real, and when a price you're waiting for arrives.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F4F0",
+  "theme_color": "#17916B",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
