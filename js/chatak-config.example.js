@@ -43,5 +43,9 @@ window.CHATAK_CONFIG = {
   matrixCurrency: 'JPY',
   // A price asks to be re-checked after this many days, and is dimmed as stale after this many.
   matrixReviewDays: 40,
-  matrixStaleDays: 45
+  matrixStaleDays: 45,
+
+  // Where "Add shop in Cost" sends you. Cost owns shops; Chatak re-reads the
+  // list when you come back to this tab.
+  costShopsUrl: 'https://celeritas7.github.io/Cost_management/'
 };

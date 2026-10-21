@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script src="./js/chatak-config.js"></script>
 <script src="./js/chatak-engine.js"></script>
+<script src="./js/akatsuki-client.js"></script>
 <style>
   *{box-sizing:border-box;}
   body{margin:0;background:#F6F4F0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1C1A17;-webkit-font-smoothing:antialiased;}
@@ -44,6 +45,7 @@
     .ck-tab-badge{position:absolute;top:2px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#C2453B;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
 
     .ck-content{padding:18px 16px calc(88px + env(safe-area-inset-bottom)) !important;}
+    .ck-herebar{bottom:calc(76px + env(safe-area-inset-bottom)) !important;}
     .ck-content h1{font-size:22px !important;}
     .ck-content > * > div{gap:16px !important;}
 
@@ -845,7 +847,93 @@
                 <span>{{ mx.pickLabel }}</span>
               </button>
             </sc-if>
+            <sc-if value="{{ mx.ready }}">
+              <button onClick="{{ mx.startAddShop }}" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid #CFE3DA;background:#F3F9F6;color:#0E6B4E;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                <span>Add shop</span>
+              </button>
+            </sc-if>
           </div>
+
+          <sc-if value="{{ mx.shopAdding }}">
+            <section style="padding:16px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;">Find or add a shop</h2>
+                <button onClick="{{ mx.cancelAddShop }}" style="padding:6px 10px;border-radius:10px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Close</button>
+              </div>
+
+              <sc-if value="{{ mx.finderHasAreas }}">
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <span style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;"><span style="display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#EAF4EF;color:#0E6B4E;font-size:10px;letter-spacing:0;">1</span><span>Area</span></span>
+                    <button type="button" onClick="{{ mx.findNearest }}" style="display:flex;align-items:center;gap:5px;padding:0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
+                      <span>Use my location</span>
+                    </button>
+                  </div>
+                  <sc-if value="{{ mx.whereChip }}">
+                    <span style="align-self:flex-start;display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:#F3F9F6;border:1px solid #D6E9E0;color:#0E6B4E;font-size:12px;font-weight:700;">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
+                      <span>{{ mx.whereChip }}</span>
+                    </span>
+                  </sc-if>
+                  <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;">
+                    <sc-for list="{{ mx.finderAreas }}" as="c" hint-placeholder-count="4">
+                      <button onClick="{{ c.pick }}" style="{{ c.style }}"><span>{{ c.label }}</span><span style="{{ c.nStyle }}">{{ c.n }}</span></button>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ mx.geoNote }}">
+                    <span style="font-size:11px;font-weight:600;color:#0E6B4E;">{{ mx.geoNote }}</span>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;"><span style="display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#EAF4EF;color:#0E6B4E;font-size:10px;letter-spacing:0;">2</span><span>Category</span></span>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <sc-for list="{{ mx.finderCats }}" as="c" hint-placeholder-count="4">
+                    <button onClick="{{ c.pick }}" style="{{ c.style }}"><span>{{ c.label }}</span><span style="{{ c.nStyle }}">{{ c.n }}</span></button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <span style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#6F6A62;"><span style="display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#EAF4EF;color:#0E6B4E;font-size:10px;letter-spacing:0;">3</span><span>Shop</span></span>
+                  <span style="font-size:11px;color:#6F6A62;">{{ mx.finderCount }}</span>
+                </div>
+                <input value="{{ mx.finderQuery }}" onChange="{{ mx.onFinderQuery }}" onKeyDown="{{ mx.onFinderKey }}" placeholder="Filter by name, or type a new shop" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;font-weight:500;color:#1C1A17;outline:none;" />
+                <div style="display:flex;flex-direction:column;border:1px solid #EFEAE2;border-radius:14px;overflow:hidden;max-height:320px;overflow-y:auto;">
+                  <sc-for list="{{ mx.finderShops }}" as="sh" hint-placeholder-count="4">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-top:1px solid #F2EEE7;">
+                      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                        <span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#1C1A17;">
+                          <span>{{ sh.name }}</span>
+                          <sc-if value="{{ sh.fav }}"><span style="font-size:10px;font-weight:700;color:#9A6A00;">★ Cost favourite</span></sc-if>
+                        </span>
+                        <span style="font-size:11px;color:#6F6A62;">{{ sh.meta }}</span>
+                      </div>
+                      <button onClick="{{ sh.pick }}" style="{{ sh.btnStyle }}">{{ sh.btn }}</button>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ mx.finderEmpty }}">
+                    <div style="padding:14px;font-size:12px;color:#6F6A62;">{{ mx.finderEmpty }}</div>
+                  </sc-if>
+                  <sc-if value="{{ mx.finderMore }}">
+                    <div style="padding:10px 14px;border-top:1px solid #F2EEE7;font-size:11px;color:#6F6A62;background:#FBFAF7;">{{ mx.finderMore }}</div>
+                  </sc-if>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:#FBFAF7;border:1px solid #EFEAE2;">
+                <span style="flex:1 1 220px;font-size:12px;color:#6F6A62;line-height:1.5;">{{ mx.finderAddHint }}</span>
+                <button onClick="{{ mx.openCost }}" style="display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:11px;border:1px solid #0E6B4E;background:#fff;color:#0E6B4E;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                  <span>Add shop in Cost</span>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg>
+                </button>
+              </div>
+            </section>
+          </sc-if>
 
           <sc-if value="{{ mx.pickNote }}">
             <div style="padding:10px 14px;border-radius:12px;background:#FBFAF7;border:1px dashed #E2DCD2;font-size:12px;color:#6F6A62;line-height:1.5;">{{ mx.pickNote }}</div>
@@ -856,7 +944,7 @@
               <div style="padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;">
                 <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                   <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;">Shops from Cost</h2>
-                  <span style="font-size:11px;color:#6F6A62;">Switch on the shops you compare. Just for you.</span>
+                  <span style="font-size:11px;color:#6F6A62;">{{ mx.pickScope }}</span>
                 </div>
                 <sc-if value="{{ mx.pickSearch }}">
                   <input value="{{ mx.pickQuery }}" onChange="{{ mx.onPickQuery }}" placeholder="Filter shops…" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
@@ -881,10 +969,16 @@
                   </button>
                 </sc-for>
                 <sc-if value="{{ mx.pickEmpty }}">
-                  <div style="padding:16px 14px;border-top:1px solid #F2EEE7;font-size:12px;color:#6F6A62;">{{ mx.pickEmptyText }}</div>
+                  <div style="padding:16px 14px;border-top:1px solid #F2EEE7;font-size:12px;color:#6F6A62;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <span>{{ mx.pickEmptyText }}</span>
+                    <sc-if value="{{ mx.pickAddLabel }}">
+                      <button onClick="{{ mx.addShopFromQuery }}" style="padding:7px 12px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">{{ mx.pickAddLabel }}</button>
+                    </sc-if>
+                  </div>
                 </sc-if>
               </div>
-              <div style="padding:10px 14px;border-top:1px solid #EFEAE2;background:#FBFAF7;display:flex;justify-content:flex-end;">
+              <div style="padding:10px 14px;border-top:1px solid #EFEAE2;background:#FBFAF7;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                <button onClick="{{ mx.startAddShop }}" style="padding:7px 0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;">+ Shop not listed? Find or add it</button>
                 <button onClick="{{ mx.togglePicker }}" style="padding:9px 18px;border-radius:11px;border:0;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Done</button>
               </div>
             </section>
@@ -893,12 +987,105 @@
           <sc-if value="{{ mx.notice }}">
             <div style="padding:12px 16px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;color:#8C2E27;font-weight:600;">{{ mx.notice }}</div>
           </sc-if>
+          <sc-if value="{{ mx.infoTop }}">
+            <div style="padding:12px 16px;border-radius:14px;background:#F3F9F6;border:1px solid #D6E9E0;font-size:12px;color:#0E6B4E;font-weight:600;">{{ mx.info }}</div>
+          </sc-if>
 
           <sc-if value="{{ mx.loading }}">
             <div style="padding:28px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;font-size:13px;color:#6F6A62;">Reading shops from Cost…</div>
           </sc-if>
 
-          <sc-if value="{{ mx.ready }}">
+          <sc-if value="{{ mx.hereChoose }}">
+            <section style="padding:14px 16px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <h2 style="margin:0;font-size:15px;font-weight:800;letter-spacing:-0.01em;">In a shop?</h2>
+                <span style="font-size:11px;color:#6F6A62;">Tap it — only that shop and your items show, for quick entry.</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <sc-for list="{{ mx.hereChoices }}" as="c" hint-placeholder-count="5">
+                  <button onClick="{{ c.go }}" style="{{ c.style }}">
+                    <sc-if value="{{ c.near }}"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg></sc-if>
+                    <span>{{ c.name }}</span>
+                  </button>
+                </sc-for>
+                <button onClick="{{ mx.hereOther }}" style="padding:10px 14px;border-radius:999px;border:1px dashed #C8BFB1;background:#fff;color:#4A443C;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Other shop…</button>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{ mx.here }}">
+            <section style="border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;background:#F3F9F6;border-bottom:1px solid #D6E9E0;border-radius:18px 18px 0 0;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                  <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                    <span style="font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#0E6B4E;">You're at</span>
+                    <h2 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-0.02em;">{{ mx.hereName }}</h2>
+                    <span style="font-size:12px;color:#4F6B60;">{{ mx.hereSub }}</span>
+                  </div>
+                  <button onClick="{{ mx.exitShop }}" style="flex-shrink:0;padding:9px 12px;border-radius:10px;border:1px solid #CFE3DA;background:#fff;color:#0E6B4E;font-size:12px;font-weight:700;cursor:pointer;">Switch shop</button>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <div style="display:flex;gap:3px;padding:3px;border-radius:10px;background:#fff;">
+                    <sc-for list="{{ mx.shelfOpts }}" as="o" hint-placeholder-count="2">
+                      <button onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</button>
+                    </sc-for>
+                  </div>
+                  <sc-if value="{{ mx.hereSearch }}">
+                    <input value="{{ mx.hereQuery }}" onChange="{{ mx.onHereQuery }}" placeholder="Find an item" style="flex:1;min-width:150px;padding:9px 12px;border-radius:10px;border:1px solid #CFE3DA;background:#fff;font-size:16px;color:#1C1A17;outline:none;" />
+                  </sc-if>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;">
+                <sc-for list="{{ mx.hereItems }}" as="e" hint-placeholder-count="6">
+                  <div style="{{ e.rowStyle }}">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+                      <span style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
+                        <sc-if value="{{ e.pinned }}"><span style="font-size:11px;color:#C08A15;">★</span></sc-if>
+                        <span style="font-size:14px;font-weight:700;">{{ e.name }}</span>
+                        <span style="font-size:11px;color:#6F6A62;font-family:'IBM Plex Mono',monospace;">{{ e.size }}</span>
+                      </span>
+                      <span style="font-size:11px;color:#6F6A62;">{{ e.last }}</span>
+                      <sc-if value="{{ e.best }}"><span style="font-size:11px;font-weight:600;color:#0F6B4F;">{{ e.best }}</span></sc-if>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                      <input value="{{ e.value }}" onChange="{{ e.onChange }}" placeholder="{{ e.placeholder }}" inputMode="numeric" enterKeyHint="next" aria-label="{{ e.label }}" style="{{ e.inputStyle }}" />
+                      <sc-if value="{{ e.canSame }}">
+                        <button onClick="{{ e.same }}" style="padding:0;border:0;background:none;color:#0E6B4E;font-size:11px;font-weight:700;cursor:pointer;">{{ e.sameLabel }}</button>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ mx.hereEmpty }}">
+                  <div style="padding:16px;border-top:1px solid #F2EEE7;font-size:12px;color:#6F6A62;">{{ mx.hereEmpty }}</div>
+                </sc-if>
+              </div>
+              <div style="padding:12px 16px;border-top:1px solid #F2EEE7;">
+                <sc-if value="{{ mx.adding }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+                    <input value="{{ mx.newName }}" onChange="{{ mx.onNewName }}" placeholder="Item, e.g. Milk" style="flex:2;min-width:140px;padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                    <input value="{{ mx.newSize }}" onChange="{{ mx.onNewSize }}" placeholder="1 L" style="flex:1;min-width:80px;padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-family:'IBM Plex Mono',monospace;font-size:16px;color:#1C1A17;outline:none;" />
+                    <input list="chatak-mx-cats" value="{{ mx.newCat }}" onChange="{{ mx.onNewCat }}" placeholder="Category" style="flex:1;min-width:110px;padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                    <datalist id="chatak-mx-cats">
+                      <sc-for list="{{ mx.catOptions }}" as="c" hint-placeholder-count="3"><option value="{{ c.value }}"></option></sc-for>
+                    </datalist>
+                    <div style="display:flex;gap:6px;">
+                      <button onClick="{{ mx.addItem }}" style="{{ mx.addStyle }}">Add item</button>
+                      <button onClick="{{ mx.cancelAdd }}" style="padding:10px 12px;border-radius:11px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ mx.notAdding }}">
+                  <button onClick="{{ mx.startAdd }}" style="padding:9px 14px;border-radius:10px;border:1px dashed #C8BFB1;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">+ Item not on the list</button>
+                </sc-if>
+              </div>
+              <div class="ck-herebar" style="position:sticky;bottom:16px;z-index:2;margin:0 12px 12px;padding:10px 12px 10px 16px;border-radius:14px;background:#1C1A17;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,0.18);">
+                <span style="font-size:12px;color:#D8D3CB;font-weight:600;">{{ mx.hereCount }}</span>
+                <button onClick="{{ mx.saveRow }}" style="{{ mx.hereSaveStyle }}">{{ mx.saveRowLabel }}</button>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{ mx.showGrid }}">
             <sc-if value="{{ mx.hasDue }}">
               <section style="padding:18px 20px;border-radius:18px;background:#FCF4E4;border:1px solid #F0E2C6;display:flex;flex-direction:column;gap:12px;">
                 <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
@@ -1101,7 +1288,8 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:900},&quot;defaultHome&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;watchlist&quot;,&quot;deals&quot;],&quot;default&quot;:&quot;watchlist&quot;,&quot;tsType&quot;:&quot;'watchlist' | 'deals'&quot;,&quot;section&quot;:&quot;Layout variants&quot;},&quot;defaultGraph&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overlay&quot;,&quot;best&quot;],&quot;default&quot;:&quot;overlay&quot;,&quot;tsType&quot;:&quot;'overlay' | 'best'&quot;,&quot;section&quot;:&quot;Layout variants&quot;},&quot;verdictStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;card&quot;,&quot;banner&quot;],&quot;default&quot;:&quot;card&quot;,&quot;tsType&quot;:&quot;'card' | 'banner'&quot;,&quot;section&quot;:&quot;Layout variants&quot;}}">
 class Component extends DCLogic {
   state = {
-    screen: 'home',
+    // Collecting shop prices is the main job, so the app opens on the matrix.
+    screen: 'matrix',
     productId: 'seiko',
     homeMode: null,
     graphMode: null,
@@ -1127,12 +1315,17 @@ class Component extends DCLogic {
     authGoogleBusy: false, resendIn: 0, signOutAsking: false,
     mx: null, mxOpen: null, mxFocus: null, mxDraft: {}, mxShelf: false, mxAll: false,
     mxAdding: false, mxNew: { name: '', size: '', cat: '' }, mxBusy: false, mxError: null,
-    mxPicker: false, mxPickQuery: ''
+    mxPicker: false, mxPickQuery: '',
+    mxShopAdding: false, mxNewShop: { name: '', cat: '', area: '' }, mxInfo: null, mxGeo: null,
+    mxWhere: null, mxAreaManual: false,
+    // In-shop quick entry: remembered for 4 h so a reload in the aisle keeps the shop.
+    mxHere: (() => { try { const v = JSON.parse(localStorage.getItem('chatak.mx.here.v1')); return v && Date.now() - v.at < 4 * 3600000 ? v.name : null; } catch (e) { return null; } })(),
+    mxHereQuery: ''
   };
 
   chartRef = React.createRef();
 
-  buildStamp = '2026-10-07-matrix';
+  buildStamp = '2026-10-18-shopmode';
 
   yen(n) { return '¥' + Math.round(n).toLocaleString('en-US'); }
 
@@ -1197,13 +1390,21 @@ class Component extends DCLogic {
     window.removeEventListener('pointerup', this.endDrag);
     window.removeEventListener('pointercancel', this.endDrag);
   };
-  componentWillUnmount() { this.endDrag(); if (this._resendTimer) clearInterval(this._resendTimer); if (this._engineWait) clearInterval(this._engineWait); }
+  componentWillUnmount() {
+    this.endDrag(); if (this._resendTimer) clearInterval(this._resendTimer); if (this._engineWait) clearInterval(this._engineWait);
+    if (this._whereT) clearInterval(this._whereT);
+    if (this._onBack) { document.removeEventListener('visibilitychange', this._onBack); window.removeEventListener('focus', this._onBack); }
+  }
+  componentDidUpdate() { this.mxSyncWherePoll(); }
 
   // ---------- live data ----------
   // Runs once on mount. With no Supabase config the app stays on generated
   // fixtures and SAYS so; with config it loads the user's watchlist and hands
   // each product to the same analyse() the fixtures use.
   componentDidMount() {
+    // Back from Cost's shop screen: re-read the shop list (Cost owns shops).
+    this._onBack = () => { if (document.visibilityState === 'visible' && this._awaitCost) { this._awaitCost = false; this.mxBackFromCost(); } };
+    document.addEventListener('visibilitychange', this._onBack); window.addEventListener('focus', this._onBack);
     // Printed so a stale cache or a server rooted in the wrong folder is
     // identifiable at a glance instead of by comparing screenshots.
     console.log('Chatak build ' + this.buildStamp);
@@ -1232,6 +1433,7 @@ class Component extends DCLogic {
     try {
       const api = await import('./js/chatak-api.js');
       this._api = api;
+      if (api.hub) console.log('[ak] chatak build ' + this.buildStamp);
       // The watchlist is row-level-security locked to auth.uid(), so without a
       // session it reads as empty rather than as an error. Ask for the sign-in
       // instead of showing an empty watchlist the user cannot fill.
@@ -1250,7 +1452,8 @@ class Component extends DCLogic {
       // rather than falling back to the fixture store list.
       // A brand-new account has an empty Home, so send it where the work starts —
       // unless the role cannot add anything, in which case Home is the honest landing.
-      if (!watch.length) { this._live = { products: [], stores }; this.setState({ live: { status: 'empty' }, screen: this._role.role === 'viewer' ? 'home' : 'add' }); return; }
+      // An empty watchlist no longer redirects: the matrix is the landing screen.
+      if (!watch.length) { this._live = { products: [], stores }; this.setState({ live: { status: 'empty' } }); return; }
       const hist = await Promise.all(watch.map((w) => api.getHistory(w.id, days)));
       this._live = { products: watch.map((w, i) => this.adapt(w, hist[i], stores)).filter(Boolean), stores };
       this._d = null;
@@ -1309,7 +1512,7 @@ class Component extends DCLogic {
     // The address stays prefilled — signing out is not a request to forget who you are.
     let last = '';
     try { last = localStorage.getItem('chatak.lastEmail') || ''; } catch (e) {}
-    this.setState({ live: { status: 'signin' }, authSent: false, authEmail: last, signOutAsking: false, screen: 'home', mx: null, mxOpen: null, mxDraft: {} });
+    this.setState({ live: { status: 'signin' }, authSent: false, authEmail: last, signOutAsking: false, screen: 'matrix', mx: null, mxOpen: null, mxDraft: {} });
   }
 
   async addLive(url) {
@@ -1394,9 +1597,10 @@ class Component extends DCLogic {
   mxSample() {
     const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
     const shops = [
-      { id: 's1', name: 'Gyomu Super', fav: true }, { id: 's2', name: 'Life Shinjuku', fav: true },
-      { id: 's3', name: 'OK Store' }, { id: 's4', name: 'Aeon Style' }, { id: 's5', name: 'Don Quijote' },
-      { id: 's6', name: 'Seiyu' }, { id: 's7', name: 'Summit' }, { id: 's8', name: 'My Basket' }
+      { id: 's1', name: 'Gyomu Super', fav: true, cat: 'Supermarket', area: 'a1' }, { id: 's2', name: 'Life Shinjuku', fav: true, cat: 'Supermarket', area: 'a2' },
+      { id: 's3', name: 'OK Store', cat: 'Supermarket', area: 'a1' }, { id: 's4', name: 'Aeon Style', cat: 'Supermarket', area: 'a1' }, { id: 's5', name: 'Don Quijote', cat: 'Discount', area: 'a2' },
+      { id: 's6', name: 'Seiyu', cat: 'Supermarket', area: 'a3' }, { id: 's7', name: 'Summit', cat: 'Supermarket', area: 'a3' }, { id: 's8', name: 'My Basket', cat: 'Convenience', area: 'a2' },
+      { id: 's9', name: 'Daiso', cat: 'Household', area: 'a1' }, { id: 's10', name: 'Matsumoto Kiyoshi', cat: 'Drugstore', area: 'a2' }
     ];
     // Seiyu, Summit and My Basket are in Cost but not switched on yet.
     const picks = {};
@@ -1419,24 +1623,62 @@ class Component extends DCLogic {
     };
     const cells = {};
     for (const shop in raw) for (const id in raw[shop]) { const [p, d, s] = raw[shop][id]; cells[this.mxKey(shop, id)] = { p, at: at(d), shelf: !!s }; }
-    return { shops, items, cells, picks, stars: { milk: true, eggs: true, rice: true, natto: true } };
+    const areas = [
+      { id: 'a1', name: 'Nishiurawa', lat: 35.8466, lng: 139.6346, region: 'JPY' },
+      { id: 'a2', name: 'Shinjuku', lat: 35.6896, lng: 139.7006, region: 'JPY' },
+      { id: 'a3', name: 'Nakano', lat: 35.7074, lng: 139.6659, region: 'JPY' }
+    ];
+    return { shops, items, cells, picks, areas, stars: { milk: true, eggs: true, rice: true, natto: true } };
   }
 
   async loadMatrix() {
-    if (!this._api) { this.setState({ mx: { status: 'sample', ...this.mxSample() } }); return; }
+    if (!this._api) {
+      // Sample stand-in for hub.whereNow(), so the "where am I" chip is visible offline.
+      this.setState({ mx: { status: 'sample', ...this.mxSample() }, mxWhere: { label: 'Home', cls: 'home', at: new Date(Date.now() - 3 * 60000).toISOString(), src: 'now', lat: null, lng: null } });
+      return;
+    }
     this.setState((s) => ({ mx: { ...(s.mx || {}), status: 'loading' } }));
     try {
-      const [shops, m] = await Promise.all([this._api.getMatrixShops(), this._api.getMatrix()]);
+      const [shops, m, areas, links] = await Promise.all([
+        this._api.getMatrixShops(), this._api.getMatrix(),
+        this._api.getCostAreas ? this._api.getCostAreas().catch(() => null) : Promise.resolve(null),
+        this._api.getCostShopAreas ? this._api.getCostShopAreas().catch(() => null) : Promise.resolve(null)
+      ]);
+      const areaById = {};
+      for (const l of links || []) if (l.shop_id && !areaById[l.shop_id]) areaById[l.shop_id] = l.area_id;
+      // Prices are keyed by Cost's shop id and shown under its live name; rows
+      // written before ids fall back to the name they were saved with.
+      const idToName = {};
+      for (const sh of shops) if (sh.id != null) idToName[String(sh.id)] = sh.name;
       const cells = {};
-      for (const r of m.latest) cells[this.mxKey(r.shop_name, r.item_id)] = { p: r.price, at: r.entered_at, shelf: r.shelf };
+      for (const r of m.latest) {
+        const k = this.mxKey((r.cost_shop_id && idToName[r.cost_shop_id]) || r.shop_name, r.item_id), old = cells[k];
+        if (!old || Date.parse(r.entered_at) > Date.parse(old.at)) cells[k] = { p: r.price, at: r.entered_at, shelf: r.shelf };
+      }
       const stars = {};
       for (const id of m.stars) stars[id] = true;
-      // null = the picks table is missing, so every shop shows (the old behaviour).
-      let picks = null;
-      if (m.picks) { picks = {}; for (const n of m.picks) picks[n] = true; }
+      const mshops = shops.map((s) => ({ id: s.id, name: s.name, fav: !!s.is_favorite, cat: s.category || '',
+        area: areaById[String(s.id)] || null }));
+      // Only a handful of shops show until the person switches more on: the first
+      // visit seeds 5 (Cost favourites first). Without the picks table the choice
+      // is kept on this device instead of every shop showing.
+      let picks, picksLocal = false;
+      if (m.picks) {
+        picks = {}; for (const p of m.picks) picks[(p.id && idToName[p.id]) || p.name] = true;
+        if (!m.picks.length && !this.mxSeeded()) {
+          const top = this.mxTop5(mshops);
+          for (const n of top) picks[n] = true;
+          this.mxMarkSeeded();
+          this._api.setMatrixShopPicks(top.map((n) => ({ name: n, id: (mshops.find((x) => x.name === n) || {}).id })), true).catch(() => {});
+        }
+      } else {
+        picksLocal = true;
+        picks = this.mxLoadLocalPicks();
+        if (!picks) { picks = {}; for (const n of this.mxTop5(mshops)) picks[n] = true; this.mxSaveLocalPicks(picks); }
+      }
       this.setState({ mx: {
-        status: 'ready', cells, stars, picks,
-        shops: shops.map((s) => ({ id: s.id, name: s.name, fav: !!s.is_favorite })),
+        status: 'ready', cells, stars, picks, picksLocal, areas,
+        shops: mshops,
         items: m.items.map((i) => ({ id: i.id, name: i.name, size: i.size || '', cat: i.category || 'Other' }))
       } });
     } catch (e) {
@@ -1444,20 +1686,114 @@ class Component extends DCLogic {
     }
   }
 
+  mxTop5(shops) {
+    return shops.slice().sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || a.name.localeCompare(b.name)).slice(0, 5).map((s) => s.name);
+  }
+  mxLoadLocalPicks() {
+    try { const v = JSON.parse(localStorage.getItem('chatak.mx.picks.v1')); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+  }
+  mxSaveLocalPicks(p) { try { localStorage.setItem('chatak.mx.picks.v1', JSON.stringify(p)); } catch (e) {} }
+  mxSeeded() { try { return !!localStorage.getItem('chatak.mx.seeded.v1'); } catch (e) { return true; } }
+  mxMarkSeeded() { try { localStorage.setItem('chatak.mx.seeded.v1', '1'); } catch (e) {} }
+
+  // Find-or-add, in Cost's order: area (by location) → category → shop.
+  mxFinderVals(M, S, cur, picks, canEdit) {
+    const NS = S.mxNewShop, shops = M.shops || [];
+    const areaList = (M.areas || []).filter((a) => !a.region || a.region === cur.code);
+    const areaName = (id) => (areaList.find((a) => a.id === id) || {}).name || '';
+    const inArea = (s) => !NS.area || (NS.area === '__none' ? !s.area : s.area === NS.area);
+    const catOf = (s) => s.cat || 'Other';
+    const chip = (on) => 'display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid ' + (on ? '#0E6B4E' : '#E2DCD2') + ';background:' + (on ? '#0E6B4E' : '#fff') + ';color:' + (on ? '#fff' : '#3A362F') + ';';
+    const setNS = (patch) => this.setState({ mxNewShop: { ...this.state.mxNewShop, ...patch }, mxError: null });
+    const setArea = (area) => this.setState({ mxNewShop: { ...this.state.mxNewShop, area, cat: '' }, mxAreaManual: true, mxGeo: null, mxError: null });
+    const count = (n, on) => ({ n: String(n), nStyle: 'font-size:11px;font-weight:600;opacity:' + (on ? '0.8' : '0.55') + ';' });
+
+    const areaChips = [{ label: 'All areas', on: !NS.area, ...count(shops.length, !NS.area), pick: () => setArea('') }]
+      .concat(areaList.map((a) => { const on = NS.area === a.id; return { label: a.name, on, ...count(shops.filter((s) => s.area === a.id).length, on), pick: () => setArea(a.id) }; }));
+    const noArea = shops.filter((s) => !s.area).length;
+    if (areaList.length && noArea) areaChips.push({ label: 'No area', on: NS.area === '__none', ...count(noArea, NS.area === '__none'), pick: () => setArea('__none') });
+    areaChips.forEach((c) => { c.style = chip(c.on); });
+
+    const areaShops = shops.filter(inArea), byCat = {};
+    for (const s of areaShops) byCat[catOf(s)] = (byCat[catOf(s)] || 0) + 1;
+    const catChips = [{ label: 'All', on: !NS.cat, ...count(areaShops.length, !NS.cat), pick: () => setNS({ cat: '' }) }]
+      .concat(Object.keys(byCat).sort((x, y) => byCat[y] - byCat[x] || x.localeCompare(y)).map((c) => ({ label: c, on: NS.cat === c, ...count(byCat[c], NS.cat === c), pick: () => setNS({ cat: NS.cat === c ? '' : c }) })));
+    catChips.forEach((c) => { c.style = chip(c.on); });
+
+    const qn = NS.name.trim().replace(/\s+/g, ' '), ql = qn.toLowerCase();
+    const matches = areaShops.filter((s) => (!NS.cat || catOf(s) === NS.cat) && (!ql || s.name.toLowerCase().includes(ql)))
+      .sort((x, y) => (y.fav ? 1 : 0) - (x.fav ? 1 : 0) || (picks[x.name] ? 1 : 0) - (picks[y.name] ? 1 : 0) || x.name.localeCompare(y.name));
+    const LIMIT = 30;
+    const exact = shops.find((s) => s.name.toLowerCase() === ql);
+    const tagFor = NS.area === '__none' || !NS.area ? 'no area' : areaName(NS.area);
+    return {
+      finderAreas: areaChips, finderHasAreas: areaList.length > 0,
+      finderCats: catChips,
+      finderQuery: NS.name,
+      onFinderQuery: (e) => setNS({ name: e.target.value }),
+      onFinderKey: (e) => {
+        if (e.key === 'Escape') this.setState({ mxShopAdding: false });
+        if (e.key === 'Enter' && exact) this.mxPickShop(exact.name);
+      },
+      finderShops: matches.slice(0, LIMIT).map((s) => {
+        const on = !!picks[s.name];
+        return { name: s.name, fav: s.fav, meta: [catOf(s), s.area ? areaName(s.area) : ''].filter(Boolean).join(' · '),
+          pick: () => this.mxPickShop(s.name), btn: on ? (canEdit ? 'Open row' : 'Shown') : 'Switch on',
+          btnStyle: 'padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;border:1px solid ' + (on ? '#E2DCD2' : '#0E6B4E') + ';background:' + (on ? '#fff' : '#0E6B4E') + ';color:' + (on ? '#6F6A62' : '#fff') + ';' };
+      }),
+      finderMore: matches.length > LIMIT ? '+' + (matches.length - LIMIT) + ' more — narrow it with area, category or the name.' : '',
+      finderEmpty: matches.length ? '' : (ql ? 'No Cost shop called “' + qn + '” here.' : 'No Cost shop in this area and category yet.'),
+      finderCount: matches.length + (matches.length === 1 ? ' shop' : ' shops'),
+      whereChip: this.mxWhereText(NS, areaName),
+      finderAddHint: exact && ql ? exact.name + ' is already in Cost — pick it from the list.'
+        : qn ? '“' + qn + '” isn’t in Cost. Add it there; Chatak re-reads the list when you come back.'
+        : 'Not listed? Add it in Cost; Chatak re-reads the list when you come back.',
+      openCost: () => this.mxOpenCost()
+    };
+  }
+
+  // "Use my location" — the user's explicit tap. One fix, used for distance
+  // only; never stored, never sent.
+  mxNearestArea() {
+    const M = this.state.mx || {}, code = this.mxCur().code;
+    if (!(M.areas || []).some((a) => a.lat != null && a.lng != null && (!a.region || a.region === code))) { this.setState({ mxGeo: 'No area has a map point yet — pick from the list.' }); return; }
+    if (!('geolocation' in navigator)) { this.setState({ mxGeo: 'Location is not available in this browser.' }); return; }
+    this.setState({ mxGeo: 'Finding you…' });
+    navigator.geolocation.getCurrentPosition((p) => {
+      const best = this.mxNearestTo(p.coords.latitude, p.coords.longitude);
+      if (!best) return;
+      this.setState((s) => ({ mxAreaManual: true, mxNewShop: { ...s.mxNewShop, area: best.a.id, cat: '' },
+        mxGeo: 'Nearest area: ' + best.a.name + ' · ' + (best.d < 1000 ? Math.round(best.d) + ' m' : (best.d / 1000).toFixed(1) + ' km') + ' away' }));
+    }, (e) => this.setState({ mxGeo: e.code === 1 ? 'Location permission denied — pick the area from the list.' : 'Could not get your location — pick the area from the list.' }),
+    { enableHighAccuracy: true, timeout: 10000 });
+  }
+
   async mxSaveRow() {
-    const S = this.state, shop = (S.mx.shops || []).find((s) => s.name === S.mxOpen);
+    const S = this.state, here = S.mxHere, shop = (S.mx.shops || []).find((s) => s.name === (here || S.mxOpen));
     const entries = Object.entries(S.mxDraft).map(([itemId, v]) => ({ itemId, price: parseInt(v, 10) })).filter((e) => e.price > 0);
     if (!entries.length || !shop || S.mxBusy) return;
+    // In a shop the list stays open for the next round; the grid row closes.
+    const done = here ? { mxDraft: {}, mxInfo: '✓ Saved ' + entries.length + (entries.length === 1 ? ' price' : ' prices') + ' at ' + shop.name + '.' } : { mxOpen: null, mxDraft: {} };
     if (this._api) {
       this.setState({ mxBusy: true, mxError: null });
       try { await this._api.saveMatrixRow(shop, entries, { shelf: S.mxShelf, currency: this.mxCur().code }); }
       catch (e) { this.setState({ mxBusy: false, mxError: 'Not saved: ' + (e.message || e) }); return; }
-      this.setState({ mxBusy: false, mxOpen: null, mxDraft: {} });
+      this.setState({ mxBusy: false, ...done });
       return this.loadMatrix();
     }
     const at = new Date().toISOString();
     this.mxPatch((m) => { const cells = { ...m.cells }; for (const e of entries) cells[this.mxKey(shop.name, e.itemId)] = { p: e.price, at, shelf: S.mxShelf }; return { ...m, cells }; });
-    this.setState({ mxOpen: null, mxDraft: {} });
+    this.setState(done);
+  }
+
+  mxEnterShop(name) {
+    try { localStorage.setItem('chatak.mx.here.v1', JSON.stringify({ name, at: Date.now() })); } catch (e) {}
+    this.setState({ mxHere: name, mxHereQuery: '', mxDraft: {}, mxShelf: false, mxOpen: null, mxPicker: false, mxShopAdding: false, mxInfo: null, mxError: null });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  mxExitShop() {
+    try { localStorage.removeItem('chatak.mx.here.v1'); } catch (e) {}
+    this.setState({ mxHere: null, mxHereQuery: '', mxDraft: {}, mxInfo: null });
   }
 
   // "Still this price" appends a confirm row with the same figure, so the record
@@ -1483,15 +1819,116 @@ class Component extends DCLogic {
 
   // Show or hide shops in this person's matrix. Optimistic, like stars.
   async mxSetPicks(names, on) {
-    const before = (this.state.mx || {}).picks;
+    const before = (this.state.mx || {}).picks, local = !!(this.state.mx || {}).picksLocal;
     if (!before || !names.length) return;
     const after = { ...before };
     for (const n of names) { if (on) after[n] = true; else delete after[n]; }
     this.mxPatch((m) => ({ ...m, picks: after }));
     if (!on && names.includes(this.state.mxOpen)) this.setState({ mxOpen: null, mxDraft: {} });
+    if (local) { this.mxSaveLocalPicks(after); return; }
     if (!this._api) return;
-    try { await this._api.setMatrixShopPicks(names, on); }
+    const objs = names.map((n) => { const sh = ((this.state.mx || {}).shops || []).find((x) => x.name === n); return { name: n, id: sh ? sh.id : null }; });
+    try { await this._api.setMatrixShopPicks(objs, on); }
     catch (e) { this.mxPatch((m) => ({ ...m, picks: before })); this.setState({ mxError: 'Shop choice not saved: ' + (e.message || e) }); }
+  }
+
+  // Cost owns shops (Akatsuki R037): Chatak hands off to Cost's shop screen and
+  // re-reads akatsuki_shops when this tab is shown again.
+  mxOpenCost() {
+    const url = (window.CHATAK_CONFIG || {}).costShopsUrl || 'https://celeritas7.github.io/Cost_management/';
+    this._awaitCost = true;
+    this._shopsBeforeCost = new Set(((this.state.mx || {}).shops || []).map((x) => String(x.id)));
+    window.open(url, '_blank', 'noopener');
+  }
+
+  async mxBackFromCost() {
+    const before = this._shopsBeforeCost || new Set();
+    await this.loadMatrix();
+    const fresh = ((this.state.mx || {}).shops || []).filter((x) => !before.has(String(x.id))).map((x) => x.name);
+    this.setState({ mxInfo: fresh.length ? 'New in Cost: ' + fresh.join(', ') + ' — switch it on below.' : 'Shop list re-read from Cost.' });
+    clearTimeout(this._mxInfoT);
+    this._mxInfoT = setTimeout(() => this.setState({ mxInfo: null }), 6000);
+  }
+
+  // Where am I, from the hub (STEP1/2): whereNow()[0] → a visit seen < 30 min
+  // ago → nothing. Polled every 60 s while the Matrix tab is open; no realtime.
+  mxSyncWherePoll() {
+    const want = this.state.screen === 'matrix' && !!(this._api && this._api.hub);
+    if (want && !this._whereT) { this.mxRefreshWhere(); this._whereT = setInterval(() => this.mxRefreshWhere(), 60000); }
+    if (!want && this._whereT) { clearInterval(this._whereT); this._whereT = null; }
+  }
+
+  async mxRefreshWhere() {
+    const hub = this._api && this._api.hub;
+    if (!hub) return;
+    try {
+      const now = await hub.whereNow();
+      let row = now[0] || null, src = 'now';
+      if (!row) {
+        const seen = (v) => Date.parse(v.last_seen_at || v.until || v.since);
+        const v = (await hub.visits({ days: 1 })).filter((x) => Date.now() - seen(x) < 30 * 60000).sort((a, b) => seen(b) - seen(a))[0];
+        if (v) { row = v; src = 'visit'; }
+      }
+      if (!row) { this.setState({ mxWhere: null }); return; }
+      if (!this._places) this._places = await hub.places().catch(() => []);
+      const pl = (this._places || []).find((p) => p.id === row.place_id) || {};
+      this.setState({ mxWhere: { label: row.place_label || row.anchor_label || pl.label || '', cls: row.class || pl.class || '',
+        at: row.last_seen_at || row.until || row.since, src, lat: pl.lat ?? null, lng: pl.lng ?? null } }, () => this.mxApplyWhere());
+    } catch (e) { /* hub unreachable: keep the last answer */ }
+  }
+
+  // At home/office keep All areas. Out, café, transit or an unnamed spot:
+  // preselect the shop area nearest the hub place — unless the user picked one.
+  mxApplyWhere() {
+    const S = this.state, W = S.mxWhere;
+    if (!S.mxShopAdding || S.mxAreaManual || !W || W.cls === 'home' || W.cls === 'office' || W.lat == null || W.lng == null) return;
+    const best = this.mxNearestTo(W.lat, W.lng);
+    if (best && S.mxNewShop.area !== best.a.id) this.setState((s) => ({ mxNewShop: { ...s.mxNewShop, area: best.a.id, cat: '' } }));
+  }
+
+  mxNearestTo(lat, lng) {
+    const code = this.mxCur().code, rad = (d) => d * Math.PI / 180;
+    const areas = ((this.state.mx || {}).areas || []).filter((a) => a.lat != null && a.lng != null && (!a.region || a.region === code));
+    if (!areas.length) return null;
+    const dist = (a) => {
+      const s = Math.sin(rad(a.lat - lat) / 2) ** 2 + Math.cos(rad(lat)) * Math.cos(rad(a.lat)) * Math.sin(rad(a.lng - lng) / 2) ** 2;
+      return 2 * 6371000 * Math.asin(Math.sqrt(s));
+    };
+    return areas.map((a) => ({ a, d: dist(a) })).sort((x, y) => x.d - y.d)[0];
+  }
+
+  async mxPickShop(name) {
+    const M = this.state.mx; if (!M) return;
+    const on = !!(M.picks && M.picks[name]);
+    this.setState({ mxShopAdding: false, mxGeo: null, mxNewShop: { name: '', cat: '', area: '' }, mxError: null,
+      mxInfo: on ? null : name + ' switched on.' });
+    this.mxOpenAfterLoad = name;
+    if (!on) await this.mxSetPicks([name], true);
+    this.mxOpenPending();
+  }
+
+  // No GPS here: location is read only on the "Use my location" tap.
+  mxOpenFinder(name) {
+    this.setState({ mxShopAdding: true, mxPicker: false, mxError: null, mxGeo: null, mxAreaManual: false, mxNewShop: { name: name || '', cat: '', area: '' } },
+      () => this.mxApplyWhere());
+  }
+
+  mxWhereText(NS, areaName) {
+    const W = this.state.mxWhere;
+    if (!W) return '';
+    const mins = Math.max(0, Math.round((Date.now() - Date.parse(W.at)) / 60000));
+    const ago = mins < 1 ? 'just now' : mins < 60 ? mins + ' min ago' : Math.round(mins / 60) + ' h ago';
+    const name = W.label || { home: 'Home', office: 'Office', cafe: 'Café', transit: 'In transit', out: 'Out' }[W.cls] || 'Unnamed spot';
+    let t = name + ' · ' + (W.src === 'now' ? 'from hub, ' + ago : 'seen ' + ago);
+    if (W.cls !== 'home' && W.cls !== 'office' && NS.area && NS.area !== '__none' && !this.state.mxAreaManual) t += ' — showing ' + areaName(NS.area);
+    return t;
+  }
+
+  mxOpenPending() {
+    const n = this.mxOpenAfterLoad; this.mxOpenAfterLoad = null;
+    if (n && this.mxCanEdit) this.setState({ mxOpen: n, mxFocus: null, mxDraft: {}, mxShelf: false });
+    clearTimeout(this._mxInfoT);
+    this._mxInfoT = setTimeout(() => this.setState({ mxInfo: null }), 6000);
   }
 
   async mxAddItem() {
@@ -1592,11 +2029,59 @@ class Component extends DCLogic {
     const filled = Object.values(S.mxDraft).filter((v) => parseInt(v, 10) > 0).length;
     const cats = [...new Set(M.items.map((i) => i.cat))].sort();
     const canAdd = S.mxNew.name.trim().length > 0 && !S.mxBusy;
+    this.mxCanEdit = canEdit;
+
+    // ---- in-shop quick entry ----
+    // Suggestions come from hub.whereNow() only (no GPS): a place label that names
+    // a shop, else shops in the Cost area nearest the hub place (< 2 km).
+    const hereShop = canEdit && S.mxHere ? M.shops.find((s) => s.name === S.mxHere) || null : null;
+    const W = S.mxWhere, wl = W && W.cls !== 'home' && W.cls !== 'office' && W.label ? W.label.toLowerCase() : '';
+    const nearArea = W && W.cls !== 'home' && W.cls !== 'office' && W.lat != null && W.lng != null ? this.mxNearestTo(W.lat, W.lng) : null;
+    const isNear = (s) => (wl && (wl.includes(s.name.toLowerCase()) || s.name.toLowerCase().includes(wl))) || (nearArea && nearArea.d < 2000 && s.area === nearArea.a.id);
+    const choiceShops = costShops.filter((s) => shown(s.name) || isNear(s)).sort((a, b) => (isNear(b) ? 1 : 0) - (isNear(a) ? 1 : 0));
+    const hereChoices = choiceShops.map((s) => {
+      const near = !!isNear(s);
+      return { name: s.name, near, go: () => this.mxEnterShop(s.name),
+        style: 'display:flex;align-items:center;gap:6px;padding:10px 14px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid ' + (near ? '#0E6B4E;background:#0E6B4E;color:#fff;' : '#DDD7CE;background:#fff;color:#1C1A17;') };
+    });
+    const hq = S.mxHereQuery.trim().toLowerCase();
+    const hereItems = hereShop ? items.filter((it) => !hq || (it.name + ' ' + it.size + ' ' + it.cat).toLowerCase().includes(hq)).map((it) => {
+      const c = M.cells[this.mxKey(hereShop.name, it.id)], v = S.mxDraft[it.id] ?? '', d = c ? ageOf(c.at) : null;
+      let best = null;
+      for (const s of M.shops) {
+        if (s.name === hereShop.name) continue;
+        const o = M.cells[this.mxKey(s.name, it.id)];
+        if (o && ageOf(o.at) < staleDays && (!best || o.p < best.p)) best = { p: o.p, shop: s.name };
+      }
+      return {
+        name: it.name, size: it.size, pinned: !!M.stars[it.id], value: v, label: it.name + ' price',
+        last: c ? 'Here ' + money(c.p) + ' · ' + (d === 0 ? 'today' : d + 'd ago') + (c.shelf ? ' · shelf' : '') : 'Not priced here yet',
+        best: best && (!c || best.p < c.p) ? 'Lowest ' + money(best.p) + ' at ' + best.shop : '',
+        placeholder: c ? String(c.p) : cur.sym.trim(),
+        onChange: (e) => this.setState({ mxDraft: { ...S.mxDraft, [it.id]: e.target.value.replace(/[^\d]/g, '') } }),
+        canSame: !!c && !v && d > 0, sameLabel: c ? 'Still ' + money(c.p) : '',
+        same: () => this.mxConfirm(hereShop, it.id),
+        rowStyle: 'display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #F2EEE7;background:' + (v ? '#F3F9F6' : '#fff') + ';',
+        inputStyle: "width:108px;padding:10px 11px;border-radius:10px;text-align:right;border:1px solid " + (v ? '#0E6B4E' : '#C8DCD3') + ";background:#fff;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#1C1A17;outline:none;"
+      };
+    }) : [];
+    const pricedHere = hereShop ? items.filter((it) => M.cells[this.mxKey(hereShop.name, it.id)]).length : 0;
 
     return { due: queue.length, vm: {
-      loading: false, ready: true, notice, canEdit, reviewDays, staleDays,
+      loading: false, ready: true, notice, info: S.mxInfo, infoTop: !!S.mxInfo && !(canEdit && S.mxHere), canEdit, reviewDays, staleDays,
+      showGrid: !hereShop, here: !!hereShop, hereChoose: canEdit && !hereShop && hereChoices.length > 0,
+      hereChoices, hereOther: () => this.setState({ mxPicker: true, mxPickQuery: '' }),
+      hereName: hereShop ? hereShop.name : '',
+      hereSub: items.length + (items.length === 1 ? ' item' : ' items') + ' · ' + pricedHere + ' priced here' + (hereShop && isNear(hereShop) ? ' · matches where you are' : ''),
+      hereItems, hereQuery: S.mxHereQuery, hereSearch: items.length > 8,
+      onHereQuery: (e) => this.setState({ mxHereQuery: e.target.value }),
+      hereEmpty: hereShop && !hereItems.length ? (hq ? 'No item matches “' + S.mxHereQuery.trim() + '”.' : 'No items yet. Add the things you buy here.') : '',
+      exitShop: () => this.mxExitShop(), notAdding: !S.mxAdding,
+      hereCount: filled ? filled + (filled === 1 ? ' new price' : ' new prices') + ' · ' + (S.mxShelf ? 'shelf' : 'paid') : (S.mxInfo || 'Type what you see. Blank stays unchanged.'),
+      hereSaveStyle: 'flex-shrink:0;padding:10px 18px;border-radius:10px;border:0;font-size:13px;font-weight:700;color:#fff;background:' + (filled && !S.mxBusy ? '#17916B' : '#4A463F') + ';cursor:' + (filled && !S.mxBusy ? 'pointer' : 'default') + ';',
       canPick: !!picks,
-      pickNote: picks ? null : 'Choosing shops needs the chatak_matrix_shop_picks table — re-run supabase/schema.sql. Until then every Cost shop shows.',
+      pickNote: null,
+      pickScope: M.picksLocal ? 'Kept on this device until schema.sql is re-run.' : 'Switch on the shops you compare. Just for you.',
       pickerOpen: !!picks && S.mxPicker,
       pickLabel: picks ? 'Shops · ' + onCount + ' of ' + M.shops.length : 'Shops',
       togglePicker: () => this.setState({ mxPicker: !S.mxPicker, mxPickQuery: '' }),
@@ -1614,7 +2099,7 @@ class Component extends DCLogic {
       showOpenPicker: !!picks && !shops.length && M.shops.length > 0,
       subtitle: M.status === 'sample'
         ? 'Sample shops and prices. With Supabase connected, shops are read from Cost.'
-        : 'Latest known price per shop, in ' + cur.code + '. Shops come from Cost — choose which ones appear with Shops.',
+        : 'Latest known price per shop, in ' + cur.code + '. Shops come from Cost; new ones are added there.',
       staleSample: money(698),
       hint: canEdit ? 'Click a shop to type its row. Click ★ to pin an item.' : 'Read-only for viewers. Click ★ to pin an item.',
       emptyNote: !M.shops.length && !orphanNames.length ? 'No shops in Cost yet. Add a shop in Cost and it appears here as a row.'
@@ -1666,6 +2151,14 @@ class Component extends DCLogic {
       onNewCat: (e) => this.setState({ mxNew: { ...S.mxNew, cat: e.target.value } }),
       catOptions: cats.map((c) => ({ value: c })),
       addItem: () => this.mxAddItem(),
+      shopAdding: S.mxShopAdding,
+      startAddShop: () => this.mxOpenFinder(''),
+      addShopFromQuery: () => this.mxOpenFinder(S.mxPickQuery.trim()),
+      pickAddLabel: q ? 'Find or add “' + S.mxPickQuery.trim() + '”' : '',
+      cancelAddShop: () => this.setState({ mxShopAdding: false, mxNewShop: { name: '', cat: '', area: '' }, mxGeo: null, mxError: null }),
+      findNearest: () => this.mxNearestArea(),
+      geoNote: S.mxGeo,
+      ...this.mxFinderVals(M, S, cur, picks || {}, canEdit),
       addStyle: 'padding:10px 16px;border-radius:11px;border:0;color:#fff;font-size:12px;font-weight:700;background:' + (canAdd ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (canAdd ? 'pointer' : 'default') + ';'
     } };
   }

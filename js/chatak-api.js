@@ -12,8 +12,13 @@ export const CHATAK_CONFIG = (typeof window !== 'undefined' && window.CHATAK_CON
 export const isConfigured = () => Boolean(CHATAK_CONFIG.url && CHATAK_CONFIG.anonKey);
 
 export const db = isConfigured()
-  ? createClient(CHATAK_CONFIG.url, CHATAK_CONFIG.anonKey)
+  ? createClient(CHATAK_CONFIG.url, CHATAK_CONFIG.anonKey, { global: { headers: { 'x-akatsuki-app': 'chatak' } } })
   : null;
+
+// Akatsuki hub — same project, same client, no second session (AKATSUKI.md).
+// js/akatsuki-client.js is a classic script loaded by index.html before this module.
+export const hub = db && typeof window !== 'undefined' && window.Akatsuki ? window.Akatsuki(db, 'chatak') : null;
+if (typeof window !== 'undefined' && db) window.chatak = { supabase: db, hub };
 
 // ── auth ──
 // Both paths are gated server-side by the allow-list trigger on
@@ -174,8 +179,8 @@ export async function searchRakuten(keyword) {
 }
 
 // ── price matrix ──
-// Shops are read from Cost's hub view and never written here. A shop that is not
-// in Cost does not exist for Chatak.
+// Shops are read from Cost's hub view. New ones are written to Cost itself
+// (addCostShop) — Chatak never keeps a shop list of its own.
 export async function getMatrixShops() {
   const { data, error } = await db.from('akatsuki_shops').select('*').order('name');
   if (error) throw error;
@@ -186,31 +191,41 @@ export async function getMatrixShops() {
 // the shops this user chose to show. picks is null when chatak_matrix_shop_picks
 // does not exist yet (schema.sql not re-run): the caller then shows every shop.
 export async function getMatrix() {
-  const [items, latest, stars, picks] = await Promise.all([
+  const missingCol = (e) => e && (e.code === '42703' || e.code === 'PGRST204');
+  let [items, latest, stars, picks] = await Promise.all([
     db.from('chatak_matrix_items').select('id, name, size, category').order('name'),
-    db.from('chatak_matrix_latest').select('shop_name, item_id, price, currency, shelf, entered_at'),
+    db.from('chatak_matrix_latest').select('cost_shop_id, shop_name, item_id, price, currency, shelf, entered_at'),
     db.from('chatak_matrix_stars').select('item_id'),
-    db.from('chatak_matrix_shop_picks').select('shop_name')
+    db.from('chatak_matrix_shop_picks').select('shop_name, cost_shop_id')
   ]);
+  // schema.sql not re-run yet: read the old shape (names only).
+  if (missingCol(latest.error)) latest = await db.from('chatak_matrix_latest').select('shop_name, item_id, price, currency, shelf, entered_at');
+  if (missingCol(picks.error)) picks = await db.from('chatak_matrix_shop_picks').select('shop_name');
   for (const r of [items, latest, stars]) if (r.error) throw r.error;
   const noPicksTable = picks.error && (picks.error.code === '42P01' || picks.error.code === 'PGRST205');
   if (picks.error && !noPicksTable) throw picks.error;
   return {
     items: items.data ?? [], latest: latest.data ?? [], stars: (stars.data ?? []).map((s) => s.item_id),
-    picks: noPicksTable ? null : (picks.data ?? []).map((p) => p.shop_name)
+    picks: noPicksTable ? null : (picks.data ?? []).map((p) => ({ name: p.shop_name, id: p.cost_shop_id ?? null }))
   };
 }
 
-// Show or hide shops in this user's matrix. Takes several names so "Show all"
-// is one request.
-export async function setMatrixShopPicks(names, on) {
-  if (!names.length) return;
+// Show or hide shops in this user's matrix: [{ name, id }]. Several at once so
+// "Show all" is one request. Keyed by Cost's shop id; the name is kept for rows
+// written before ids.
+export async function setMatrixShopPicks(shops, on) {
+  if (!shops.length) return;
   const uid = (await session())?.user?.id;
-  const q = on
-    ? db.from('chatak_matrix_shop_picks').upsert(names.map((shop_name) => ({ user_id: uid, shop_name })))
-    : db.from('chatak_matrix_shop_picks').delete().eq('user_id', uid).in('shop_name', names);
-  const { error } = await q;
-  if (error) throw error;
+  const ids = shops.map((s) => (s.id != null ? String(s.id) : null)).filter(Boolean);
+  if (on) {
+    let { error } = await db.from('chatak_matrix_shop_picks').upsert(shops.map((s) => ({ user_id: uid, shop_name: s.name, cost_shop_id: s.id != null ? String(s.id) : null })));
+    if (error && (error.code === '42703' || error.code === 'PGRST204')) ({ error } = await db.from('chatak_matrix_shop_picks').upsert(shops.map((s) => ({ user_id: uid, shop_name: s.name }))));
+    if (error) throw error;
+    return;
+  }
+  const byName = await db.from('chatak_matrix_shop_picks').delete().eq('user_id', uid).in('shop_name', shops.map((s) => s.name));
+  if (byName.error) throw byName.error;
+  if (ids.length) await db.from('chatak_matrix_shop_picks').delete().eq('user_id', uid).in('cost_shop_id', ids);
 }
 
 // Append-only: every save is a new row, the view picks the latest.
@@ -231,6 +246,24 @@ export async function confirmMatrixPrice(shop, itemId, price, shelf, currency = 
     item_id: itemId, price, currency, shelf, kind: 'confirm', entered_by: uid
   });
   if (error) throw error;
+}
+
+// Areas live in the Akatsuki hub; Cost reads them through akatsuki_cost_areas.
+// null = the view is not there (or not readable): the area field hides.
+export async function getCostAreas() {
+  const { data, error } = await db.from('akatsuki_cost_areas').select('*').order('name');
+  if (error) return null;
+  const num = (v) => (v == null || v === '' ? null : Number(v));
+  return (data ?? []).map((a) => ({ id: String(a.id), name: a.name, lat: num(a.lat), lng: num(a.lng), region: a.region || null }));
+}
+
+// Which area each Cost shop is in — the hub view akatsuki_cost_shop_areas
+// (user_id, shop_id, area_id; area_id matches akatsuki_cost_areas.id).
+// null = view not readable: area tabs show no counts.
+export async function getCostShopAreas() {
+  const { data, error } = await db.from('akatsuki_cost_shop_areas').select('shop_id, area_id');
+  if (error || !Array.isArray(data)) return null;
+  return data.map((r) => ({ shop_id: r.shop_id != null ? String(r.shop_id) : null, area_id: r.area_id != null ? String(r.area_id) : null }));
 }
 
 export async function addMatrixItem({ name, size, category }) {
