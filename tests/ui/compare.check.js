@@ -146,6 +146,39 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   const blue = (await m.$$eval('article', (a) => a.map((x) => x.innerText))).find((t) => t.split('\n').includes('Bottle cover, blue')) || '';
   ok(blue.includes('Online · no link yet') && blue.includes('ANA Mall') && blue.includes('¥1,210'), 'saved without a link: seller and price shown');
 
+  // watch price: link an online option to a tracked product; the pill must match Home's
+  const card = (name) => m.locator('article').filter({ has: m.locator('span', { hasText: new RegExp('^' + name + '$') }) });
+  ok(await card('MY space table').getByRole('button', { name: 'Watch price' }).count() === 0, 'in-shop options have no Watch price');
+  await card('Bed table 70x48x30').getByRole('button', { name: 'Watch price' }).click();
+  await m.waitForSelector('text=Watch price · Bed table 70x48x30');
+  ok((await text(m)).includes('Amazon JP prices are not collected automatically'), 'Amazon option: the panel says Amazon is not collected');
+  await m.getByRole('button', { name: 'Search Rakuten' }).click();
+  ok((await text(m)).includes('Rakuten search needs the live app'), 'sample: search explains it needs the live app');
+  await m.getByLabel('Rakuten item link').fill('https://www.amazon.co.jp/dp/B000');
+  await m.getByRole('button', { name: 'Watch link' }).click();
+  ok((await text(m)).includes('Paste a Rakuten item link'), 'a non-Rakuten link is refused with a reason');
+  const first = await m.evaluate(() => {
+    const btn = [...document.querySelectorAll('section button')].find((b) => b.textContent.trim() === 'Link');
+    const row = btn.parentElement, spans = row.querySelectorAll(':scope > span');
+    return { pill: spans[0].innerText.trim(), name: spans[1].firstElementChild.innerText.trim() };
+  });
+  const linkedName = first.name, linkedPill = first.pill;
+  await m.getByRole('button', { name: 'Link', exact: true }).first().click();
+  await m.waitForSelector('text=Watching ' + linkedName + '.');
+  const watched = await card('Bed table 70x48x30').innerText();
+  ok(watched.includes(linkedPill) && /Price history/.test(watched), 'card shows the product\'s pill (' + linkedPill + ') and a history link');
+  ok(await card('Bed table 70x48x30').getByRole('button', { name: 'Watch price' }).count() === 0, 'a watched option offers Stop watching instead');
+  await m.screenshot({ path: path.join(OUT, 'compare-phone-watch.png'), fullPage: true });
+  await card('Bed table 70x48x30').getByRole('button', { name: 'Price history' }).click();
+  await m.waitForTimeout(400);
+  const productPage = await text(m);
+  ok(productPage.includes(linkedName.replace('…', '').split(' ').pop()) && productPage.toUpperCase().includes(linkedPill.toUpperCase()), 'Price history opens the same product, with the same verdict');
+  await m.locator('.ck-tab', { hasText: 'Compare' }).click();
+  await m.waitForSelector('text=Bed table 70x48x30');
+  await card('Bed table 70x48x30').getByRole('button', { name: 'Stop watching' }).click();
+  await m.waitForSelector('text=Stopped watching from Compare.');
+  ok(await card('Bed table 70x48x30').getByRole('button', { name: 'Watch price' }).count() === 1, 'stop watching: back to Watch price');
+
   // a tax-excluded tag at an unknown shop must be decided, not guessed
   await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'Edit' }).click();
   await m.getByPlaceholder('Shop, as named in Cost').fill('Corner shop');

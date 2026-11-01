@@ -529,6 +529,26 @@ export async function addCmpPrice(p) {
   return data;
 }
 
+// ── watch price (Compare phase 5) ──
+// An option points at a tracked product (chatak_products). Rakuten listings go
+// through add-product, which creates or reuses the product and its offer and
+// puts it on the caller's watchlist; tracking the same listing twice returns
+// the same product. Amazon JP is not collected automatically, so an Amazon
+// option is watched through a Rakuten listing of the same item.
+export async function watchCmpOptionByUrl(optionId, url) {
+  const r = await addByUrl(url);
+  if (!r || !r.product_id) throw new Error('No product came back for that listing.');
+  await setCmpOptionProduct(optionId, r.product_id);
+  return r;
+}
+
+// Link to a product already on the watchlist, or null to stop. Stopping keeps
+// the product on Home; remove it there if it is no longer wanted.
+export async function setCmpOptionProduct(optionId, productId) {
+  const { error } = await db.from('chatak_cmp_options').update({ product_id: productId }).eq('id', optionId);
+  if (error) throw error;
+}
+
 export async function deleteCmpPrice(id) {
   const { error } = await db.from('chatak_cmp_prices').delete().eq('id', id);
   if (error) throw error;

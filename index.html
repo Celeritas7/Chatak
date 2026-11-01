@@ -1411,6 +1411,48 @@
             </section>
           </sc-if>
 
+          <!-- watch price -->
+          <sc-if value="{{ cmp.watchPanel }}">
+            <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:12px;">
+              <h2 style="margin:0;font-size:16px;font-weight:800;">{{ cmp.watchPanel.title }}</h2>
+              <span style="font-size:12px;color:#6F6A62;line-height:1.5;">{{ cmp.watchPanel.intro }}</span>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input value="{{ cmp.watchPanel.q }}" onChange="{{ cmp.watchPanel.onQ }}" onKeyDown="{{ cmp.watchPanel.onQKey }}" aria-label="Search Rakuten" placeholder="Item name or model number" style="flex:1;min-width:min(220px,100%);padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                <button onClick="{{ cmp.watchPanel.search }}" style="{{ cmp.watchPanel.searchStyle }}">Search Rakuten</button>
+              </div>
+              <sc-if value="{{ cmp.watchPanel.busy }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.watchPanel.busy }}</span></sc-if>
+              <sc-for list="{{ cmp.watchPanel.results }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #F2EEE7;">
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <span style="font-size:12px;font-weight:600;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ x.name }}</span>
+                    <span style="font-size:11px;color:#6F6A62;">{{ x.meta }}</span>
+                  </span>
+                  <button onClick="{{ x.go }}" style="flex-shrink:0;padding:7px 12px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Watch this</button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ cmp.watchPanel.noResults }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.watchPanel.noResults }}</span></sc-if>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input value="{{ cmp.watchPanel.url }}" onChange="{{ cmp.watchPanel.onUrl }}" inputMode="url" aria-label="Rakuten item link" placeholder="Or paste a Rakuten item link" style="flex:1;min-width:min(220px,100%);padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                <button onClick="{{ cmp.watchPanel.addUrl }}" style="{{ cmp.watchPanel.addUrlStyle }}">Watch link</button>
+              </div>
+              <sc-if value="{{ cmp.watchPanel.trackedTitle }}">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;margin-top:4px;">{{ cmp.watchPanel.trackedTitle }}</span>
+                <sc-for list="{{ cmp.watchPanel.tracked }}" as="t" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #F2EEE7;">
+                    <span style="{{ t.pill }}">{{ t.label }}</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0;">
+                      <span style="font-size:12px;font-weight:600;">{{ t.name }}</span>
+                      <span style="font-size:11px;color:#6F6A62;">{{ t.meta }}</span>
+                    </span>
+                    <button onClick="{{ t.go }}" style="flex-shrink:0;padding:7px 12px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Link</button>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{ cmp.watchPanel.error }}"><div style="font-size:12px;color:#B03A31;font-weight:600;">{{ cmp.watchPanel.error }}</div></sc-if>
+              <button onClick="{{ cmp.watchPanel.close }}" style="align-self:flex-start;padding:8px 2px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Close</button>
+            </section>
+          </sc-if>
+
           <!-- option editor -->
           <sc-if value="{{ cmp.ed }}">
             <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:14px;">
@@ -1607,11 +1649,20 @@
                       </sc-for>
                       <sc-if value="{{ r.missing }}"><span style="font-size:11px;color:#8C877E;padding:4px 6px 0;">{{ r.missing }}</span></sc-if>
                     </div>
+                    <sc-if value="{{ r.watch }}">
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:10px;border:1px solid #F0ECE4;">
+                        <sc-if value="{{ r.watch.pill }}"><span style="{{ r.watch.pill }}">{{ r.watch.label }}</span></sc-if>
+                        <span style="font-size:11px;color:#4A443C;flex:1;min-width:0;">{{ r.watch.text }}</span>
+                        <sc-if value="{{ r.watch.open }}"><button onClick="{{ r.watch.open }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Price history</button></sc-if>
+                      </div>
+                    </sc-if>
                     <sc-if value="{{ r.verdict }}"><span style="font-size:12px;font-weight:600;color:#1C1A17;">"{{ r.verdict }}"</span></sc-if>
                     <sc-if value="{{ r.notes }}"><span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ r.notes }}</span></sc-if>
                     <div style="display:flex;gap:8px;">
                       <button onClick="{{ r.edit }}" style="padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Edit</button>
                       <button onClick="{{ r.shortlist }}" style="{{ r.shortlistStyle }}">{{ r.shortlistLabel }}</button>
+                      <sc-if value="{{ r.canWatch }}"><button onClick="{{ r.startWatch }}" style="padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">Watch price</button></sc-if>
+                      <sc-if value="{{ r.unwatch }}"><button onClick="{{ r.unwatch }}" style="padding:8px 4px;border:0;background:none;color:#8C877E;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Stop watching</button></sc-if>
                     </div>
                   </div>
                 </article>
@@ -1770,7 +1821,9 @@ class Component extends DCLogic {
     cmpNewField: { label: '', unit: '', kind: 'number', better: 'none', choices: '' }, cmpNewCat: '',
     cmpBusy: false, cmpError: null, cmpInfo: null, cmpConfirmDel: false, cmpConfirmArchive: false,
     // Photos: signed links by storage path (live) or object URLs (sample and not-yet-saved).
-    cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null
+    cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null,
+    // Watch price: the option being linked to a tracked product, with its Rakuten search.
+    cmpWatch: null
   };
 
   chartRef = React.createRef();
@@ -2772,7 +2825,7 @@ class Component extends DCLogic {
       cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', seller: '', store_id: 2, url: '',
         qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -2783,7 +2836,7 @@ class Component extends DCLogic {
       cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', seller: o.source_kind === 'online' && o.store_id == null ? (o.shop_name || '') : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
         name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -3032,6 +3085,64 @@ class Component extends DCLogic {
     if (ok) this.setState({ cmpCat: null, cmpFieldsOpen: false, cmpConfirmArchive: false });
   }
 
+  // ---- watch price (phase 5) ----
+  // A Compare option points at a tracked product; its card then shows the
+  // same Buy / Watch / Wait pill as Home, read from the same built product.
+  cmpIsRakuten(url) { return /^https?:\/\/(item|www)\.rakuten\.co\.jp\//i.test(String(url || '').trim()); }
+
+  cmpOpenWatch(o) {
+    this.setState({
+      cmpWatch: { id: o.id, q: [o.brand, o.name].filter(Boolean).join(' '), url: this.cmpIsRakuten(o.url) ? o.url : '', results: null, busy: null, error: null },
+      cmpEdit: null, cmpPrice: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
+    });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  cmpWatchPatch(patch) { this.setState((s) => ({ cmpWatch: s.cmpWatch ? { ...s.cmpWatch, ...patch } : null })); }
+
+  async cmpWatchSearch() {
+    const W = this.state.cmpWatch;
+    if (!W || W.busy || !W.q.trim()) return;
+    if (!this.cmpLive()) { this.cmpWatchPatch({ error: 'Rakuten search needs the live app. In the sample, link one of the sample products below.' }); return; }
+    this.cmpWatchPatch({ busy: 'Searching Rakuten…', error: null, results: null });
+    try {
+      const results = (await this._api.searchRakuten(W.q.trim())).filter((r) => r.url);
+      this.cmpWatchPatch({ busy: null, results });
+    } catch (e) {
+      this.cmpWatchPatch({ busy: null, error: 'Rakuten search failed: ' + (e.message || e) });
+    }
+  }
+
+  // A Rakuten listing: add-product creates or reuses the product and puts it on Home.
+  async cmpWatchUrl(url) {
+    const W = this.state.cmpWatch;
+    if (!W || W.busy) return;
+    if (!this.cmpIsRakuten(url)) { this.cmpWatchPatch({ error: 'Paste a Rakuten item link (item.rakuten.co.jp/…). Amazon JP prices are not collected automatically.' }); return; }
+    if (!this.cmpLive()) { this.cmpWatchPatch({ error: 'Tracking a listing needs the live app. In the sample, link one of the sample products below.' }); return; }
+    this.cmpWatchPatch({ busy: 'Adding the listing…', error: null });
+    try {
+      const r = await this._api.watchCmpOptionByUrl(W.id, url.trim());
+      await Promise.all([this.loadCompare(), this.loadLive()]);
+      this.setState({ cmpWatch: null, cmpInfo: 'Watching ' + (r.name ? r.name.slice(0, 60) : 'the listing') + '. Today’s price is the first one; the verdict needs about two weeks of prices.' });
+    } catch (e) {
+      this.cmpWatchPatch({ busy: null, error: 'Not added: ' + (e.message || e) });
+    }
+  }
+
+  async cmpWatchLink(productId, name) {
+    const W = this.state.cmpWatch;
+    if (!W) return;
+    const ok = await this.cmpWrite(() => this._api.setCmpOptionProduct(W.id, productId),
+      (c) => ({ ...c, options: c.options.map((o) => (o.id === W.id ? { ...o, product_id: productId } : o)) }), 'Watching ' + name + '.');
+    if (ok) this.setState({ cmpWatch: null });
+  }
+
+  cmpUnwatch(o) {
+    return this.cmpWrite(() => this._api.setCmpOptionProduct(o.id, null),
+      (c) => ({ ...c, options: c.options.map((x) => (x.id === o.id ? { ...x, product_id: null } : x)) }),
+      'Stopped watching from Compare. The product stays on Home until you remove it there.');
+  }
+
   compareVals(S) {
     const C = window.ChatakCompare, D = S.cmp;
     const chip = (on) => 'padding:6px 11px;border-radius:999px;border:1px solid ' + (on ? '#1C1A17' : '#DDD7CE') + ';background:' + (on ? '#1C1A17' : '#fff') + ';color:' + (on ? '#fff' : '#4A443C') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;';
@@ -3053,7 +3164,7 @@ class Component extends DCLogic {
           count: v.all.length ? v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · ' + v.fields.length + ' fields' : 'No options yet · ' + v.fields.length + ' fields',
           range: ps.length ? C.yen(Math.min(...ps)) + (ps.length > 1 ? ' – ' + C.yen(Math.max(...ps)) : '') + ' incl. tax' : '—',
           shortlisted: sl ? sl + ' shortlisted' : '',
-          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
+          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
             cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} }, cmpConfirmArchive: false })
         };
       });
@@ -3087,6 +3198,17 @@ class Component extends DCLogic {
       return { text: L.text, diffs: L.diffs.length ? L.diffs.join(' · ') : L.note };
     };
     const tint = 'background:#F0F8F4;';
+    // Tracked products, as Home builds them. Live: only the real watchlist, never
+    // the fixtures build() falls back to when nothing is tracked yet.
+    const built = this.build();
+    const tracked = sample ? (built.products || []) : (built.live ? built.products || [] : []);
+    const watchOf = (r) => {
+      if (!r.product_id) return null;
+      const q = tracked.find((p) => String(p.id) === String(r.product_id));
+      if (!q) return { pill: null, label: '', text: 'Watching · prices are being collected' };
+      return { pill: this.pill(q.verdict), label: this.vlabel(q.verdict), open: this.open(q.id),
+        text: q.bestStore + ' ' + this.yen(q.current) + (q.median ? ' · ' + q.medianLabel + ' ' + this.yen(q.median) : '') };
+    };
     const photosOf = (id) => (D.photos || []).filter((p) => p.option_id === id && S.cmpPhotoUrls[p.storage_path]);
     const cssUrl = (u) => 'url("' + String(u).replace(/["\\\n]/g, '') + '")';
     const openViewer = (id, i) => this.setState({ cmpViewPhoto: { option: id, i } });
@@ -3119,6 +3241,9 @@ class Component extends DCLogic {
           return !n ? '' : n === fields.length ? 'No specs recorded yet.' : n + ' of ' + fields.length + ' specs not recorded.';
         })(),
         verdict: r.verdict || '', notes: r.notes || '',
+        watch: watchOf(r),
+        canWatch: online && !r.product_id, startWatch: () => this.cmpOpenWatch(r),
+        unwatch: r.product_id ? () => this.cmpUnwatch(r) : null,
         edit: () => this.cmpOpenOption(r),
         shortlist: () => this.cmpSetStatus(r, r.status === 'shortlisted' ? 'considering' : 'shortlisted'),
         shortlistLabel: r.status === 'shortlisted' ? '★ Shortlisted' : '☆ Shortlist',
@@ -3136,6 +3261,10 @@ class Component extends DCLogic {
       { label: 'Price (incl. tax)', cells: v.rows.map((r) => ({ text: r.lead ? C.yen(r.lead.price_incl) : '—', sub: r.lead ? this.cmpShopLabel(r.lead) + (r.lead.tax_basis === 'excl' ? ' · tag ' + C.yen(r.lead.price) + ' + tax' : '') : '', style: cell("font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;") })) },
       { label: 'Member price', cells: v.rows.map((r) => ({ text: r.member ? C.yen(r.member.price_incl) : '—', sub: r.member ? r.member.member_program : '', style: cell("font-family:'IBM Plex Mono',monospace;") })) },
       { label: 'Pay more, get what', cells: v.rows.map((r) => { const p = payFor(r); return { text: p.text || '—', sub: p.diffs, style: cell('font-size:11px;') }; }) },
+      ...(v.rows.some((r) => r.product_id) ? [{ label: 'Price watch', cells: v.rows.map((r) => {
+        const w = watchOf(r);
+        return { text: w ? (w.label || 'Watching') : '—', sub: w ? w.text : '', style: cell(w && w.label ? 'font-weight:700;' : '') };
+      }) }] : []),
       { label: 'Size', cells: v.rows.map((r) => ({ text: r.pack_qty + ' ' + r.pack_unit + (r.size_label ? ' · ' + r.size_label : ''), style: cell() })) }
     ].concat(v.per.unit ? [{ label: 'Per ' + v.per.unit, cells: v.rows.map((r) => ({ text: v.per.values[r.id] != null ? C.yen(v.per.values[r.id]) : '—', style: cell("font-family:'IBM Plex Mono',monospace;") })) }] : [])
       .concat(fields.map((f) => ({ label: f.label + (f.unit ? ' (' + f.unit + ')' : ''), cells: v.rows.map((r) => {
@@ -3237,6 +3366,34 @@ class Component extends DCLogic {
     const betterWord = { higher: 'higher is better', lower: 'lower is better', none: '' };
 
     const anyFilter = filters.maxPrice || F.statuses.length || F.source !== 'all' || F.mustHave.length || Object.values(filters.min).some((x) => x > 0);
+    let watchPanel = null;
+    if (S.cmpWatch) {
+      const W = S.cmpWatch, opt = (D.options || []).find((o) => o.id === W.id);
+      if (opt) {
+        const isAmazon = opt.store_id === 2;
+        watchPanel = {
+          title: 'Watch price · ' + opt.name,
+          intro: isAmazon
+            ? 'Amazon JP prices are not collected automatically. Pick the same item on Rakuten and Chatak will record its price every morning.'
+            : 'Pick the Rakuten listing for this item, or paste its link. Chatak records its price every morning and shows the verdict here and on Home.',
+          q: W.q, onQ: (e) => this.cmpWatchPatch({ q: e.target.value, error: null }),
+          onQKey: (e) => { if (e.key === 'Enter') this.cmpWatchSearch(); },
+          search: () => this.cmpWatchSearch(), searchStyle: softBtn(!!W.q.trim() && !W.busy),
+          url: W.url, onUrl: (e) => this.cmpWatchPatch({ url: e.target.value.trim(), error: null }),
+          addUrl: () => this.cmpWatchUrl(W.url), addUrlStyle: softBtn(this.cmpIsRakuten(W.url) && !W.busy),
+          busy: W.busy, error: W.error,
+          results: (W.results || []).map((x) => ({
+            name: x.name, meta: [x.subtitle, x.current ? this.yen(x.current) : ''].filter(Boolean).join(' · '),
+            go: () => this.cmpWatchUrl(x.url)
+          })),
+          noResults: W.results && !W.results.length ? 'Nothing on Rakuten for that. Try fewer words, or the model number.' : '',
+          trackedTitle: tracked.length ? (sample ? 'Sample products' : 'Already on Home') : '',
+          tracked: tracked.map((p) => ({ name: p.short || p.name, meta: p.bestStore + ' ' + this.yen(p.current), pill: this.pill(p.verdict), label: this.vlabel(p.verdict), go: () => this.cmpWatchLink(p.id, p.short || p.name) })),
+          close: () => this.setState({ cmpWatch: null })
+        };
+      }
+    }
+
     let viewer = null;
     if (S.cmpViewPhoto) {
       const pics = photosOf(S.cmpViewPhoto.option), n = pics.length;
@@ -3259,11 +3416,11 @@ class Component extends DCLogic {
       }
     }
 
-    return { ...base, inCat: true, title: cat.name, viewer,
+    return { ...base, inCat: true, title: cat.name, viewer, watchPanel,
       subtitle: v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · prices compared tax-included · the green tint marks the best value in a column where you said which way is better. Nothing is scored.',
-      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
+      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
       views: [['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => ({ label: l, go: () => this.setState({ cmpView: k }), style: this.seg(S.cmpView === k) })),
-      toggleFields: () => this.setState({ cmpFieldsOpen: !S.cmpFieldsOpen, cmpEdit: null, cmpError: null, cmpConfirmArchive: false }),
+      toggleFields: () => this.setState({ cmpFieldsOpen: !S.cmpFieldsOpen, cmpEdit: null, cmpWatch: null, cmpError: null, cmpConfirmArchive: false }),
       fieldsBtnStyle: chip(S.cmpFieldsOpen).replace('padding:6px 11px', 'padding:9px 14px').replace('border-radius:999px', 'border-radius:12px'),
       newOption: () => this.cmpNewOption(),
       fieldsOpen: S.cmpFieldsOpen,
