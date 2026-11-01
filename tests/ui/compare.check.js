@@ -132,6 +132,20 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   await m.waitForSelector('text=Added Photo first table.');
   ok(await m.locator('article', { hasText: 'Photo first table' }).getByRole('button', { name: 'View photo' }).count() === 1, 'new option saved with its photo');
 
+  // online, at a seller with no store row, before its page is found
+  await m.getByRole('button', { name: '+ Option' }).click();
+  await m.getByPlaceholder('e.g. MY space table').fill('Bottle cover, blue');
+  await m.getByRole('button', { name: 'Online', exact: true }).first().click();
+  await m.getByRole('button', { name: 'Other seller' }).click();
+  await m.getByRole('button', { name: 'Add option' }).click();
+  ok((await text(m)).includes('Which seller?'), 'other seller needs a name');
+  await m.getByPlaceholder("Seller, e.g. ANA Mall or the maker's site").fill('ANA Mall');
+  await m.getByPlaceholder('Price on the tag').fill('1210');
+  await m.getByRole('button', { name: 'Add option' }).click();
+  await m.waitForSelector('text=Added Bottle cover, blue.');
+  const blue = (await m.$$eval('article', (a) => a.map((x) => x.innerText))).find((t) => t.split('\n').includes('Bottle cover, blue')) || '';
+  ok(blue.includes('Online · no link yet') && blue.includes('ANA Mall') && blue.includes('¥1,210'), 'saved without a link: seller and price shown');
+
   // a tax-excluded tag at an unknown shop must be decided, not guessed
   await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'Edit' }).click();
   await m.getByPlaceholder('Shop, as named in Cost').fill('Corner shop');
