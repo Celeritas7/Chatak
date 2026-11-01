@@ -59,3 +59,12 @@ Inline, on the elements, by design — the app paints as it streams instead of
 waiting for a stylesheet. There is no `css/` folder to look for; the only
 global rules (fonts, body reset, selection colour) sit in the `<helmet>` block
 at the top of the .dc.html file.
+
+## Tests
+
+`tests/db/run.sh` starts a throwaway Postgres (15+), stubs the parts of
+Supabase the schema touches (auth, roles, storage), runs
+`supabase/schema.sql` **twice** to prove it is safe to re-run, then every
+`tests/db/test_*.sql`. Each check prints `ok  …` or stops the run with
+`FAILED: …`. Pass a name fragment to run one file: `tests/db/run.sh compare`.
+Nothing here touches the live project.

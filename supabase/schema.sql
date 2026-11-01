@@ -623,3 +623,288 @@ end; $$;
 drop trigger if exists chatak_matrix_price_alerts on public.chatak_matrix_prices;
 create trigger chatak_matrix_price_alerts after insert on public.chatak_matrix_prices
   for each row execute function public.chatak_matrix_price_alerts();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Compare: what to buy. Categories (a need) → fields (its parameters) →
+-- options (buyable products) → prices (what was seen, where, on which tax
+-- basis) and photos (your own shelf photos).
+--
+-- Private to each person: every row carries user_id and is readable only by
+-- its owner, who must also be on the Chatak allow-list. A child row may only
+-- point at a parent its owner owns. Shops are Cost's (akatsuki_shops, by
+-- cost_shop_id, as the matrix stores them); online sources are chatak_stores.
+-- Safe to re-run.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.chatak_cmp_categories (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  name        text not null check (length(btrim(name)) > 0),
+  notes       text,
+  -- 10 standard, 8 for food and drink. Pre-fills each price's rate.
+  tax_rate    numeric(4,2) not null default 10 check (tax_rate in (8, 10)),
+  sort_order  integer not null default 0,
+  archived    boolean not null default false,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create unique index if not exists chatak_cmp_categories_name
+  on public.chatak_cmp_categories (user_id, lower(name));
+
+create table if not exists public.chatak_cmp_fields (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  category_id  uuid not null references public.chatak_cmp_categories(id) on delete cascade,
+  key          text not null check (key ~ '^[a-z][a-z0-9_]{0,39}$'),
+  label        text not null check (length(btrim(label)) > 0),
+  kind         text not null check (kind in ('number', 'text', 'bool', 'choice')),
+  unit         text,
+  -- Set by the person, never inferred. Only decides the best-in-column tint.
+  better       text not null default 'none' check (better in ('higher', 'lower', 'none')),
+  choices      text[],
+  sort_order   integer not null default 0,
+  created_at   timestamptz not null default now(),
+  unique (category_id, key),
+  check (better = 'none' or kind in ('number', 'bool')),
+  check (kind <> 'choice' or coalesce(array_length(choices, 1), 0) > 0)
+);
+
+create table if not exists public.chatak_cmp_options (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  category_id   uuid not null references public.chatak_cmp_categories(id) on delete cascade,
+  name          text not null check (length(btrim(name)) > 0),
+  name_ja       text,
+  brand         text,
+  model_code    text,
+  source_kind   text not null check (source_kind in ('shop', 'online')),
+  cost_shop_id  text,                      -- akatsuki_shops.id, as chatak_matrix_prices stores it
+  shop_name     text,                      -- fallback when the shop is not (yet) in Cost
+  store_id      smallint references public.chatak_stores(id),
+  url           text,
+  -- Comparisons silently invert without these, so they are never optional.
+  pack_qty      numeric not null check (pack_qty > 0),
+  pack_unit     text not null check (pack_unit in ('pc', 'set', 'pair', 'sheet', 'roll', 'g', 'kg', 'ml', 'L', 'cm', 'm')),
+  size_label    text,                      -- as written on the tag, e.g. "60x45 cm"
+  specs         jsonb not null default '{}'::jsonb check (jsonb_typeof(specs) = 'object'),
+  notes         text,
+  status        text not null default 'considering' check (status in ('considering', 'shortlisted', 'bought', 'rejected')),
+  verdict       text check (verdict is null or length(verdict) <= 200),
+  photo_check   boolean not null default false,  -- the spreadsheet's "Check photo" flag
+  product_id    uuid references public.chatak_products(id) on delete set null,  -- phase 5
+  import_key    text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  check (source_kind <> 'online' or (store_id is not null and url is not null)),
+  check (source_kind <> 'shop' or cost_shop_id is not null or shop_name is not null)
+);
+create unique index if not exists chatak_cmp_options_import
+  on public.chatak_cmp_options (user_id, import_key) where import_key is not null;
+create index if not exists chatak_cmp_options_category on public.chatak_cmp_options (category_id);
+
+create table if not exists public.chatak_cmp_photos (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  option_id      uuid not null references public.chatak_cmp_options(id) on delete cascade,
+  storage_path   text not null unique,     -- <user_id>/<option_id>/<file> in bucket chatak-compare
+  original_name  text,                     -- e.g. IMG20261024192355.jpg
+  taken_at       timestamptz,
+  width          integer check (width is null or width <= 2400),
+  height         integer check (height is null or height <= 2400),
+  bytes          integer check (bytes is null or bytes <= 2000000),
+  created_at     timestamptz not null default now(),
+  check (split_part(storage_path, '/', 1) = user_id::text)
+);
+create index if not exists chatak_cmp_photos_option on public.chatak_cmp_photos (option_id);
+
+-- One row per price seen. Never edited: a correction is a new row (or a delete).
+create table if not exists public.chatak_cmp_prices (
+  id              bigserial primary key,
+  user_id         uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  option_id       uuid not null references public.chatak_cmp_options(id) on delete cascade,
+  cost_shop_id    text,
+  shop_name       text,
+  store_id        smallint references public.chatak_stores(id),
+  price           integer not null check (price > 0),
+  tax_basis       text not null check (tax_basis in ('incl', 'excl')),
+  tax_rate        numeric(4,2) not null default 10 check (tax_rate in (8, 10)),
+  -- The one number comparisons use. Rounded down, as shops round on the tag.
+  price_incl      integer generated always as (
+                    case when tax_basis = 'incl' then price
+                         else floor(price * (100 + tax_rate) / 100)::integer end) stored,
+  price_kind      text not null default 'shelf' check (price_kind in ('shelf', 'member', 'sale', 'online')),
+  member_program  text,
+  seen_on         date not null default current_date,
+  source          text not null default 'manual' check (source in ('import', 'photo', 'manual', 'url')),
+  photo_id        uuid references public.chatak_cmp_photos(id) on delete set null,
+  note            text,
+  import_key      text,
+  entered_at      timestamptz not null default now(),
+  check (cost_shop_id is not null or shop_name is not null or store_id is not null),
+  check (price_kind <> 'member' or member_program is not null)
+);
+create unique index if not exists chatak_cmp_prices_import
+  on public.chatak_cmp_prices (user_id, import_key) where import_key is not null;
+create index if not exists chatak_cmp_prices_option on public.chatak_cmp_prices (option_id, seen_on desc);
+
+-- Specs must match the category's field list: no unknown keys, right types.
+create or replace function public.chatak_cmp_check_specs()
+returns trigger language plpgsql set search_path = public as $$
+declare
+  k text; v jsonb; f record;
+begin
+  for k, v in select * from jsonb_each(new.specs) loop
+    select kind, choices into f from public.chatak_cmp_fields
+     where category_id = new.category_id and key = k;
+    if not found then
+      raise exception 'Unknown field "%" for this category', k using errcode = '22023';
+    end if;
+    if jsonb_typeof(v) = 'null' then continue; end if;
+    if (f.kind = 'number' and jsonb_typeof(v) <> 'number')
+       or (f.kind = 'bool' and jsonb_typeof(v) <> 'boolean')
+       or (f.kind in ('text', 'choice') and jsonb_typeof(v) <> 'string') then
+      raise exception 'Field "%" expects a %', k, f.kind using errcode = '22023';
+    end if;
+    if f.kind = 'choice' and not ((v #>> '{}') = any (f.choices)) then
+      raise exception 'Field "%" must be one of: %', k, array_to_string(f.choices, ', ') using errcode = '22023';
+    end if;
+  end loop;
+  new.updated_at := now();
+  return new;
+end; $$;
+
+drop trigger if exists chatak_cmp_options_specs on public.chatak_cmp_options;
+create trigger chatak_cmp_options_specs before insert or update on public.chatak_cmp_options
+  for each row execute function public.chatak_cmp_check_specs();
+
+create or replace function public.chatak_cmp_touch()
+returns trigger language plpgsql set search_path = public as $$
+begin new.updated_at := now(); return new; end; $$;
+drop trigger if exists chatak_cmp_categories_touch on public.chatak_cmp_categories;
+create trigger chatak_cmp_categories_touch before update on public.chatak_cmp_categories
+  for each row execute function public.chatak_cmp_touch();
+
+-- Row access: owner only, on the allow-list, and children only under own parents.
+alter table public.chatak_cmp_categories enable row level security;
+alter table public.chatak_cmp_fields     enable row level security;
+alter table public.chatak_cmp_options    enable row level security;
+alter table public.chatak_cmp_photos     enable row level security;
+alter table public.chatak_cmp_prices     enable row level security;
+
+drop policy if exists chatak_cmp_categories_own on public.chatak_cmp_categories;
+create policy chatak_cmp_categories_own on public.chatak_cmp_categories for all to authenticated
+  using (user_id = auth.uid() and public.chatak_role() is not null)
+  with check (user_id = auth.uid() and public.chatak_role() is not null);
+
+drop policy if exists chatak_cmp_fields_own on public.chatak_cmp_fields;
+create policy chatak_cmp_fields_own on public.chatak_cmp_fields for all to authenticated
+  using (user_id = auth.uid() and public.chatak_role() is not null)
+  with check (user_id = auth.uid() and public.chatak_role() is not null
+              and exists (select 1 from public.chatak_cmp_categories c where c.id = category_id and c.user_id = auth.uid()));
+
+drop policy if exists chatak_cmp_options_own on public.chatak_cmp_options;
+create policy chatak_cmp_options_own on public.chatak_cmp_options for all to authenticated
+  using (user_id = auth.uid() and public.chatak_role() is not null)
+  with check (user_id = auth.uid() and public.chatak_role() is not null
+              and exists (select 1 from public.chatak_cmp_categories c where c.id = category_id and c.user_id = auth.uid()));
+
+drop policy if exists chatak_cmp_photos_own on public.chatak_cmp_photos;
+create policy chatak_cmp_photos_own on public.chatak_cmp_photos for all to authenticated
+  using (user_id = auth.uid() and public.chatak_role() is not null)
+  with check (user_id = auth.uid() and public.chatak_role() is not null
+              and exists (select 1 from public.chatak_cmp_options o where o.id = option_id and o.user_id = auth.uid()));
+
+-- Prices: read, add and delete own rows. No update — history is not rewritten.
+drop policy if exists chatak_cmp_prices_read on public.chatak_cmp_prices;
+drop policy if exists chatak_cmp_prices_add  on public.chatak_cmp_prices;
+drop policy if exists chatak_cmp_prices_del  on public.chatak_cmp_prices;
+create policy chatak_cmp_prices_read on public.chatak_cmp_prices for select to authenticated
+  using (user_id = auth.uid() and public.chatak_role() is not null);
+create policy chatak_cmp_prices_add on public.chatak_cmp_prices for insert to authenticated
+  with check (user_id = auth.uid() and public.chatak_role() is not null
+              and exists (select 1 from public.chatak_cmp_options o where o.id = option_id and o.user_id = auth.uid())
+              and (photo_id is null or exists (select 1 from public.chatak_cmp_photos p where p.id = photo_id and p.user_id = auth.uid())));
+create policy chatak_cmp_prices_del on public.chatak_cmp_prices for delete to authenticated
+  using (user_id = auth.uid() and public.chatak_role() is not null);
+
+-- Photos: a private bucket, 2 MB cap (the app shrinks to ~300 KB first), JPEG/WebP
+-- only. Each person reads and writes only under their own <user_id>/ folder.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('chatak-compare', 'chatak-compare', false, 2000000, array['image/jpeg', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 2000000,
+  allowed_mime_types = array['image/jpeg', 'image/webp'];
+
+drop policy if exists chatak_cmp_storage_read   on storage.objects;
+drop policy if exists chatak_cmp_storage_add    on storage.objects;
+drop policy if exists chatak_cmp_storage_delete on storage.objects;
+create policy chatak_cmp_storage_read on storage.objects for select to authenticated
+  using (bucket_id = 'chatak-compare' and (storage.foldername(name))[1] = auth.uid()::text
+         and public.chatak_role() is not null);
+create policy chatak_cmp_storage_add on storage.objects for insert to authenticated
+  with check (bucket_id = 'chatak-compare' and (storage.foldername(name))[1] = auth.uid()::text
+              and public.chatak_role() is not null);
+create policy chatak_cmp_storage_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'chatak-compare' and (storage.foldername(name))[1] = auth.uid()::text
+         and public.chatak_role() is not null);
+
+-- Starter categories for the caller: folding bed table, slicer, blender. Adds
+-- only what is missing, so calling it twice changes nothing. Runs as the
+-- caller (security invoker), so row access applies as usual.
+create or replace function public.chatak_cmp_seed_starters()
+returns integer language plpgsql security invoker set search_path = public as $$
+declare
+  added integer := 0;
+  cat uuid;
+  starter jsonb;
+  fld jsonb;
+  i integer;
+begin
+  if auth.uid() is null then raise exception 'Sign in first' using errcode = '42501'; end if;
+  for starter in select * from jsonb_array_elements($j$[
+    {"name": "Folding bed table", "fields": [
+      {"key": "width",      "label": "Width",         "kind": "number", "unit": "cm", "better": "higher"},
+      {"key": "depth",      "label": "Depth",         "kind": "number", "unit": "cm", "better": "higher"},
+      {"key": "height",     "label": "Height",        "kind": "number", "unit": "cm", "better": "none"},
+      {"key": "weight",     "label": "Weight",        "kind": "number", "unit": "kg", "better": "lower"},
+      {"key": "load",       "label": "Load capacity", "kind": "number", "unit": "kg", "better": "higher"},
+      {"key": "material",   "label": "Top material",  "kind": "choice", "choices": ["Wood", "MDF", "Bamboo", "Plastic", "Metal"]},
+      {"key": "adjustable", "label": "Adjustable height", "kind": "bool", "better": "higher"},
+      {"key": "tablet_slot","label": "Tablet slot",   "kind": "bool", "better": "higher"},
+      {"key": "cup_holder", "label": "Cup holder",    "kind": "bool", "better": "higher"}]},
+    {"name": "Slicer", "fields": [
+      {"key": "type",        "label": "Type",               "kind": "choice", "choices": ["Mandoline", "Rotary", "Electric"]},
+      {"key": "blades",      "label": "Blades included",    "kind": "number", "better": "higher"},
+      {"key": "thickness",   "label": "Thickness settings", "kind": "number", "better": "higher"},
+      {"key": "hand_guard",  "label": "Hand guard",         "kind": "bool",   "better": "higher"},
+      {"key": "dishwasher",  "label": "Dishwasher safe",    "kind": "bool",   "better": "higher"},
+      {"key": "weight",      "label": "Weight",             "kind": "number", "unit": "g", "better": "lower"}]},
+    {"name": "Blender", "fields": [
+      {"key": "power",       "label": "Power",        "kind": "number", "unit": "W",  "better": "higher"},
+      {"key": "jar",         "label": "Jar capacity", "kind": "number", "unit": "L",  "better": "higher"},
+      {"key": "speeds",      "label": "Speeds",       "kind": "number", "better": "higher"},
+      {"key": "ice",         "label": "Crushes ice",  "kind": "bool",   "better": "higher"},
+      {"key": "noise",       "label": "Noise",        "kind": "number", "unit": "dB", "better": "lower"},
+      {"key": "weight",      "label": "Weight",       "kind": "number", "unit": "kg", "better": "lower"},
+      {"key": "warranty",    "label": "Warranty",     "kind": "number", "unit": "years", "better": "higher"}]}
+  ]$j$::jsonb) loop
+    select id into cat from public.chatak_cmp_categories
+     where user_id = auth.uid() and lower(name) = lower(starter->>'name');
+    if cat is null then
+      insert into public.chatak_cmp_categories (name, sort_order)
+      values (starter->>'name', added) returning id into cat;
+      added := added + 1;
+    end if;
+    i := 0;
+    for fld in select * from jsonb_array_elements(starter->'fields') loop
+      insert into public.chatak_cmp_fields (category_id, key, label, kind, unit, better, choices, sort_order)
+      values (cat, fld->>'key', fld->>'label', fld->>'kind', fld->>'unit', coalesce(fld->>'better', 'none'),
+              case when fld ? 'choices' then array(select jsonb_array_elements_text(fld->'choices')) end, i)
+      on conflict (category_id, key) do nothing;
+      i := i + 1;
+    end loop;
+    cat := null;
+  end loop;
+  return added;
+end; $$;
+revoke all on function public.chatak_cmp_seed_starters() from public, anon;
+grant execute on function public.chatak_cmp_seed_starters() to authenticated;
