@@ -59,3 +59,20 @@ Inline, on the elements, by design — the app paints as it streams instead of
 waiting for a stylesheet. There is no `css/` folder to look for; the only
 global rules (fonts, body reset, selection colour) sit in the `<helmet>` block
 at the top of the .dc.html file.
+
+## Tests
+
+`tests/db/run.sh` starts a throwaway Postgres (15+), stubs the parts of
+Supabase the schema touches (auth, roles, storage), runs
+`supabase/schema.sql` **twice** to prove it is safe to re-run, then every
+`tests/db/test_*.sql`. Each check prints `ok  …` or stops the run with
+`FAILED: …`. Pass a name fragment to run one file: `tests/db/run.sh compare`.
+Nothing here touches the live project.
+
+`node --test tests/js/*.test.js` checks Compare's arithmetic in
+`js/chatak-compare.js` (tax basis, best in column, "pay more, get what",
+sorting, filters) on the sample folding tables.
+
+`tests/ui/compare.check.js` drives the Compare tab in a headless browser at
+phone and desktop width on sample data; see the header of that file for the
+one-time setup.
