@@ -80,6 +80,58 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: '☆ Shortlist' }).click();
   ok(await m.locator('article', { hasText: 'Wide table test' }).getByText('Shortlisted', { exact: true }).count() === 1, 'shortlist marks the card');
 
+  // photos: a big camera-sized JPEG is shrunk in the browser, then shown, viewed and deleted
+  const big = await m.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 4000; c.height = 3000;
+    const g = c.getContext('2d'), img = g.createImageData(4000, 3000);
+    for (let i = 0; i < img.data.length; i += 4) { const px = i / 4, x = px % 4000, y = (px / 4000) | 0, n = (Math.random() * 24) | 0; img.data[i] = ((x / 16) & 255) ^ n; img.data[i + 1] = ((y / 12) & 255) + (n >> 1); img.data[i + 2] = ((x + y) / 28) & 255; img.data[i + 3] = 255; }
+    g.putImageData(img, 0, 0);
+    const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.95));
+    const u = new Uint8Array(await b.arrayBuffer()); let s = '';
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return { b64: btoa(s), size: b.size };
+  });
+  ok(big.size > 1500000, 'test photo is camera-sized (' + Math.round(big.size / 1024) + ' KB)');
+  const photoFile = { name: 'IMG20261024192355.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(big.b64, 'base64') };
+  await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'Edit' }).click();
+  await m.getByLabel('Add photos').setInputFiles(photoFile);
+  await m.waitForSelector('text=Photo added.', { timeout: 20000 });
+  ok(await m.locator('[aria-label="Photo 1 of 1"]').count() === 1, 'editor shows the new photo');
+  await m.getByRole('button', { name: 'Cancel' }).click();
+  const viewBtn = m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'View photo' });
+  ok(await viewBtn.count() === 1, 'card shows the photo with a View button');
+  await viewBtn.click();
+  await m.waitForSelector('[role=dialog] [role=img]');
+  const shot = await m.evaluate(async () => {
+    const src = document.querySelector('[role=dialog] [role=img]').dataset.src;
+    const b = await (await fetch(src)).blob();
+    const img = await createImageBitmap(b);
+    return { w: img.width, h: img.height, bytes: b.size, type: b.type, caption: document.querySelector('[role=dialog]').innerText };
+  });
+  ok(shot.w === 1600 && shot.h === 1200, 'shrunk to 1600 x 1200 (got ' + shot.w + ' x ' + shot.h + ')');
+  ok(shot.bytes <= 300000 && shot.type === 'image/jpeg', 'stored copy is a JPEG of at most 300 KB (got ' + Math.round(shot.bytes / 1024) + ' KB)');
+  ok(shot.caption.includes('taken 24 Oct 2026, 19:23 JST') && shot.caption.includes('IMG20261024192355.jpg'), 'viewer gives the time taken, from the file name');
+  await m.screenshot({ path: path.join(OUT, 'compare-phone-photo-viewer.png') });
+  await m.keyboard.press('Escape');
+  ok(await m.locator('[role=dialog]').count() === 0, 'Escape closes the viewer');
+  await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'Edit' }).click();
+  await m.getByRole('button', { name: 'Delete photo' }).click();
+  ok(await m.getByRole('button', { name: 'Confirm: delete this photo' }).count() === 1, 'deleting a photo asks once more');
+  await m.getByRole('button', { name: 'Confirm: delete this photo' }).click();
+  await m.waitForSelector('text=Photo deleted.');
+  ok(await m.locator('[aria-label="Photo 1 of 1"]').count() === 0, 'photo removed');
+  await m.getByRole('button', { name: 'Cancel' }).click();
+
+  // a photo chosen for a new option waits for the save
+  await m.getByRole('button', { name: '+ Option' }).click();
+  await m.getByPlaceholder('e.g. MY space table').fill('Photo first table');
+  await m.getByPlaceholder('Shop, as named in Cost').fill('Nitori');
+  await m.getByLabel('Add photos').setInputFiles(photoFile);
+  await m.waitForSelector('text=1 photo uploads when you save.', { timeout: 20000 });
+  await m.getByRole('button', { name: 'Add option' }).click();
+  await m.waitForSelector('text=Added Photo first table.');
+  ok(await m.locator('article', { hasText: 'Photo first table' }).getByRole('button', { name: 'View photo' }).count() === 1, 'new option saved with its photo');
+
   // a tax-excluded tag at an unknown shop must be decided, not guessed
   await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'Edit' }).click();
   await m.getByPlaceholder('Shop, as named in Cost').fill('Corner shop');

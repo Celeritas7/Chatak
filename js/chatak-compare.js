@@ -208,7 +208,7 @@
       P('o-vecelo', 2999, 'incl', 'online', { store_id: 2 }),
       P('o-yamazen', 3799, 'incl', 'online', { store_id: 2 })
     ];
-    return { categories, fields: F, options, prices };
+    return { categories, fields: F, options, prices, photos: [] };
   }
 
   const api = { yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };

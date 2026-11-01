@@ -72,6 +72,9 @@ Nothing here touches the live project.
 `node --test tests/js/*.test.js` checks Compare's arithmetic in
 `js/chatak-compare.js` (tax basis, best in column, "pay more, get what",
 sorting, filters) on the sample folding tables.
+`tests/js/photo.test.js` covers `js/chatak-photo.js`: the 1600 px resize
+maths and reading when a photo was taken (EXIF, or names like
+`IMG20261024192355.jpg`).
 
 `tests/ui/compare.check.js` drives the Compare tab in a headless browser at
 phone and desktop width on sample data; see the header of that file for the
