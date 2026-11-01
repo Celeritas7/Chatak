@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script src="./js/chatak-config.js"></script>
 <script src="./js/chatak-engine.js"></script>
+<script src="./js/chatak-compare.js"></script>
 <script src="./js/akatsuki-client.js"></script>
 <style>
   *{box-sizing:border-box;}
@@ -1311,6 +1312,316 @@
         </div>
       </sc-if>
 
+      <!-- ============ COMPARE ============ -->
+      <sc-if value="{{ isCompare }}">
+        <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px;">
+
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:min(260px,100%);">
+              <sc-if value="{{ cmp.inCat }}">
+                <button onClick="{{ cmp.back }}" style="align-self:flex-start;padding:0;border:0;background:none;font-size:12px;font-weight:700;color:#6F6A62;cursor:pointer;">← All needs</button>
+              </sc-if>
+              <h1 style="margin:0;font-size:25px;font-weight:800;letter-spacing:-0.02em;">{{ cmp.title }}</h1>
+              <p style="margin:0;font-size:13px;color:#6F6A62;line-height:1.5;">{{ cmp.subtitle }}</p>
+            </div>
+            <sc-if value="{{ cmp.inCat }}">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <div style="display:flex;gap:3px;padding:3px;border-radius:11px;background:#F4F1EB;">
+                  <sc-for list="{{ cmp.views }}" as="v" hint-placeholder-count="2">
+                    <button onClick="{{ v.go }}" style="{{ v.style }}">{{ v.label }}</button>
+                  </sc-for>
+                </div>
+                <button onClick="{{ cmp.toggleFields }}" style="{{ cmp.fieldsBtnStyle }}">Fields</button>
+                <button onClick="{{ cmp.newOption }}" style="padding:9px 14px;border-radius:12px;border:0;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Option</button>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ cmp.notice }}">
+            <div style="padding:12px 16px;border-radius:14px;background:#FBE7E4;border:1px solid #F0D9D5;font-size:12px;line-height:1.5;color:#8C2E27;font-weight:600;">{{ cmp.notice }}</div>
+          </sc-if>
+          <sc-if value="{{ cmp.info }}">
+            <div style="padding:10px 14px;border-radius:12px;background:#F3F9F6;border:1px solid #D6E9E0;font-size:12px;color:#14684E;font-weight:600;">{{ cmp.info }}</div>
+          </sc-if>
+          <sc-if value="{{ cmp.loading }}">
+            <div style="padding:28px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;font-size:13px;color:#6F6A62;">{{ cmp.loadingText }}</div>
+          </sc-if>
+
+          <!-- needs (categories) -->
+          <sc-if value="{{ cmp.showList }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:14px;">
+              <sc-for list="{{ cmp.cats }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.open }}" style="text-align:left;padding:18px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;cursor:pointer;display:flex;flex-direction:column;gap:8px;font:inherit;color:inherit;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
+                  <span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;">{{ c.name }}</span>
+                  <span style="font-size:12px;color:#6F6A62;">{{ c.count }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;">{{ c.range }}</span>
+                  <sc-if value="{{ c.shortlisted }}"><span style="font-size:11px;font-weight:700;color:#0E6B4E;">{{ c.shortlisted }}</span></sc-if>
+                </button>
+              </sc-for>
+              <div style="padding:18px;border-radius:20px;background:#FBFAF7;border:1px dashed #DDD7CE;display:flex;flex-direction:column;gap:10px;">
+                <span style="font-size:13px;font-weight:700;">New need</span>
+                <input value="{{ cmp.newCatName }}" onChange="{{ cmp.onNewCatName }}" onKeyDown="{{ cmp.onNewCatKey }}" placeholder="e.g. Rice cooker" style="padding:10px 12px;border-radius:11px;border:1px solid #DDD7CE;background:#fff;font-size:16px;color:#1C1A17;outline:none;" />
+                <button onClick="{{ cmp.createCat }}" style="{{ cmp.createCatStyle }}">Create</button>
+                <span style="font-size:11px;color:#6F6A62;line-height:1.45;">Then add the parameters it should compare under Fields.</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- fields of this need -->
+          <sc-if value="{{ cmp.fieldsOpen }}">
+            <section style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                <h2 style="margin:0;font-size:15px;font-weight:800;">What this need compares</h2>
+                <span style="font-size:11px;color:#6F6A62;">"Better" only decides which value gets the green tint. Nothing is scored.</span>
+              </div>
+              <div style="display:flex;flex-direction:column;">
+                <sc-for list="{{ cmp.fieldRows }}" as="f" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #F2EEE7;">
+                    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                      <span style="font-size:13px;font-weight:700;">{{ f.label }}</span>
+                      <span style="font-size:11px;color:#6F6A62;">{{ f.meta }}</span>
+                    </span>
+                    <button onClick="{{ f.remove }}" aria-label="Remove field" title="Remove field" style="width:28px;height:28px;flex-shrink:0;border-radius:8px;border:1px solid #EAE5DD;background:#fff;color:#8C877E;cursor:pointer;font-size:14px;" style-hover="border-color:#C2453B;color:#C2453B;">×</button>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;padding:12px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                <span style="font-size:12px;font-weight:700;">Add a field</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <input value="{{ cmp.nf.label }}" onChange="{{ cmp.nf.onLabel }}" placeholder="Label, e.g. Weight" style="flex:2;min-width:min(160px,100%);padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;font-size:16px;color:#1C1A17;outline:none;" />
+                  <input value="{{ cmp.nf.unit }}" onChange="{{ cmp.nf.onUnit }}" placeholder="Unit (kg, cm…)" style="flex:1;min-width:110px;padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;font-size:16px;color:#1C1A17;outline:none;" />
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <span style="font-size:11px;color:#6F6A62;width:44px;">Type</span>
+                  <sc-for list="{{ cmp.nf.kinds }}" as="k" hint-placeholder-count="4"><button onClick="{{ k.go }}" style="{{ k.style }}">{{ k.label }}</button></sc-for>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <span style="font-size:11px;color:#6F6A62;width:44px;">Better</span>
+                  <sc-for list="{{ cmp.nf.betters }}" as="b" hint-placeholder-count="3"><button onClick="{{ b.go }}" style="{{ b.style }}">{{ b.label }}</button></sc-for>
+                </div>
+                <sc-if value="{{ cmp.nf.isChoice }}">
+                  <input value="{{ cmp.nf.choices }}" onChange="{{ cmp.nf.onChoices }}" placeholder="Choices, separated by commas" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;font-size:16px;color:#1C1A17;outline:none;" />
+                </sc-if>
+                <button onClick="{{ cmp.nf.add }}" style="{{ cmp.nf.addStyle }}">Add field</button>
+              </div>
+              <button onClick="{{ cmp.archiveCat }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#A5322A;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ cmp.archiveLabel }}</button>
+            </section>
+          </sc-if>
+
+          <!-- option editor -->
+          <sc-if value="{{ cmp.ed }}">
+            <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:14px;">
+              <h2 style="margin:0;font-size:16px;font-weight:800;">{{ cmp.ed.title }}</h2>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;">
+                <sc-for list="{{ cmp.ed.texts }}" as="t" hint-placeholder-count="4">
+                  <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:#6F6A62;">{{ t.label }}
+                    <input value="{{ t.value }}" onChange="{{ t.onChange }}" placeholder="{{ t.placeholder }}" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                  </label>
+                </sc-for>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;">Where you can buy it</span>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <sc-for list="{{ cmp.ed.sources }}" as="s" hint-placeholder-count="2"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+                </div>
+                <sc-if value="{{ cmp.ed.isShop }}">
+                  <input list="chatak-cmp-shops" value="{{ cmp.ed.shop }}" onChange="{{ cmp.ed.onShop }}" placeholder="Shop, as named in Cost" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                  <datalist id="chatak-cmp-shops"><sc-for list="{{ cmp.shopOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.name }}"></option></sc-for></datalist>
+                  <span style="font-size:11px;color:#6F6A62;">{{ cmp.ed.shopNote }}</span>
+                </sc-if>
+                <sc-if value="{{ cmp.ed.isOnline }}">
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <sc-for list="{{ cmp.ed.stores }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+                  </div>
+                  <input value="{{ cmp.ed.url }}" onChange="{{ cmp.ed.onUrl }}" placeholder="Paste the product page URL" inputMode="url" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                  <span style="font-size:11px;color:#6F6A62;">Read the listing and type what it says. Nothing is fetched from the shop, and its images are not stored.</span>
+                </sc-if>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;">Pack size (always required)</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <input value="{{ cmp.ed.qty }}" onChange="{{ cmp.ed.onQty }}" inputMode="decimal" aria-label="Pack quantity" style="width:90px;padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                  <sc-for list="{{ cmp.ed.units }}" as="u" hint-placeholder-count="6"><button onClick="{{ u.go }}" style="{{ u.style }}">{{ u.label }}</button></sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;">Specs</span>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:10px;">
+                  <sc-for list="{{ cmp.ed.specs }}" as="e" hint-placeholder-count="5">
+                    <div style="display:flex;flex-direction:column;gap:5px;">
+                      <span style="font-size:11px;font-weight:700;color:#4A443C;">{{ e.label }}</span>
+                      <sc-if value="{{ e.isInput }}">
+                        <input value="{{ e.value }}" onChange="{{ e.onChange }}" inputMode="{{ e.mode }}" placeholder="{{ e.placeholder }}" style="padding:8px 10px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                      </sc-if>
+                      <sc-if value="{{ e.isChips }}">
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;"><sc-for list="{{ e.chips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ cmp.ed.noFields }}"><span style="font-size:12px;color:#6F6A62;">This need has no fields yet. Add them under Fields.</span></sc-if>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;">Status</span>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ cmp.ed.statuses }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div>
+                <input value="{{ cmp.ed.verdict }}" onChange="{{ cmp.ed.onVerdict }}" maxLength="200" placeholder="Short verdict, e.g. Sturdy but heavy" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                <textarea value="{{ cmp.ed.notes }}" onChange="{{ cmp.ed.onNotes }}" rows="2" placeholder="Notes" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:inherit;resize:vertical;"></textarea>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                <span style="font-size:12px;font-weight:700;">{{ cmp.ed.pricesTitle }}</span>
+                <sc-for list="{{ cmp.ed.priceRows }}" as="p" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #F0ECE4;">
+                    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;">{{ p.main }}</span>
+                      <span style="font-size:11px;color:#6F6A62;">{{ p.sub }}</span>
+                    </span>
+                    <sc-if value="{{ p.remove }}"><button onClick="{{ p.remove }}" aria-label="Delete price" title="Delete this price" style="width:26px;height:26px;flex-shrink:0;border-radius:8px;border:1px solid #EAE5DD;background:#fff;color:#8C877E;cursor:pointer;">×</button></sc-if>
+                  </div>
+                </sc-for>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <span style="font-size:15px;color:#0F6B4F;font-weight:700;font-family:'IBM Plex Mono',monospace;">¥</span>
+                  <input value="{{ cmp.ed.np.price }}" onChange="{{ cmp.ed.np.onPrice }}" inputMode="numeric" placeholder="Price on the tag" aria-label="Price" style="width:140px;padding:8px 10px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                  <input type="date" value="{{ cmp.ed.np.date }}" onChange="{{ cmp.ed.np.onDate }}" aria-label="Seen on" style="padding:7px 9px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;font-size:15px;color:#1C1A17;outline:none;" />
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <sc-for list="{{ cmp.ed.np.bases }}" as="b" hint-placeholder-count="2"><button onClick="{{ b.go }}" style="{{ b.style }}">{{ b.label }}</button></sc-for>
+                  <span style="width:6px;"></span>
+                  <sc-for list="{{ cmp.ed.np.kinds }}" as="k" hint-placeholder-count="4"><button onClick="{{ k.go }}" style="{{ k.style }}">{{ k.label }}</button></sc-for>
+                </div>
+                <sc-if value="{{ cmp.ed.np.isMember }}">
+                  <input value="{{ cmp.ed.np.program }}" onChange="{{ cmp.ed.np.onProgram }}" placeholder="Card or programme, e.g. majica" style="padding:8px 10px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;font-size:16px;color:#1C1A17;outline:none;" />
+                </sc-if>
+                <span style="font-size:11px;color:#6F6A62;">{{ cmp.ed.np.hint }}</span>
+                <sc-if value="{{ cmp.ed.np.add }}"><button onClick="{{ cmp.ed.np.add }}" style="{{ cmp.ed.np.addStyle }}">Add price</button></sc-if>
+              </div>
+
+              <sc-if value="{{ cmp.ed.error }}"><div style="font-size:12px;color:#B03A31;font-weight:600;">{{ cmp.ed.error }}</div></sc-if>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button onClick="{{ cmp.ed.save }}" style="{{ cmp.ed.saveStyle }}">{{ cmp.ed.saveLabel }}</button>
+                <button onClick="{{ cmp.ed.cancel }}" style="padding:10px 14px;border-radius:12px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+                <sc-if value="{{ cmp.ed.del }}"><button onClick="{{ cmp.ed.del }}" style="margin-left:auto;padding:10px 14px;border-radius:12px;border:1px solid #F0D9D5;background:#fff;color:#A5322A;font-size:12px;font-weight:700;cursor:pointer;">{{ cmp.ed.delLabel }}</button></sc-if>
+              </div>
+            </section>
+          </sc-if>
+
+          <!-- sort and filter -->
+          <sc-if value="{{ cmp.inCat }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid #EAE5DD;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;margin-right:2px;">Sort</span>
+                <sc-for list="{{ cmp.sorts }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+                <button onClick="{{ cmp.flipDir }}" aria-label="Reverse order" style="padding:6px 10px;border-radius:999px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">{{ cmp.dirLabel }}</button>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;margin-right:2px;">Show</span>
+                <sc-for list="{{ cmp.sources }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+                <span style="width:4px;"></span>
+                <sc-for list="{{ cmp.statusFilters }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+                <button onClick="{{ cmp.toggleMore }}" style="padding:6px 10px;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ cmp.moreLabel }}</button>
+              </div>
+              <sc-if value="{{ cmp.moreOpen }}">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding-top:8px;border-top:1px solid #F2EEE7;">
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#6F6A62;">Max price (incl. tax)
+                    <input value="{{ cmp.maxPrice }}" onChange="{{ cmp.onMaxPrice }}" inputMode="numeric" placeholder="¥" style="width:120px;padding:7px 9px;border-radius:9px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                  </label>
+                  <sc-for list="{{ cmp.mins }}" as="m" hint-placeholder-count="3">
+                    <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#6F6A62;">{{ m.label }}
+                      <input value="{{ m.value }}" onChange="{{ m.onChange }}" inputMode="decimal" placeholder="min" style="width:90px;padding:7px 9px;border-radius:9px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                    </label>
+                  </sc-for>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ cmp.musts }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.go }}" style="{{ m.style }}">{{ m.label }}</button></sc-for></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ cmp.hiddenNote }}">
+                <div style="display:flex;gap:10px;align-items:center;font-size:12px;color:#6F6A62;">
+                  <span>{{ cmp.hiddenNote }}</span>
+                  <button onClick="{{ cmp.clearFilters }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">Clear filters</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ cmp.emptyCat }}">
+            <div style="padding:22px;border-radius:18px;background:#fff;border:1px dashed #E2DCD2;font-size:13px;color:#6F6A62;line-height:1.55;">{{ cmp.emptyCat }}</div>
+          </sc-if>
+
+          <!-- cards -->
+          <sc-if value="{{ cmp.showCards }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:14px;align-items:start;">
+              <sc-for list="{{ cmp.cards }}" as="r" hint-placeholder-count="4">
+                <article style="{{ r.cardStyle }}">
+                  <div style="{{ r.photoStyle }}">
+                    <span style="font-size:11px;color:#6F6A62;font-weight:600;text-align:center;padding:0 16px;">{{ r.photoText }}</span>
+                    <sc-if value="{{ r.url }}"><a href="{{ r.url }}" target="_blank" rel="noopener noreferrer" style="font-size:12px;font-weight:700;color:#0F6B4F;">{{ r.urlLabel }}</a></sc-if>
+                  </div>
+                  <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                      <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                        <span style="font-size:14px;font-weight:700;line-height:1.35;">{{ r.name }}</span>
+                        <span style="font-size:11px;color:#6F6A62;">{{ r.byline }}</span>
+                      </span>
+                      <sc-if value="{{ r.statusLabel }}"><span style="{{ r.statusStyle }}">{{ r.statusLabel }}</span></sc-if>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                      <span style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;letter-spacing:-0.01em;">{{ r.price }}</span>
+                        <sc-if value="{{ r.member }}"><span style="padding:2px 8px;border-radius:999px;background:#FBEFD9;color:#7A4F08;font-size:11px;font-weight:700;">{{ r.member }}</span></sc-if>
+                      </span>
+                      <span style="font-size:11px;color:#6F6A62;">{{ r.priceNote }}</span>
+                    </div>
+                    <div style="{{ r.payStyle }}">
+                      <span style="font-weight:700;">{{ r.payText }}</span>
+                      <sc-if value="{{ r.payDiffs }}"><span>{{ r.payDiffs }}</span></sc-if>
+                    </div>
+                    <div style="display:flex;flex-direction:column;">
+                      <sc-for list="{{ r.specs }}" as="s" hint-placeholder-count="5">
+                        <div style="{{ s.style }}"><span style="color:#6F6A62;">{{ s.label }}</span><span style="{{ s.valueStyle }}">{{ s.value }}</span></div>
+                      </sc-for>
+                      <sc-if value="{{ r.missing }}"><span style="font-size:11px;color:#8C877E;padding:4px 6px 0;">{{ r.missing }}</span></sc-if>
+                    </div>
+                    <sc-if value="{{ r.verdict }}"><span style="font-size:12px;font-weight:600;color:#1C1A17;">"{{ r.verdict }}"</span></sc-if>
+                    <sc-if value="{{ r.notes }}"><span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ r.notes }}</span></sc-if>
+                    <div style="display:flex;gap:8px;">
+                      <button onClick="{{ r.edit }}" style="padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Edit</button>
+                      <button onClick="{{ r.shortlist }}" style="{{ r.shortlistStyle }}">{{ r.shortlistLabel }}</button>
+                    </div>
+                  </div>
+                </article>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- table -->
+          <sc-if value="{{ cmp.showTable }}">
+            <div style="border-radius:18px;background:#fff;border:1px solid #EAE5DD;overflow-x:auto;">
+              <div style="{{ cmp.tableInner }}">
+                <sc-for list="{{ cmp.tableRows }}" as="row" hint-placeholder-count="6">
+                  <div style="{{ row.style }}">
+                    <div style="{{ row.headStyle }}">{{ row.label }}</div>
+                    <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="4">
+                      <div style="{{ c.style }}">
+                        <span>{{ c.text }}</span>
+                        <sc-if value="{{ c.sub }}"><span style="font-size:10px;color:#8C877E;font-weight:600;">{{ c.sub }}</span></sc-if>
+                        <sc-if value="{{ c.edit }}"><button onClick="{{ c.edit }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Edit</button></sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ cmp.footnote }}">
+            <span style="font-size:11px;color:#6F6A62;line-height:1.5;">{{ cmp.footnote }}</span>
+          </sc-if>
+        </div>
+      </sc-if>
+
       <!-- ============ SETTINGS ============ -->
       <sc-if value="{{ isSettings }}">
         <div style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px;">
@@ -1415,7 +1726,13 @@ class Component extends DCLogic {
     mxWhere: null, mxAreaManual: false,
     // In-shop quick entry: remembered for 4 h so a reload in the aisle keeps the shop.
     mxHere: (() => { try { const v = JSON.parse(localStorage.getItem('chatak.mx.here.v1')); return v && Date.now() - v.at < 4 * 3600000 ? v.name : null; } catch (e) { return null; } })(),
-    mxHereQuery: ''
+    mxHereQuery: '',
+    // Compare: what to buy. cmp = the data (sample or live); the rest is view state.
+    cmp: null, cmpCat: null, cmpView: (typeof window !== 'undefined' && window.innerWidth < 760) ? 'cards' : 'table',
+    cmpSort: 'price', cmpDir: 'asc', cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} },
+    cmpMore: false, cmpEdit: null, cmpPrice: null, cmpFieldsOpen: false,
+    cmpNewField: { label: '', unit: '', kind: 'number', better: 'none', choices: '' }, cmpNewCat: '',
+    cmpBusy: false, cmpError: null, cmpInfo: null, cmpConfirmDel: false, cmpConfirmArchive: false
   };
 
   chartRef = React.createRef();
@@ -1510,7 +1827,7 @@ class Component extends DCLogic {
     // gets the same request as a message from the service worker.
     this._openFromHash = () => {
       const h = (location.hash || '').slice(1);
-      if (['alerts', 'matrix', 'home', 'deals', 'calendar', 'settings'].includes(h)) {
+      if (['alerts', 'matrix', 'compare', 'home', 'deals', 'calendar', 'settings'].includes(h)) {
         this.setState({ screen: h });
         try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
       }
@@ -1544,7 +1861,7 @@ class Component extends DCLogic {
     const url = String(cfg.url || '').trim();
     const anonKey = String(cfg.anonKey || '').trim();
     const days = Number(cfg.historyDays) || 365;
-    if (!url || !anonKey) { this.setState({ live: { status: (forced ?? isLocal) ? 'signin' : 'sample' } }); this.loadMatrix(); return; }
+    if (!url || !anonKey) { this.setState({ live: { status: (forced ?? isLocal) ? 'signin' : 'sample' } }); this.loadMatrix(); this.loadCompare(); return; }
     // The prefilled Seiko URL is a sample-mode demo; with a backend it would
     // describe a fixture as if it were the user's own tracked product.
     this.setState({ live: { status: 'loading' }, url: '', urlFetched: false });
@@ -1564,6 +1881,7 @@ class Component extends DCLogic {
       if (!this._role) { await api.signOut(); this.setState({ live: { status: 'signin' }, authError: 'That account does not have access.' }); return; }
       // Independent of the watchlist: an empty watchlist must not hide the matrix.
       this.loadMatrix();
+      this.loadCompare();
       this.loadNotifier();
       this.pushRefresh();
       const [stores, watch] = await Promise.all([api.getStores(), api.getWatchlist()]);
@@ -2332,6 +2650,433 @@ class Component extends DCLogic {
     this.setState({ mxAdding: false, mxError: null, mxNew: { name: '', size: '', cat: '' } });
   }
 
+  // ---------- compare (what to buy) ----------
+  // Live: the signed-in person's own rows (owner RLS). Sample: the six folding
+  // tables from the brief, kept in memory, so every action works on the demo.
+  async loadCompare() {
+    const C = window.ChatakCompare;
+    if (!C) return;
+    if (!this._api || !this._session) { this.setState({ cmp: { status: 'sample', ...C.sample() } }); return; }
+    this.setState((s) => ({ cmp: { ...(s.cmp || {}), status: 'loading' } }));
+    try {
+      let d = await this._api.getCompare();
+      // First visit: the three starter needs. The function adds only what is missing.
+      if (!d.categories.length && !this._cmpSeeded) { this._cmpSeeded = true; await this._api.seedCompareStarters(); d = await this._api.getCompare(); }
+      this.setState({ cmp: { status: 'ready', ...d } });
+    } catch (e) {
+      this.setState({ cmp: { status: 'error', message: String(e.message || e), categories: [], fields: [], options: [], prices: [] } });
+    }
+  }
+
+  cmpLive() { return !!(this._api && this._session && this.state.cmp && this.state.cmp.status !== 'sample'); }
+
+  // One write path: live calls the API then re-reads; sample patches memory.
+  async cmpWrite(live, sample, okInfo) {
+    this.setState({ cmpBusy: true, cmpError: null });
+    try {
+      if (this.cmpLive()) { await live(); await this.loadCompare(); }
+      else this.setState((s) => ({ cmp: sample(s.cmp) }));
+      this.setState({ cmpBusy: false, cmpInfo: okInfo || null });
+      return true;
+    } catch (e) {
+      this.setState({ cmpBusy: false, cmpError: String(e.message || e) });
+      return false;
+    }
+  }
+
+  cmpShops() {
+    const M = this.state.mx;
+    return (M && M.shops ? M.shops : []).filter((s) => !s.orphan).map((s) => ({ id: s.id != null ? String(s.id) : null, name: s.name }));
+  }
+  cmpStores() {
+    const live = this._live && this._live.stores ? this._live.stores.filter((s) => ['rakuten_api', 'yahoo_api', 'paapi'].includes(s.adapter)) : [];
+    return live.length ? live.map((s) => ({ id: s.id, name: s.name })) : [{ id: 2, name: 'Amazon JP' }, { id: 1, name: 'Rakuten' }, { id: 5, name: 'Yahoo Shopping' }];
+  }
+  // Tag conventions: Donki and Daiso print tax-excluded, Nitori tax-included.
+  // Anything else is left for you to choose, never guessed.
+  cmpShopBasis(name) {
+    const n = String(name || '').toLowerCase();
+    if (/donki|don quijote|ドン|daiso|ダイソー/.test(n)) return 'excl';
+    if (/nitori|ニトリ/.test(n)) return 'incl';
+    return null;
+  }
+  cmpShopLabel(p) {
+    if (!p) return '';
+    if (p.store_id != null) { const s = this.cmpStores().find((x) => x.id === p.store_id); return s ? s.name : 'Online'; }
+    if (p.cost_shop_id != null) { const s = this.cmpShops().find((x) => x.id === String(p.cost_shop_id)); if (s) return s.name; }
+    return p.shop_name || 'Shop';
+  }
+
+  cmpNewOption() {
+    const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+    this.setState({
+      cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', store_id: 2, url: '',
+        qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
+      cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null
+    });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  cmpOpenOption(o) {
+    const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+    this.setState({
+      cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
+        name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
+      cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null
+    });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  // The option as the database expects it, or an error to show.
+  cmpOptionRow() {
+    const E = this.state.cmpEdit, fields = (this.state.cmp.fields || []).filter((f) => f.category_id === E.category_id);
+    if (!E.name.trim()) return { error: 'Give it a name.' };
+    const qty = Number(String(E.qty).replace(',', '.'));
+    if (!(qty > 0)) return { error: 'Pack size is required: how many ' + E.pack_unit + ' in one purchase?' };
+    const row = { ...E, name: E.name.trim(), pack_qty: qty, specs: {} };
+    for (const f of fields) {
+      const v = E.specs[f.key];
+      if (v === undefined || v === null || v === '') continue;
+      if (f.kind === 'number') {
+        const n = Number(String(v).replace(',', '.'));
+        if (!isFinite(n)) return { error: f.label + ' must be a number' + (f.unit ? ' in ' + f.unit : '') + '.' };
+        row.specs[f.key] = n;
+      } else row.specs[f.key] = v;
+    }
+    if (E.source_kind === 'shop') {
+      const name = E.shop.trim();
+      if (!name) return { error: 'Which shop? Pick one from Cost, or type its name.' };
+      const hit = this.cmpShops().find((s) => s.name.toLowerCase() === name.toLowerCase());
+      Object.assign(row, { cost_shop_id: hit && hit.id ? hit.id : null, shop_name: hit ? hit.name : name, store_id: null, url: null });
+    } else {
+      if (!/^https?:\/\//i.test(E.url.trim())) return { error: 'Paste the product page URL (it starts with https://).' };
+      Object.assign(row, { cost_shop_id: null, shop_name: null, url: E.url.trim() });
+    }
+    return { row };
+  }
+
+  // The price as entered, or null when nothing was typed; an error when incomplete.
+  cmpPriceRow(opt) {
+    const P = this.state.cmpPrice;
+    const price = parseInt(String(P.price).replace(/[^\d]/g, ''), 10);
+    if (!(price > 0)) return { row: null };
+    const basis = P.tax_basis || (opt.source_kind === 'online' ? 'incl' : this.cmpShopBasis(opt.shop_name || opt.shop));
+    if (!basis) return { error: 'Was ¥' + price.toLocaleString('en-US') + ' with or without tax? Choose one.' };
+    if (P.price_kind === 'member' && !P.member_program.trim()) return { error: 'Which card or programme gives the member price?' };
+    const cat = (this.state.cmp.categories || []).find((c) => c.id === opt.category_id);
+    return { row: {
+      option_id: opt.id, cost_shop_id: opt.cost_shop_id ?? null, shop_name: opt.source_kind === 'shop' ? (opt.shop_name || null) : null,
+      store_id: opt.source_kind === 'online' ? opt.store_id : null, price, tax_basis: basis, tax_rate: cat ? Number(cat.tax_rate) : 10,
+      price_kind: P.price_kind, member_program: P.price_kind === 'member' ? P.member_program.trim() : null,
+      seen_on: P.seen_on || new Date().toISOString().slice(0, 10), source: opt.source_kind === 'online' ? 'url' : 'manual'
+    } };
+  }
+
+  async cmpSaveOption() {
+    if (this.state.cmpBusy) return;
+    const { row, error } = this.cmpOptionRow();
+    if (error) { this.setState({ cmpError: error }); return; }
+    const isNew = !row.id;
+    const pr = this.cmpPriceRow({ ...row, id: row.id || 'new' });
+    if (pr.error) { this.setState({ cmpError: pr.error }); return; }
+    this.setState({ cmpBusy: true, cmpError: null });
+    try {
+      if (this.cmpLive()) {
+        const saved = await this._api.saveCmpOption(row);
+        if (pr.row) await this._api.addCmpPrice({ ...pr.row, option_id: saved.id });
+        await this.loadCompare();
+      } else {
+        const id = row.id || 'o-' + Date.now();
+        this.setState((s) => {
+          const options = isNew ? s.cmp.options.concat([{ ...row, id }]) : s.cmp.options.map((o) => (o.id === id ? { ...o, ...row } : o));
+          const prices = pr.row ? s.cmp.prices.concat([{ ...pr.row, id: Date.now(), option_id: id }]) : s.cmp.prices;
+          return { cmp: { ...s.cmp, options, prices } };
+        });
+      }
+      this.setState({ cmpBusy: false, cmpEdit: null, cmpPrice: null, cmpInfo: (isNew ? 'Added ' : 'Saved ') + row.name + '.' });
+    } catch (e) {
+      this.setState({ cmpBusy: false, cmpError: String(e.message || e) });
+    }
+  }
+
+  // Adds a price to an option that already exists, without closing the editor.
+  async cmpAddPrice() {
+    const E = this.state.cmpEdit;
+    if (!E || !E.id || this.state.cmpBusy) return;
+    const saved = (this.state.cmp.options || []).find((o) => o.id === E.id) || E;
+    const pr = this.cmpPriceRow(saved);
+    if (pr.error || !pr.row) { this.setState({ cmpError: pr.error || 'Type the price first.' }); return; }
+    const ok = await this.cmpWrite(() => this._api.addCmpPrice(pr.row),
+      (c) => ({ ...c, prices: c.prices.concat([{ ...pr.row, id: Date.now() }]) }), null);
+    if (ok) this.setState((s) => ({ cmpPrice: { ...s.cmpPrice, price: '', member_program: '' } }));
+  }
+
+  cmpDeletePrice(id) {
+    return this.cmpWrite(() => this._api.deleteCmpPrice(id), (c) => ({ ...c, prices: c.prices.filter((p) => p.id !== id) }), null);
+  }
+
+  async cmpDeleteOption() {
+    const E = this.state.cmpEdit;
+    if (!E || !E.id) return;
+    if (!this.state.cmpConfirmDel) { this.setState({ cmpConfirmDel: true }); return; }
+    const ok = await this.cmpWrite(() => this._api.deleteCmpOption(E.id),
+      (c) => ({ ...c, options: c.options.filter((o) => o.id !== E.id), prices: c.prices.filter((p) => p.option_id !== E.id) }), 'Deleted ' + E.name + '.');
+    if (ok) this.setState({ cmpEdit: null, cmpPrice: null, cmpConfirmDel: false });
+  }
+
+  cmpSetStatus(o, status) {
+    return this.cmpWrite(() => this._api.setCmpOptionStatus(o.id, status),
+      (c) => ({ ...c, options: c.options.map((x) => (x.id === o.id ? { ...x, status } : x)) }), null);
+  }
+
+  async cmpCreateCategory() {
+    const name = this.state.cmpNewCat.trim();
+    if (!name || this.state.cmpBusy) return;
+    if ((this.state.cmp.categories || []).some((c) => c.name.toLowerCase() === name.toLowerCase())) { this.setState({ cmpError: name + ' already exists.' }); return; }
+    let newId = null;
+    const ok = await this.cmpWrite(async () => { newId = (await this._api.saveCmpCategory({ name })).id; },
+      (c) => { newId = 'c-' + Date.now(); return { ...c, categories: c.categories.concat([{ id: newId, name, tax_rate: 10, sort_order: c.categories.length }]) }; }, null);
+    if (ok) this.setState({ cmpNewCat: '', cmpCat: newId, cmpFieldsOpen: true });
+  }
+
+  async cmpAddField() {
+    const N = this.state.cmpNewField, C = window.ChatakCompare, cat = this.state.cmpCat;
+    const key = C.keyOf(N.label);
+    if (!key) { this.setState({ cmpError: 'Give the field a label.' }); return; }
+    if ((this.state.cmp.fields || []).some((f) => f.category_id === cat && f.key === key)) { this.setState({ cmpError: N.label + ' is already a field.' }); return; }
+    const choices = N.kind === 'choice' ? N.choices.split(',').map((x) => x.trim()).filter(Boolean) : null;
+    if (N.kind === 'choice' && !choices.length) { this.setState({ cmpError: 'List the choices, separated by commas.' }); return; }
+    const better = N.kind === 'number' || N.kind === 'bool' ? N.better : 'none';
+    const order = (this.state.cmp.fields || []).filter((f) => f.category_id === cat).length;
+    const row = { category_id: cat, key, label: N.label.trim(), kind: N.kind, unit: N.unit.trim() || null, better, choices, sort_order: order };
+    const ok = await this.cmpWrite(() => this._api.addCmpField(row), (c) => ({ ...c, fields: c.fields.concat([{ ...row, id: 'f-' + Date.now() }]) }), 'Added ' + row.label + '.');
+    if (ok) this.setState({ cmpNewField: { label: '', unit: '', kind: N.kind, better: 'none', choices: '' } });
+  }
+
+  // Removing a field keeps the values typed for it out of every later save.
+  cmpRemoveField(f) {
+    return this.cmpWrite(() => this._api.deleteCmpField(f.id), (c) => ({ ...c, fields: c.fields.filter((x) => x.id !== f.id) }), 'Removed ' + f.label + '.');
+  }
+
+  async cmpArchiveCategory() {
+    const cat = this.state.cmpCat;
+    if (!this.state.cmpConfirmArchive) { this.setState({ cmpConfirmArchive: true }); return; }
+    const ok = await this.cmpWrite(() => this._api.archiveCmpCategory(cat), (c) => ({ ...c, categories: c.categories.filter((x) => x.id !== cat) }), 'Need archived. Its options stay in the database.');
+    if (ok) this.setState({ cmpCat: null, cmpFieldsOpen: false, cmpConfirmArchive: false });
+  }
+
+  compareVals(S) {
+    const C = window.ChatakCompare, D = S.cmp;
+    const chip = (on) => 'padding:6px 11px;border-radius:999px;border:1px solid ' + (on ? '#1C1A17' : '#DDD7CE') + ';background:' + (on ? '#1C1A17' : '#fff') + ';color:' + (on ? '#fff' : '#4A443C') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;';
+    const softBtn = (ok) => 'align-self:flex-start;padding:9px 16px;border-radius:11px;border:0;color:#fff;font-size:12px;font-weight:700;background:' + (ok ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (ok ? 'pointer' : 'default') + ';';
+    const base = { notice: S.cmpError || (D && D.status === 'error' ? 'Could not load Compare: ' + D.message : null), info: S.cmpInfo };
+    if (!C || !D || !D.categories) return { ...base, loading: true, loadingText: 'Loading your comparisons…', title: 'Compare', subtitle: '' };
+    if (D.status === 'loading' && !D.categories.length) return { ...base, loading: true, loadingText: 'Loading your comparisons…', title: 'Compare', subtitle: '' };
+    const cat = S.cmpCat ? D.categories.find((c) => c.id === S.cmpCat) : null;
+    const sample = D.status === 'sample';
+    const shopOptions = this.cmpShops();
+
+    if (!cat) {
+      const cats = D.categories.map((c) => {
+        const v = C.compareCategory(c, D.fields, D.options, D.prices);
+        const ps = v.all.filter((r) => r.lead).map((r) => r.lead.price_incl);
+        const sl = v.all.filter((r) => r.status === 'shortlisted').length;
+        return {
+          name: c.name,
+          count: v.all.length ? v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · ' + v.fields.length + ' fields' : 'No options yet · ' + v.fields.length + ' fields',
+          range: ps.length ? C.yen(Math.min(...ps)) + (ps.length > 1 ? ' – ' + C.yen(Math.max(...ps)) : '') + ' incl. tax' : '—',
+          shortlisted: sl ? sl + ' shortlisted' : '',
+          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
+            cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} }, cmpConfirmArchive: false })
+        };
+      });
+      const can = S.cmpNewCat.trim().length > 0 && !S.cmpBusy;
+      return { ...base, showList: true, cats, title: 'Compare',
+        subtitle: 'What to buy: options for one need side by side, on one tax basis, with your own photos. ' + (sample ? 'Sample data: six folding tables from your notes.' : 'Only you can see these.'),
+        newCatName: S.cmpNewCat, onNewCatName: (e) => this.setState({ cmpNewCat: e.target.value, cmpError: null }),
+        onNewCatKey: (e) => { if (e.key === 'Enter') this.cmpCreateCategory(); }, createCat: () => this.cmpCreateCategory(), createCatStyle: softBtn(can) };
+    }
+
+    // ---- one need ----
+    const F = S.cmpFilters;
+    const filters = { maxPrice: parseInt(F.maxPrice, 10) || 0, statuses: F.statuses, source: F.source, mustHave: F.mustHave,
+      min: Object.fromEntries(Object.entries(F.min).map(([k, v]) => [k, Number(v)])) };
+    const v = C.compareCategory(cat, D.fields, D.options, D.prices, { filters, sort: S.cmpSort, dir: S.cmpDir });
+    const fields = v.fields;
+    const setF = (patch) => this.setState({ cmpFilters: { ...F, ...patch } });
+    const toggleIn = (list, x) => (list.includes(x) ? list.filter((y) => y !== x) : list.concat([x]));
+    const statusWord = { considering: '', shortlisted: 'Shortlisted', bought: 'Bought', rejected: 'Rejected' };
+    const statusStyle = (st) => 'padding:4px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;' +
+      ({ shortlisted: 'background:#E3F3EC;color:#0F6B4F;', bought: 'background:#1C1A17;color:#fff;', rejected: 'background:#F1EDE6;color:#8C877E;' }[st] || '');
+    const priceNote = (r) => !r.lead ? 'No price recorded yet'
+      : (r.lead.tax_basis === 'excl' ? 'incl. tax (tag ' + C.yen(r.lead.price) + ' + tax)' : 'incl. tax') + ' · ' + this.cmpShopLabel(r.lead) + ' · ' + r.lead.seen_on
+        + (r.shopCount > 1 ? ' · cheapest of ' + r.shopCount + ' shops' : '');
+    const memberText = (r) => (r.member ? r.member.member_program + ' ' + C.yen(r.member.price_incl) : '');
+    const payFor = (r) => {
+      if (!v.pay.base) return { text: '', diffs: '' };
+      if (r.id === v.pay.base.id) return { text: 'Cheapest here', diffs: '' };
+      const L = v.pay.lines[r.id];
+      if (!L) return { text: 'No price yet', diffs: '' };
+      return { text: L.text, diffs: L.diffs.length ? L.diffs.join(' · ') : L.note };
+    };
+    const tint = 'background:#F0F8F4;';
+
+    const cards = v.rows.map((r) => {
+      const pay = payFor(r), online = r.source_kind === 'online';
+      const store = online ? this.cmpStores().find((s) => s.id === r.store_id) : null;
+      return {
+        name: r.name, byline: [r.brand, r.model_code, r.size_label].filter(Boolean).join(' · ') || (online ? 'Online' : this.cmpShopLabel(r)),
+        statusLabel: statusWord[r.status] || '', statusStyle: statusStyle(r.status),
+        cardStyle: 'border-radius:20px;background:#fff;border:1px solid ' + (r.status === 'shortlisted' ? '#CFE3DA' : '#EAE5DD') + ';overflow:hidden;' + (r.status === 'rejected' ? 'opacity:0.6;' : ''),
+        photoStyle: 'height:150px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);',
+        photoText: online ? 'Online listing · no image stored' : 'No photo yet',
+        url: online ? r.url : null, urlLabel: 'Open on ' + (store ? store.name : 'the shop site') + ' ↗',
+        price: r.lead ? C.yen(r.lead.price_incl) : '—', member: memberText(r), priceNote: priceNote(r),
+        payText: pay.text, payDiffs: pay.diffs,
+        payStyle: 'display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;background:#FBFAF7;border:1px solid #F0ECE4;font-size:11px;line-height:1.45;color:#4A443C;' + (pay.text ? '' : 'display:none;'),
+        specs: fields.filter((f) => r.specs && r.specs[f.key] !== undefined && r.specs[f.key] !== null && r.specs[f.key] !== '').map((f) => {
+          const best = v.best[f.key] && v.best[f.key].has(r.id);
+          return { label: f.label, value: C.fmtVal(f, r.specs ? r.specs[f.key] : null),
+            style: 'display:flex;justify-content:space-between;gap:10px;padding:5px 6px;border-radius:7px;font-size:12px;' + (best ? tint : ''),
+            valueStyle: 'font-weight:' + (best ? '700' : '600') + ';color:' + (best ? '#0F6B4F' : '#1C1A17') + ';text-align:right;' };
+        }),
+        missing: (() => {
+          const n = fields.filter((f) => !(r.specs && r.specs[f.key] !== undefined && r.specs[f.key] !== null && r.specs[f.key] !== '')).length;
+          return !n ? '' : n === fields.length ? 'No specs recorded yet.' : n + ' of ' + fields.length + ' specs not recorded.';
+        })(),
+        verdict: r.verdict || '', notes: r.notes || '',
+        edit: () => this.cmpOpenOption(r),
+        shortlist: () => this.cmpSetStatus(r, r.status === 'shortlisted' ? 'considering' : 'shortlisted'),
+        shortlistLabel: r.status === 'shortlisted' ? '★ Shortlisted' : '☆ Shortlist',
+        shortlistStyle: 'padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid ' + (r.status === 'shortlisted' ? '#CFE3DA;background:#F3F9F6;color:#0E6B4E;' : '#DDD7CE;background:#fff;color:#4A443C;')
+      };
+    });
+
+    // Table: options as columns, so each parameter lines up across them.
+    const cols = '170px repeat(' + Math.max(1, v.rows.length) + ', minmax(130px, 1fr))';
+    const rowStyle = (head) => 'display:grid;grid-template-columns:' + cols + ';border-bottom:1px solid #F2EEE7;' + (head ? 'background:#FBFAF7;' : '');
+    const headCell = (head) => 'position:sticky;left:0;z-index:1;padding:10px 14px;font-size:11px;font-weight:700;color:#6F6A62;display:flex;align-items:center;background:' + (head ? '#FBFAF7' : '#fff') + ';border-right:1px solid #F2EEE7;';
+    const cell = (extra) => 'display:flex;flex-direction:column;gap:3px;justify-content:center;padding:10px 12px;font-size:12px;border-left:1px solid #F2EEE7;min-width:0;' + (extra || '');
+    const tableRows = [
+      { label: 'Option', head: true, cells: v.rows.map((r) => ({ text: r.name, sub: [r.brand, r.model_code].filter(Boolean).join(' · ') + (statusWord[r.status] ? ' · ' + statusWord[r.status] : ''), style: cell('font-weight:700;font-size:13px;'), edit: () => this.cmpOpenOption(r) })) },
+      { label: 'Price (incl. tax)', cells: v.rows.map((r) => ({ text: r.lead ? C.yen(r.lead.price_incl) : '—', sub: r.lead ? this.cmpShopLabel(r.lead) + (r.lead.tax_basis === 'excl' ? ' · tag ' + C.yen(r.lead.price) + ' + tax' : '') : '', style: cell("font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;") })) },
+      { label: 'Member price', cells: v.rows.map((r) => ({ text: r.member ? C.yen(r.member.price_incl) : '—', sub: r.member ? r.member.member_program : '', style: cell("font-family:'IBM Plex Mono',monospace;") })) },
+      { label: 'Pay more, get what', cells: v.rows.map((r) => { const p = payFor(r); return { text: p.text || '—', sub: p.diffs, style: cell('font-size:11px;') }; }) },
+      { label: 'Size', cells: v.rows.map((r) => ({ text: r.pack_qty + ' ' + r.pack_unit + (r.size_label ? ' · ' + r.size_label : ''), style: cell() })) }
+    ].concat(v.per.unit ? [{ label: 'Per ' + v.per.unit, cells: v.rows.map((r) => ({ text: v.per.values[r.id] != null ? C.yen(v.per.values[r.id]) : '—', style: cell("font-family:'IBM Plex Mono',monospace;") })) }] : [])
+      .concat(fields.map((f) => ({ label: f.label + (f.unit ? ' (' + f.unit + ')' : ''), cells: v.rows.map((r) => {
+        const best = v.best[f.key] && v.best[f.key].has(r.id), val = r.specs ? r.specs[f.key] : null;
+        return { text: f.kind === 'number' && val != null && val !== '' ? String(val) : C.fmtVal(f, val), style: cell(best ? tint + 'font-weight:700;color:#0F6B4F;' : '') };
+      }) })))
+      .map((row) => ({ ...row, style: rowStyle(row.head), headStyle: headCell(row.head) }));
+
+    // ---- editor ----
+    let ed = null;
+    if (S.cmpEdit) {
+      const E = S.cmpEdit, P = S.cmpPrice, set = (patch) => this.setState({ cmpEdit: { ...E, ...patch }, cmpError: null });
+      const setP = (patch) => this.setState({ cmpPrice: { ...P, ...patch }, cmpError: null });
+      const myFields = D.fields.filter((f) => f.category_id === E.category_id).sort((a, b) => a.sort_order - b.sort_order);
+      const prices = E.id ? D.prices.filter((p) => p.option_id === E.id).slice().sort((a, b) => (a.seen_on < b.seen_on ? 1 : -1)) : [];
+      const defBasis = E.source_kind === 'online' ? 'incl' : this.cmpShopBasis(E.shop);
+      const basis = P.tax_basis || defBasis;
+      const typed = parseInt(String(P.price).replace(/[^\d]/g, ''), 10) || 0;
+      const canSave = !S.cmpBusy;
+      ed = {
+        title: E.id ? 'Edit ' + E.name : 'New option · ' + cat.name,
+        texts: [['name', 'Name', 'e.g. MY space table'], ['name_ja', 'Name (Japanese)', '例: マイスペーステーブル'], ['brand', 'Brand', 'e.g. VECELO'], ['model_code', 'Model', 'e.g. CTY-6045NA'], ['size_label', 'Size as written on the tag', 'e.g. 60x45 cm']]
+          .map(([k, label, ph]) => ({ label, value: E[k] || '', placeholder: ph, onChange: (e) => set({ [k]: e.target.value }) })),
+        sources: [['shop', 'In a shop'], ['online', 'Online']].map(([k, label]) => ({ label, go: () => set({ source_kind: k }), style: chip(E.source_kind === k) })),
+        isShop: E.source_kind === 'shop', isOnline: E.source_kind === 'online',
+        shop: E.shop, onShop: (e) => set({ shop: e.target.value }),
+        shopNote: E.shop && !shopOptions.some((s) => s.name.toLowerCase() === E.shop.trim().toLowerCase())
+          ? 'Not a Cost shop yet: saved by name. Add it in Cost to link it.' : (defBasis ? 'Tags here are ' + (defBasis === 'excl' ? 'tax-excluded' : 'tax-included') + '.' : ''),
+        stores: this.cmpStores().map((s) => ({ label: s.name, go: () => set({ store_id: s.id }), style: chip(E.store_id === s.id) })),
+        url: E.url, onUrl: (e) => set({ url: e.target.value.trim() }),
+        qty: E.qty, onQty: (e) => set({ qty: e.target.value.replace(/[^\d.,]/g, '') }),
+        units: ['pc', 'set', 'pair', 'sheet', 'roll', 'g', 'kg', 'ml', 'L', 'cm', 'm'].map((u) => ({ label: u, go: () => set({ pack_unit: u }), style: chip(E.pack_unit === u) })),
+        noFields: !myFields.length,
+        specs: myFields.map((f) => {
+          const val = E.specs[f.key], setV = (x) => set({ specs: { ...E.specs, [f.key]: x } });
+          const label = f.label + (f.unit ? ' (' + f.unit + ')' : '');
+          if (f.kind === 'bool') return { label, isChips: true, chips: [['Yes', true], ['No', false], ['—', null]].map(([l, x]) => ({ label: l, go: () => setV(x), style: chip(val === x || (x === null && (val === undefined || val === null))) })) };
+          if (f.kind === 'choice') return { label, isChips: true, chips: (f.choices || []).concat(['—']).map((c) => ({ label: c, go: () => setV(c === '—' ? null : c), style: chip(c === '—' ? val == null : val === c) })) };
+          return { label, isInput: true, value: val == null ? '' : String(val), mode: f.kind === 'number' ? 'decimal' : 'text', placeholder: f.kind === 'number' ? (f.unit || 'number') : '',
+            onChange: (e) => setV(f.kind === 'number' ? e.target.value.replace(/[^\d.,\-]/g, '') : e.target.value) };
+        }),
+        statuses: [['considering', 'Considering'], ['shortlisted', 'Shortlisted'], ['bought', 'Bought'], ['rejected', 'Rejected']].map(([k, l]) => ({ label: l, go: () => set({ status: k }), style: chip(E.status === k) })),
+        verdict: E.verdict, onVerdict: (e) => set({ verdict: e.target.value }),
+        notes: E.notes, onNotes: (e) => set({ notes: e.target.value }),
+        pricesTitle: E.id ? (prices.length ? 'Prices seen (' + prices.length + ')' : 'Prices seen') : 'First price (optional)',
+        priceRows: prices.map((p) => ({
+          main: C.yen(C.inclOf(p)) + ' incl. tax' + (p.price_kind !== 'shelf' ? ' · ' + (p.price_kind === 'member' ? p.member_program : p.price_kind) : ''),
+          sub: (p.tax_basis === 'excl' ? 'tag ' + C.yen(p.price) + ' + ' + Number(p.tax_rate) + '% · ' : '') + this.cmpShopLabel(p) + ' · ' + p.seen_on,
+          remove: () => this.cmpDeletePrice(p.id)
+        })),
+        np: {
+          price: P.price, onPrice: (e) => setP({ price: e.target.value.replace(/[^\d]/g, '') }),
+          date: P.seen_on, onDate: (e) => setP({ seen_on: e.target.value }),
+          bases: [['excl', 'Tax excluded'], ['incl', 'Tax included']].map(([k, l]) => ({ label: l, go: () => setP({ tax_basis: k }), style: chip(basis === k) })),
+          kinds: (E.source_kind === 'online' ? [['online', 'Online'], ['sale', 'Sale'], ['member', 'Member']] : [['shelf', 'Shelf'], ['member', 'Member'], ['sale', 'Sale']])
+            .map(([k, l]) => ({ label: l, go: () => setP({ price_kind: k }), style: chip(P.price_kind === k) })),
+          isMember: P.price_kind === 'member', program: P.member_program, onProgram: (e) => setP({ member_program: e.target.value }),
+          hint: !typed ? (basis ? 'Type the number on the tag.' : 'Type the number on the tag, and choose whether it includes tax.')
+            : basis ? '= ' + C.yen(C.inclOf({ price: typed, tax_basis: basis, tax_rate: Number(cat.tax_rate) })) + ' incl. ' + Number(cat.tax_rate) + '% tax' : 'Choose whether ¥' + typed.toLocaleString('en-US') + ' includes tax.',
+          add: E.id ? () => this.cmpAddPrice() : null, addStyle: softBtn(typed > 0 && !S.cmpBusy)
+        },
+        error: S.cmpError,
+        save: () => this.cmpSaveOption(), saveLabel: S.cmpBusy ? 'Saving…' : E.id ? 'Save' : 'Add option', saveStyle: softBtn(canSave).replace('align-self:flex-start;', '') + 'padding:10px 18px;font-size:13px;',
+        cancel: () => this.setState({ cmpEdit: null, cmpPrice: null, cmpError: null, cmpConfirmDel: false }),
+        del: E.id ? () => this.cmpDeleteOption() : null, delLabel: S.cmpConfirmDel ? 'Delete it and its prices?' : 'Delete option'
+      };
+    }
+
+    // ---- fields editor ----
+    const N = S.cmpNewField, setN = (patch) => this.setState({ cmpNewField: { ...N, ...patch }, cmpError: null });
+    const nf = {
+      label: N.label, onLabel: (e) => setN({ label: e.target.value }), unit: N.unit, onUnit: (e) => setN({ unit: e.target.value }),
+      kinds: [['number', 'Number'], ['bool', 'Yes / no'], ['choice', 'Choice'], ['text', 'Text']].map(([k, l]) => ({ label: l, go: () => setN({ kind: k, better: k === 'number' || k === 'bool' ? N.better : 'none' }), style: chip(N.kind === k) })),
+      betters: (N.kind === 'number' || N.kind === 'bool' ? [['higher', N.kind === 'bool' ? 'Yes is better' : 'Higher'], ['lower', N.kind === 'bool' ? 'No is better' : 'Lower'], ['none', 'Neither']] : [['none', 'Neither']])
+        .map(([k, l]) => ({ label: l, go: () => setN({ better: k }), style: chip(N.better === k) })),
+      isChoice: N.kind === 'choice', choices: N.choices, onChoices: (e) => setN({ choices: e.target.value }),
+      add: () => this.cmpAddField(), addStyle: softBtn(!!C.keyOf(N.label) && !S.cmpBusy)
+    };
+    const betterWord = { higher: 'higher is better', lower: 'lower is better', none: '' };
+
+    const anyFilter = filters.maxPrice || F.statuses.length || F.source !== 'all' || F.mustHave.length || Object.values(filters.min).some((x) => x > 0);
+    return { ...base, inCat: true, title: cat.name,
+      subtitle: v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · prices compared tax-included · the green tint marks the best value in a column where you said which way is better. Nothing is scored.',
+      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
+      views: [['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => ({ label: l, go: () => this.setState({ cmpView: k }), style: this.seg(S.cmpView === k) })),
+      toggleFields: () => this.setState({ cmpFieldsOpen: !S.cmpFieldsOpen, cmpEdit: null, cmpError: null, cmpConfirmArchive: false }),
+      fieldsBtnStyle: chip(S.cmpFieldsOpen).replace('padding:6px 11px', 'padding:9px 14px').replace('border-radius:999px', 'border-radius:12px'),
+      newOption: () => this.cmpNewOption(),
+      fieldsOpen: S.cmpFieldsOpen,
+      fieldRows: fields.map((f) => ({ label: f.label, meta: [{ number: 'Number', bool: 'Yes / no', choice: 'Choice: ' + (f.choices || []).join(', '), text: 'Text' }[f.kind], f.unit, betterWord[f.better]].filter(Boolean).join(' · '),
+        remove: () => this.cmpRemoveField(f) })),
+      nf, archiveCat: () => this.cmpArchiveCategory(), archiveLabel: S.cmpConfirmArchive ? 'Archive ' + cat.name + '? Tap again to confirm.' : 'Archive this need',
+      ed, shopOptions,
+      sorts: [['price', 'Price']].concat(fields.filter((f) => f.kind === 'number').map((f) => [f.key, f.label]))
+        .map(([k, l]) => ({ label: l, go: () => this.setState({ cmpSort: k }), style: chip(S.cmpSort === k) })),
+      flipDir: () => this.setState({ cmpDir: S.cmpDir === 'asc' ? 'desc' : 'asc' }), dirLabel: S.cmpDir === 'asc' ? '↑ Low to high' : '↓ High to low',
+      sources: [['all', 'All'], ['shop', 'In-store'], ['online', 'Online']].map(([k, l]) => ({ label: l, go: () => setF({ source: k }), style: chip(F.source === k) })),
+      statusFilters: [['shortlisted', 'Shortlisted'], ['bought', 'Bought'], ['rejected', 'Rejected']].map(([k, l]) => ({ label: l, go: () => setF({ statuses: toggleIn(F.statuses, k) }), style: chip(F.statuses.includes(k)) })),
+      toggleMore: () => this.setState({ cmpMore: !S.cmpMore }), moreLabel: S.cmpMore ? 'Fewer filters' : 'More filters', moreOpen: S.cmpMore,
+      maxPrice: F.maxPrice, onMaxPrice: (e) => setF({ maxPrice: e.target.value.replace(/[^\d]/g, '') }),
+      mins: fields.filter((f) => f.kind === 'number').map((f) => ({ label: f.label + ' at least' + (f.unit ? ' (' + f.unit + ')' : ''), value: F.min[f.key] || '',
+        onChange: (e) => setF({ min: { ...F.min, [f.key]: e.target.value.replace(/[^\d.]/g, '') } }) })),
+      musts: fields.filter((f) => f.kind === 'bool').map((f) => ({ label: 'Has ' + f.label.toLowerCase(), go: () => setF({ mustHave: toggleIn(F.mustHave, f.key) }), style: chip(F.mustHave.includes(f.key)) })),
+      hiddenNote: anyFilter && v.hidden ? v.hidden + (v.hidden === 1 ? ' option hidden' : ' options hidden') + ' by filters.' : (anyFilter ? 'Filters on; nothing hidden.' : null),
+      clearFilters: () => this.setState({ cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} } }),
+      emptyCat: !v.all.length ? 'No options yet. Add one with + Option: a product on a shelf, or an online listing you paste.' : !v.rows.length ? 'Every option is hidden by the filters.' : null,
+      showCards: S.cmpView === 'cards' && v.rows.length > 0, cards,
+      showTable: S.cmpView === 'table' && v.rows.length > 0, tableRows,
+      tableInner: 'width:100%;min-width:' + (170 + Math.max(1, v.rows.length) * 130) + 'px;',
+      footnote: v.per.mixed ? 'Per-unit prices are not shown: these options are sold in different units.' : (sample ? 'Sample data. Amazon prices are from review articles and unverified.' : null)
+    };
+  }
+
   matrixVals(S, canEdit) {
     const M = S.mx, cfg = window.CHATAK_CONFIG || {};
     const reviewDays = Number(cfg.matrixReviewDays) || 40, staleDays = Number(cfg.matrixStaleDays) || 45;
@@ -2624,13 +3369,14 @@ class Component extends DCLogic {
     const navIcons = {
       home: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
       matrix: 'M4 4h16v16H4zM4 10h16M4 16h16M10 4v16',
+      compare: 'M4 5h6v14H4zM14 5h6v14h-6zM12 2v20',
       deals: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.01',
       calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
       alerts: 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
       settings: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4'
     };
     const buildNav = (alertBadge, matrixBadge) => [
-      ['home', 'Home', 0, 'Home'], ['matrix', 'Price matrix', matrixBadge, 'Matrix'], ['deals', 'Deal feed', 0, 'Deals'],
+      ['home', 'Home', 0, 'Home'], ['matrix', 'Price matrix', matrixBadge, 'Matrix'], ['compare', 'Compare', 0, 'Compare'], ['deals', 'Deal feed', 0, 'Deals'],
       ['calendar', 'Season calendar', 0, 'Calendar'], ['alerts', 'Alerts', alertBadge, 'Alerts'], ['settings', 'Settings', 0, 'Settings']
     ].map(([id, label, badge, short]) => ({
       label, badge, short, icon: navIcons[id],
@@ -3290,6 +4036,7 @@ class Component extends DCLogic {
     return {
       nav, dataStrip, isEmptyLive, isSignIn, isAuthDown, perms,
       mx: mxv.vm, isMatrix: screen === 'matrix' && !isSignIn && !isAuthDown,
+      cmp: this.compareVals(S), isCompare: screen === 'compare' && !isSignIn && !isAuthDown,
       showApp: !isSignIn && !isAuthDown,
       authDownMessage: L.message || 'No response from the server.',
       retryLive: () => this.loadLive(),

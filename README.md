@@ -68,3 +68,11 @@ Supabase the schema touches (auth, roles, storage), runs
 `tests/db/test_*.sql`. Each check prints `ok  …` or stops the run with
 `FAILED: …`. Pass a name fragment to run one file: `tests/db/run.sh compare`.
 Nothing here touches the live project.
+
+`node --test tests/js/*.test.js` checks Compare's arithmetic in
+`js/chatak-compare.js` (tax basis, best in column, "pay more, get what",
+sorting, filters) on the sample folding tables.
+
+`tests/ui/compare.check.js` drives the Compare tab in a headless browser at
+phone and desktop width on sample data; see the header of that file for the
+one-time setup.

@@ -387,3 +387,89 @@ export async function findByBarcode(jan) {
   const { data } = await db.from('chatak_products').select('id, name, subtitle, msrp').eq('jan_code', jan).maybeSingle();
   return data;
 }
+
+// ── compare ──
+// Private to the signed-in person (owner RLS). One read returns the whole set:
+// a person's comparison data is small (tens of options, hundreds of prices).
+export async function getCompare() {
+  const [cats, fields, options, prices] = await Promise.all([
+    db.from('chatak_cmp_categories').select('*').eq('archived', false).order('sort_order').order('name'),
+    db.from('chatak_cmp_fields').select('*').order('sort_order'),
+    db.from('chatak_cmp_options').select('*').order('name'),
+    db.from('chatak_cmp_prices').select('*').order('seen_on', { ascending: false })
+  ]);
+  for (const r of [cats, fields, options, prices]) if (r.error) throw r.error;
+  return { categories: cats.data ?? [], fields: fields.data ?? [], options: options.data ?? [], prices: prices.data ?? [] };
+}
+
+// Folding bed table, slicer, blender. Adds only what is missing.
+export async function seedCompareStarters() {
+  const { data, error } = await db.rpc('chatak_cmp_seed_starters');
+  if (error) throw error;
+  return data;
+}
+
+export async function saveCmpCategory({ id, name, tax_rate }) {
+  const row = { name, tax_rate: tax_rate ?? 10 };
+  const q = id ? db.from('chatak_cmp_categories').update(row).eq('id', id) : db.from('chatak_cmp_categories').insert(row);
+  const { data, error } = await q.select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function archiveCmpCategory(id) {
+  const { error } = await db.from('chatak_cmp_categories').update({ archived: true }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function addCmpField(row) {
+  const { data, error } = await db.from('chatak_cmp_fields').insert(row).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCmpField(id) {
+  const { error } = await db.from('chatak_cmp_fields').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Insert when there is no id, otherwise update. Specs are validated by the
+// database against the category's fields; its message is shown as-is.
+export async function saveCmpOption(o) {
+  const row = {
+    category_id: o.category_id, name: o.name, name_ja: o.name_ja || null, brand: o.brand || null, model_code: o.model_code || null,
+    source_kind: o.source_kind, cost_shop_id: o.cost_shop_id ?? null, shop_name: o.shop_name || null,
+    store_id: o.store_id ?? null, url: o.url || null, pack_qty: o.pack_qty, pack_unit: o.pack_unit, size_label: o.size_label || null,
+    specs: o.specs || {}, notes: o.notes || null, status: o.status || 'considering', verdict: o.verdict || null
+  };
+  const q = o.id ? db.from('chatak_cmp_options').update(row).eq('id', o.id) : db.from('chatak_cmp_options').insert(row);
+  const { data, error } = await q.select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setCmpOptionStatus(id, status) {
+  const { error } = await db.from('chatak_cmp_options').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCmpOption(id) {
+  const { error } = await db.from('chatak_cmp_options').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Prices are append-only: add a new one, or delete a mistaken one.
+export async function addCmpPrice(p) {
+  const { data, error } = await db.from('chatak_cmp_prices').insert({
+    option_id: p.option_id, cost_shop_id: p.cost_shop_id ?? null, shop_name: p.shop_name || null, store_id: p.store_id ?? null,
+    price: p.price, tax_basis: p.tax_basis, tax_rate: p.tax_rate ?? 10, price_kind: p.price_kind || 'shelf',
+    member_program: p.member_program || null, seen_on: p.seen_on, source: p.source || 'manual', note: p.note || null
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCmpPrice(id) {
+  const { error } = await db.from('chatak_cmp_prices').delete().eq('id', id);
+  if (error) throw error;
+}
