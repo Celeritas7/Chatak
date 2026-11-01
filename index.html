@@ -20,6 +20,7 @@
 <script src="./js/chatak-config.js"></script>
 <script src="./js/chatak-engine.js"></script>
 <script src="./js/chatak-compare.js"></script>
+<script src="./js/chatak-photo.js"></script>
 <script src="./js/akatsuki-client.js"></script>
 <style>
   *{box-sizing:border-box;}
@@ -31,6 +32,7 @@
 
   /* ---- Phone layout. Markup styles are inline, so overrides need !important. ---- */
   .ck-mobile-only{display:none;}
+  body.ck-viewing{overflow:hidden;}
   @media (max-width:760px){
     html,body{overflow-x:hidden;}
     .ck-desktop-only,.ck-side,.ck-deal-head{display:none !important;}
@@ -47,6 +49,7 @@
     .ck-strip > span:first-child{margin-top:5px;}
 
     .ck-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,0.97);backdrop-filter:blur(8px);border-top:1px solid #EAE5DD;padding:4px 4px calc(4px + env(safe-area-inset-bottom));}
+    body.ck-viewing .ck-tabbar{display:none !important;}
     .ck-tab{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:0;background:none;cursor:pointer;font-size:10px;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
     .ck-tab span{overflow:hidden;text-overflow:ellipsis;max-width:100%;}
     .ck-tab-badge{position:absolute;top:2px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#C2453B;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;}
@@ -1472,6 +1475,22 @@
                 <textarea value="{{ cmp.ed.notes }}" onChange="{{ cmp.ed.onNotes }}" rows="2" placeholder="Notes" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:inherit;resize:vertical;"></textarea>
               </div>
 
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;">Photos</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <sc-for list="{{ cmp.ed.photos }}" as="ph" hint-placeholder-count="2">
+                    <div style="{{ ph.style }}" onClick="{{ ph.open }}" role="img" aria-label="{{ ph.label }}" title="{{ ph.label }}">
+                      <button onClick="{{ ph.remove }}" aria-label="{{ ph.removeAria }}" style="{{ ph.removeStyle }}">{{ ph.removeLabel }}</button>
+                    </div>
+                  </sc-for>
+                  <label style="position:relative;width:84px;height:84px;border-radius:10px;border:1px dashed #C9C2B6;background:#FBFAF7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:#0F6B4F;font-size:12px;font-weight:700;flex-shrink:0;">
+                    <span style="font-size:20px;line-height:1;">+</span><span>Add photo</span>
+                    <input type="file" accept="image/*" multiple="{{ cmp.ed.multi }}" onChange="{{ cmp.ed.onPhotos }}" disabled="{{ cmp.ed.photoBusy }}" aria-label="Add photos" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
+                  </label>
+                </div>
+                <span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ cmp.ed.photoHint }}</span>
+              </div>
+
               <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
                 <span style="font-size:12px;font-weight:700;">{{ cmp.ed.pricesTitle }}</span>
                 <sc-for list="{{ cmp.ed.priceRows }}" as="p" hint-placeholder-count="2">
@@ -1556,7 +1575,8 @@
               <sc-for list="{{ cmp.cards }}" as="r" hint-placeholder-count="4">
                 <article style="{{ r.cardStyle }}">
                   <div style="{{ r.photoStyle }}">
-                    <span style="font-size:11px;color:#6F6A62;font-weight:600;text-align:center;padding:0 16px;">{{ r.photoText }}</span>
+                    <sc-if value="{{ r.photoText }}"><span style="font-size:11px;color:#6F6A62;font-weight:600;text-align:center;padding:0 16px;">{{ r.photoText }}</span></sc-if>
+                    <sc-if value="{{ r.photoOpen }}"><button onClick="{{ r.photoOpen }}" style="margin-top:auto;margin-bottom:10px;align-self:flex-end;margin-right:10px;padding:5px 10px;border-radius:999px;border:0;background:rgba(28,26,23,0.66);color:#fff;font-size:11px;font-weight:700;cursor:pointer;">{{ r.photoCount }}</button></sc-if>
                     <sc-if value="{{ r.url }}"><a href="{{ r.url }}" target="_blank" rel="noopener noreferrer" style="font-size:12px;font-weight:700;color:#0F6B4F;">{{ r.urlLabel }}</a></sc-if>
                   </div>
                   <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;">
@@ -1618,6 +1638,19 @@
 
           <sc-if value="{{ cmp.footnote }}">
             <span style="font-size:11px;color:#6F6A62;line-height:1.5;">{{ cmp.footnote }}</span>
+          </sc-if>
+
+          <!-- photo viewer -->
+          <sc-if value="{{ cmp.viewer }}">
+            <div role="dialog" aria-modal="true" aria-label="Photo" tabIndex="-1" ref="{{ cmpViewerRef }}" onKeyDown="{{ cmp.viewer.onKey }}" style="position:fixed;inset:0;z-index:200;background:rgba(18,17,15,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;outline:none;">
+              <div role="img" aria-label="{{ cmp.viewer.alt }}" data-src="{{ cmp.viewer.src }}" style="{{ cmp.viewer.style }}"></div>
+              <span style="font-size:12px;color:#E9E4DB;text-align:center;line-height:1.5;max-width:640px;">{{ cmp.viewer.caption }}</span>
+              <div style="display:flex;gap:10px;">
+                <sc-if value="{{ cmp.viewer.multi }}"><button onClick="{{ cmp.viewer.prev }}" aria-label="Previous photo" style="padding:10px 16px;border-radius:12px;border:1px solid #4A443C;background:#2A2723;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">← Previous</button></sc-if>
+                <button onClick="{{ cmp.viewer.close }}" style="padding:10px 18px;border-radius:12px;border:0;background:#fff;color:#1C1A17;font-size:13px;font-weight:700;cursor:pointer;">Close</button>
+                <sc-if value="{{ cmp.viewer.multi }}"><button onClick="{{ cmp.viewer.next }}" aria-label="Next photo" style="padding:10px 16px;border-radius:12px;border:1px solid #4A443C;background:#2A2723;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Next →</button></sc-if>
+              </div>
+            </div>
           </sc-if>
         </div>
       </sc-if>
@@ -1732,10 +1765,13 @@ class Component extends DCLogic {
     cmpSort: 'price', cmpDir: 'asc', cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} },
     cmpMore: false, cmpEdit: null, cmpPrice: null, cmpFieldsOpen: false,
     cmpNewField: { label: '', unit: '', kind: 'number', better: 'none', choices: '' }, cmpNewCat: '',
-    cmpBusy: false, cmpError: null, cmpInfo: null, cmpConfirmDel: false, cmpConfirmArchive: false
+    cmpBusy: false, cmpError: null, cmpInfo: null, cmpConfirmDel: false, cmpConfirmArchive: false,
+    // Photos: signed links by storage path (live) or object URLs (sample and not-yet-saved).
+    cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null
   };
 
   chartRef = React.createRef();
+  cmpViewerRef = React.createRef();
 
   buildStamp = '2026-10-18-shopmode';
 
@@ -1809,7 +1845,13 @@ class Component extends DCLogic {
     if (this._openFromHash) window.removeEventListener('hashchange', this._openFromHash);
     if (this._onSwMessage) navigator.serviceWorker.removeEventListener('message', this._onSwMessage);
   }
-  componentDidUpdate() { this.mxSyncWherePoll(); }
+  componentDidUpdate(_, prev) {
+    this.mxSyncWherePoll();
+    // The photo viewer covers the page: no tab bar over it, no scrolling behind it.
+    try { document.body.classList.toggle('ck-viewing', !!this.state.cmpViewPhoto); } catch (e) {}
+    // The photo viewer takes focus so Escape and the arrow keys reach it.
+    if (this.state.cmpViewPhoto && !(prev && prev.cmpViewPhoto) && this.cmpViewerRef.current) { try { this.cmpViewerRef.current.focus(); } catch (e) {} }
+  }
 
   // ---------- live data ----------
   // Runs once on mount. With no Supabase config the app stays on generated
@@ -2662,7 +2704,10 @@ class Component extends DCLogic {
       let d = await this._api.getCompare();
       // First visit: the three starter needs. The function adds only what is missing.
       if (!d.categories.length && !this._cmpSeeded) { this._cmpSeeded = true; await this._api.seedCompareStarters(); d = await this._api.getCompare(); }
-      this.setState({ cmp: { status: 'ready', ...d } });
+      // Signed links last an hour; every load renews them. A failure here only hides the images.
+      let urls = {};
+      try { urls = await this._api.signCmpPhotos((d.photos || []).map((p) => p.storage_path)); } catch (e) { console.warn('[cmp] photo links', e); }
+      this.setState({ cmp: { status: 'ready', ...d }, cmpPhotoUrls: urls });
     } catch (e) {
       this.setState({ cmp: { status: 'error', message: String(e.message || e), categories: [], fields: [], options: [], prices: [] } });
     }
@@ -2682,6 +2727,17 @@ class Component extends DCLogic {
       this.setState({ cmpBusy: false, cmpError: String(e.message || e) });
       return false;
     }
+  }
+
+  // Cost's shops come with the matrix. Saving waits for them, so a shop typed
+  // before they arrived is still linked by id rather than kept as a bare name.
+  async cmpEnsureShops() {
+    const M = this.state.mx;
+    if (!this._api || (M && M.shops && M.shops.length && M.status !== 'loading')) return;
+    if (!this._cmpShopWait) this._cmpShopWait = (M && M.status === 'loading' ? Promise.resolve() : this.loadMatrix()).catch(() => null);
+    await this._cmpShopWait;
+    for (let i = 0; i < 40 && this.state.mx && this.state.mx.status === 'loading'; i++) await new Promise((r) => setTimeout(r, 150));
+    this._cmpShopWait = null;
   }
 
   cmpShops() {
@@ -2713,7 +2769,7 @@ class Component extends DCLogic {
       cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', store_id: 2, url: '',
         qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -2724,7 +2780,7 @@ class Component extends DCLogic {
       cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
         name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -2776,29 +2832,120 @@ class Component extends DCLogic {
 
   async cmpSaveOption() {
     if (this.state.cmpBusy) return;
+    if (this.cmpLive() && this.state.cmpEdit.source_kind === 'shop') {
+      this.setState({ cmpBusy: true });
+      await this.cmpEnsureShops();
+      this.setState({ cmpBusy: false });
+    }
     const { row, error } = this.cmpOptionRow();
     if (error) { this.setState({ cmpError: error }); return; }
     const isNew = !row.id;
     const pr = this.cmpPriceRow({ ...row, id: row.id || 'new' });
     if (pr.error) { this.setState({ cmpError: pr.error }); return; }
     this.setState({ cmpBusy: true, cmpError: null });
+    // Each step is its own write. Once the option exists the editor holds its
+    // id, so a retry after a failed price or photo updates it, never adds a twin.
+    let step = 'option';
     try {
       if (this.cmpLive()) {
         const saved = await this._api.saveCmpOption(row);
+        if (isNew) this.setState((s) => ({ cmpEdit: { ...s.cmpEdit, id: saved.id } }));
+        step = 'price';
         if (pr.row) await this._api.addCmpPrice({ ...pr.row, option_id: saved.id });
+        if (pr.row) this.setState((s) => ({ cmpPrice: { ...s.cmpPrice, price: '', member_program: '' } }));
+        step = 'photos';
+        await this.cmpUploadPending(saved.id);
         await this.loadCompare();
       } else {
         const id = row.id || 'o-' + Date.now();
+        const pend = this.state.cmpPending || [];
         this.setState((s) => {
           const options = isNew ? s.cmp.options.concat([{ ...row, id }]) : s.cmp.options.map((o) => (o.id === id ? { ...o, ...row } : o));
           const prices = pr.row ? s.cmp.prices.concat([{ ...pr.row, id: Date.now(), option_id: id }]) : s.cmp.prices;
-          return { cmp: { ...s.cmp, options, prices } };
+          const added = pend.map((x, i) => ({ id: 'ph-' + Date.now() + '-' + i, option_id: id, storage_path: x.url, original_name: x.original_name, taken_at: x.taken_at, width: x.width, height: x.height, bytes: x.bytes, created_at: new Date().toISOString() }));
+          const urls = { ...s.cmpPhotoUrls };
+          for (const a of added) urls[a.storage_path] = a.storage_path;
+          return { cmp: { ...s.cmp, options, prices, photos: (s.cmp.photos || []).concat(added) }, cmpPhotoUrls: urls, cmpPending: [] };
         });
       }
       this.setState({ cmpBusy: false, cmpEdit: null, cmpPrice: null, cmpInfo: (isNew ? 'Added ' : 'Saved ') + row.name + '.' });
     } catch (e) {
-      this.setState({ cmpBusy: false, cmpError: String(e.message || e) });
+      const msg = String(e.message || e);
+      const lead = step === 'price' ? row.name + ' was saved, but its price was not: '
+        : step === 'photos' ? row.name + ' was saved, but a photo was not: ' : '';
+      if (step !== 'option') await this.loadCompare();
+      this.setState({ cmpBusy: false, cmpError: lead + msg });
     }
+  }
+
+  // ---- photos ----
+  // Chosen files are shrunk at once. On a saved option they upload straight
+  // away; on a new one they wait in cmpPending until the option is saved.
+  cmpDropPending() {
+    for (const p of this.state.cmpPending || []) { try { URL.revokeObjectURL(p.url); } catch (e) {} }
+    return [];
+  }
+
+  async cmpPickPhotos(files) {
+    const P = window.ChatakPhoto, E = this.state.cmpEdit;
+    if (!P || !E || !files || !files.length || this.state.cmpPhotoBusy) return;
+    const list = Array.from(files).slice(0, 8);
+    const shrunk = [];
+    this.setState({ cmpError: null, cmpPhotoBusy: 'Shrinking ' + (list.length === 1 ? 'the photo' : list.length + ' photos') + '…' });
+    try {
+      for (const f of list) shrunk.push(await P.shrink(f));
+    } catch (e) {
+      this.setState({ cmpPhotoBusy: null, cmpError: String(e.message || e) });
+      return;
+    }
+    if (!E.id) {
+      const add = shrunk.map((x) => ({ ...x, url: URL.createObjectURL(x.blob) }));
+      this.setState((s) => ({ cmpPending: (s.cmpPending || []).concat(add), cmpPhotoBusy: null }));
+      return;
+    }
+    if (this.cmpLive()) {
+      this.setState({ cmpPhotoBusy: 'Uploading…' });
+      let done = 0;
+      try {
+        for (const x of shrunk) { await this._api.uploadCmpPhoto(E.id, x); done++; }
+      } catch (e) {
+        await this.loadCompare();
+        this.setState({ cmpPhotoBusy: null, cmpError: (done ? done + ' of ' + shrunk.length + ' photos saved. ' : '') + 'Photo not saved: ' + (e.message || e) });
+        return;
+      }
+      await this.loadCompare();
+      this.setState({ cmpPhotoBusy: null, cmpInfo: (shrunk.length === 1 ? 'Photo' : shrunk.length + ' photos') + ' added.' });
+      return;
+    }
+    this.setState((s) => {
+      const urls = { ...s.cmpPhotoUrls };
+      const added = shrunk.map((x, i) => {
+        const url = URL.createObjectURL(x.blob);
+        urls[url] = url;
+        return { id: 'ph-' + Date.now() + '-' + i, option_id: E.id, storage_path: url, original_name: x.original_name, taken_at: x.taken_at, width: x.width, height: x.height, bytes: x.bytes, created_at: new Date().toISOString() };
+      });
+      return { cmp: { ...s.cmp, photos: (s.cmp.photos || []).concat(added) }, cmpPhotoUrls: urls, cmpPhotoBusy: null, cmpInfo: (added.length === 1 ? 'Photo' : added.length + ' photos') + ' added.' };
+    });
+  }
+
+  async cmpUploadPending(optionId) {
+    const pend = (this.state.cmpPending || []).slice();
+    for (const x of pend) {
+      await this._api.uploadCmpPhoto(optionId, x);
+      // Drop each one as it lands, so a retry does not upload it twice.
+      this.setState((s) => ({ cmpPending: s.cmpPending.filter((y) => y !== x) }));
+      try { URL.revokeObjectURL(x.url); } catch (e) {}
+    }
+  }
+
+  cmpRemovePending(x) {
+    try { URL.revokeObjectURL(x.url); } catch (e) {}
+    this.setState((s) => ({ cmpPending: s.cmpPending.filter((y) => y !== x) }));
+  }
+
+  cmpDeletePhoto(ph) {
+    return this.cmpWrite(() => this._api.deleteCmpPhoto(ph),
+      (c) => ({ ...c, photos: (c.photos || []).filter((x) => x.id !== ph.id) }), 'Photo deleted.');
   }
 
   // Adds a price to an option that already exists, without closing the editor.
@@ -2822,7 +2969,7 @@ class Component extends DCLogic {
     if (!E || !E.id) return;
     if (!this.state.cmpConfirmDel) { this.setState({ cmpConfirmDel: true }); return; }
     const ok = await this.cmpWrite(() => this._api.deleteCmpOption(E.id),
-      (c) => ({ ...c, options: c.options.filter((o) => o.id !== E.id), prices: c.prices.filter((p) => p.option_id !== E.id) }), 'Deleted ' + E.name + '.');
+      (c) => ({ ...c, options: c.options.filter((o) => o.id !== E.id), prices: c.prices.filter((p) => p.option_id !== E.id), photos: (c.photos || []).filter((p) => p.option_id !== E.id) }), 'Deleted ' + E.name + '.');
     if (ok) this.setState({ cmpEdit: null, cmpPrice: null, cmpConfirmDel: false });
   }
 
@@ -2835,6 +2982,17 @@ class Component extends DCLogic {
     const name = this.state.cmpNewCat.trim();
     if (!name || this.state.cmpBusy) return;
     if ((this.state.cmp.categories || []).some((c) => c.name.toLowerCase() === name.toLowerCase())) { this.setState({ cmpError: name + ' already exists.' }); return; }
+    // An archived need with this name: bring it back, with its options, rather
+    // than hit the one-name-per-person rule.
+    if (this.cmpLive()) {
+      let old = null;
+      try { old = (await this._api.getArchivedCmpCategories()).find((c) => c.name.toLowerCase() === name.toLowerCase()); } catch (e) {}
+      if (old) {
+        const ok = await this.cmpWrite(() => this._api.restoreCmpCategory(old.id), null, 'Restored ' + old.name + ' from the archive, with its options.');
+        if (ok) this.setState({ cmpNewCat: '', cmpCat: old.id });
+        return;
+      }
+    }
     let newId = null;
     const ok = await this.cmpWrite(async () => { newId = (await this._api.saveCmpCategory({ name })).id; },
       (c) => { newId = 'c-' + Date.now(); return { ...c, categories: c.categories.concat([{ id: newId, name, tax_rate: 10, sort_order: c.categories.length }]) }; }, null);
@@ -2863,7 +3021,7 @@ class Component extends DCLogic {
   async cmpArchiveCategory() {
     const cat = this.state.cmpCat;
     if (!this.state.cmpConfirmArchive) { this.setState({ cmpConfirmArchive: true }); return; }
-    const ok = await this.cmpWrite(() => this._api.archiveCmpCategory(cat), (c) => ({ ...c, categories: c.categories.filter((x) => x.id !== cat) }), 'Need archived. Its options stay in the database.');
+    const ok = await this.cmpWrite(() => this._api.archiveCmpCategory(cat), (c) => ({ ...c, categories: c.categories.filter((x) => x.id !== cat) }), 'Need archived. Its options are kept: create a need with the same name to bring it back.');
     if (ok) this.setState({ cmpCat: null, cmpFieldsOpen: false, cmpConfirmArchive: false });
   }
 
@@ -2922,16 +3080,23 @@ class Component extends DCLogic {
       return { text: L.text, diffs: L.diffs.length ? L.diffs.join(' · ') : L.note };
     };
     const tint = 'background:#F0F8F4;';
+    const photosOf = (id) => (D.photos || []).filter((p) => p.option_id === id && S.cmpPhotoUrls[p.storage_path]);
+    const cssUrl = (u) => 'url("' + String(u).replace(/["\\\n]/g, '') + '")';
+    const openViewer = (id, i) => this.setState({ cmpViewPhoto: { option: id, i } });
 
     const cards = v.rows.map((r) => {
       const pay = payFor(r), online = r.source_kind === 'online';
       const store = online ? this.cmpStores().find((s) => s.id === r.store_id) : null;
+      const pics = photosOf(r.id), cover = pics.length ? S.cmpPhotoUrls[pics[pics.length - 1].storage_path] : null;
       return {
         name: r.name, byline: [r.brand, r.model_code, r.size_label].filter(Boolean).join(' · ') || (online ? 'Online' : this.cmpShopLabel(r)),
         statusLabel: statusWord[r.status] || '', statusStyle: statusStyle(r.status),
         cardStyle: 'border-radius:20px;background:#fff;border:1px solid ' + (r.status === 'shortlisted' ? '#CFE3DA' : '#EAE5DD') + ';overflow:hidden;' + (r.status === 'rejected' ? 'opacity:0.6;' : ''),
-        photoStyle: 'height:150px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);',
-        photoText: online ? 'Online listing · no image stored' : 'No photo yet',
+        photoStyle: 'height:150px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;' + (cover
+          ? 'background:#F1EDE6 ' + cssUrl(cover) + ' center/cover no-repeat;' : 'background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);'),
+        photoText: cover ? '' : online ? 'Online listing · no image stored' : 'No photo yet',
+        photoOpen: cover ? () => openViewer(r.id, pics.length - 1) : null,
+        photoCount: pics.length > 1 ? pics.length + ' photos' : pics.length ? 'View photo' : '',
         url: online ? r.url : null, urlLabel: 'Open on ' + (store ? store.name : 'the shop site') + ' ↗',
         price: r.lead ? C.yen(r.lead.price_incl) : '—', member: memberText(r), priceNote: priceNote(r),
         payText: pay.text, payDiffs: pay.diffs,
@@ -3008,6 +3173,24 @@ class Component extends DCLogic {
         statuses: [['considering', 'Considering'], ['shortlisted', 'Shortlisted'], ['bought', 'Bought'], ['rejected', 'Rejected']].map(([k, l]) => ({ label: l, go: () => set({ status: k }), style: chip(E.status === k) })),
         verdict: E.verdict, onVerdict: (e) => set({ verdict: e.target.value }),
         notes: E.notes, onNotes: (e) => set({ notes: e.target.value }),
+        photos: (E.id ? photosOf(E.id) : []).map((p, i, all) => ({
+          style: 'position:relative;width:84px;height:84px;border-radius:10px;border:1px solid #EAE5DD;background:#F1EDE6 ' + cssUrl(S.cmpPhotoUrls[p.storage_path]) + ' center/cover no-repeat;cursor:pointer;flex-shrink:0;',
+          open: () => openViewer(E.id, i),
+          label: 'Photo ' + (i + 1) + ' of ' + all.length,
+          remove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (S.cmpConfirmPhoto === p.id) this.cmpDeletePhoto(p).then(() => this.setState({ cmpConfirmPhoto: null })); else this.setState({ cmpConfirmPhoto: p.id }); },
+          removeLabel: S.cmpConfirmPhoto === p.id ? 'Delete?' : '×',
+          removeAria: S.cmpConfirmPhoto === p.id ? 'Confirm: delete this photo' : 'Delete photo',
+          removeStyle: 'position:absolute;top:4px;right:4px;height:24px;min-width:24px;padding:0 6px;border-radius:7px;border:0;font-size:' + (S.cmpConfirmPhoto === p.id ? '10px' : '13px') + ';font-weight:800;cursor:pointer;color:#fff;background:' + (S.cmpConfirmPhoto === p.id ? '#A5322A' : 'rgba(28,26,23,0.62)') + ';'
+        })).concat((S.cmpPending || []).map((x) => ({
+          style: 'position:relative;width:84px;height:84px;border-radius:10px;border:1px dashed #9FC3B4;background:#F1EDE6 ' + cssUrl(x.url) + ' center/cover no-repeat;flex-shrink:0;',
+          open: null, label: 'Waiting for save',
+          remove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.cmpRemovePending(x); }, removeLabel: '×', removeAria: 'Remove photo',
+          removeStyle: 'position:absolute;top:4px;right:4px;height:24px;min-width:24px;padding:0 6px;border-radius:7px;border:0;font-size:13px;font-weight:800;cursor:pointer;color:#fff;background:rgba(28,26,23,0.62);'
+        }))),
+        photoHint: S.cmpPhotoBusy || (S.cmpPending && S.cmpPending.length ? S.cmpPending.length + (S.cmpPending.length === 1 ? ' photo uploads' : ' photos upload') + ' when you save.'
+          : 'Shelf tag, box, label. Shrunk on this device to about 300 KB before upload; location data is removed. Only you can see them.'),
+        photoBusy: !!S.cmpPhotoBusy, multi: true,
+        onPhotos: (e) => { const files = e.target.files; this.cmpPickPhotos(files ? Array.from(files) : []); try { e.target.value = ''; } catch (x) {} },
         pricesTitle: E.id ? (prices.length ? 'Prices seen (' + prices.length + ')' : 'Prices seen') : 'First price (optional)',
         priceRows: prices.map((p) => ({
           main: C.yen(C.inclOf(p)) + ' incl. tax' + (p.price_kind !== 'shelf' ? ' · ' + (p.price_kind === 'member' ? p.member_program : p.price_kind) : ''),
@@ -3027,7 +3210,7 @@ class Component extends DCLogic {
         },
         error: S.cmpError,
         save: () => this.cmpSaveOption(), saveLabel: S.cmpBusy ? 'Saving…' : E.id ? 'Save' : 'Add option', saveStyle: softBtn(canSave).replace('align-self:flex-start;', '') + 'padding:10px 18px;font-size:13px;',
-        cancel: () => this.setState({ cmpEdit: null, cmpPrice: null, cmpError: null, cmpConfirmDel: false }),
+        cancel: () => this.setState({ cmpEdit: null, cmpPrice: null, cmpError: null, cmpConfirmDel: false, cmpPending: this.cmpDropPending() }),
         del: E.id ? () => this.cmpDeleteOption() : null, delLabel: S.cmpConfirmDel ? 'Delete it and its prices?' : 'Delete option'
       };
     }
@@ -3045,7 +3228,29 @@ class Component extends DCLogic {
     const betterWord = { higher: 'higher is better', lower: 'lower is better', none: '' };
 
     const anyFilter = filters.maxPrice || F.statuses.length || F.source !== 'all' || F.mustHave.length || Object.values(filters.min).some((x) => x > 0);
-    return { ...base, inCat: true, title: cat.name,
+    let viewer = null;
+    if (S.cmpViewPhoto) {
+      const pics = photosOf(S.cmpViewPhoto.option), n = pics.length;
+      const i = n ? ((S.cmpViewPhoto.i % n) + n) % n : 0, ph = pics[i];
+      const opt = (D.options || []).find((o) => o.id === S.cmpViewPhoto.option);
+      if (ph) {
+        const when = ph.taken_at ? new Date(ph.taken_at).toLocaleString('en-GB', { timeZone: 'Asia/Tokyo', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' JST' : '';
+        viewer = {
+          src: S.cmpPhotoUrls[ph.storage_path],
+          // A background, not <img src>: the browser would fetch the raw {{ }} placeholder before the template fills it.
+          style: 'width:min(100%, ' + (ph.width || 1600) + 'px);aspect-ratio:' + (ph.width || 4) + ' / ' + (ph.height || 3) + ';max-height:calc(100vh - 140px);border-radius:10px;background:#2A2723 ' + cssUrl(S.cmpPhotoUrls[ph.storage_path]) + ' center/contain no-repeat;',
+          alt: (opt ? opt.name : 'Option') + ', photo ' + (i + 1),
+          caption: [opt ? opt.name : '', n > 1 ? (i + 1) + ' of ' + n : '', when ? 'taken ' + when : '', ph.original_name || ''].filter(Boolean).join(' · '),
+          multi: n > 1,
+          prev: () => this.setState({ cmpViewPhoto: { ...S.cmpViewPhoto, i: i - 1 } }),
+          next: () => this.setState({ cmpViewPhoto: { ...S.cmpViewPhoto, i: i + 1 } }),
+          close: () => this.setState({ cmpViewPhoto: null }),
+          onKey: (e) => { if (e.key === 'Escape') this.setState({ cmpViewPhoto: null }); else if (e.key === 'ArrowLeft') this.setState({ cmpViewPhoto: { ...S.cmpViewPhoto, i: i - 1 } }); else if (e.key === 'ArrowRight') this.setState({ cmpViewPhoto: { ...S.cmpViewPhoto, i: i + 1 } }); }
+        };
+      }
+    }
+
+    return { ...base, inCat: true, title: cat.name, viewer,
       subtitle: v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · prices compared tax-included · the green tint marks the best value in a column where you said which way is better. Nothing is scored.',
       back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
       views: [['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => ({ label: l, go: () => this.setState({ cmpView: k }), style: this.seg(S.cmpView === k) })),
@@ -4146,6 +4351,7 @@ class Component extends DCLogic {
         (S.showUsed ? '#1C1A17' : '#EAE5DD') + ';background:' + (S.showUsed ? '#1C1A17' : '#fff') + ';color:' + (S.showUsed ? '#fff' : '#6F6A62') + ';',
 
       chartRef: this.chartRef,
+      cmpViewerRef: this.cmpViewerRef,
       onChartMove: this.onChartMove,
       onChartLeave: this.onChartLeave,
       startDrag: this.startDrag,

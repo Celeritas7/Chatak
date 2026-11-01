@@ -392,14 +392,69 @@ export async function findByBarcode(jan) {
 // Private to the signed-in person (owner RLS). One read returns the whole set:
 // a person's comparison data is small (tens of options, hundreds of prices).
 export async function getCompare() {
-  const [cats, fields, options, prices] = await Promise.all([
+  const [cats, fields, options, prices, photos] = await Promise.all([
     db.from('chatak_cmp_categories').select('*').eq('archived', false).order('sort_order').order('name'),
     db.from('chatak_cmp_fields').select('*').order('sort_order'),
     db.from('chatak_cmp_options').select('*').order('name'),
-    db.from('chatak_cmp_prices').select('*').order('seen_on', { ascending: false })
+    db.from('chatak_cmp_prices').select('*').order('seen_on', { ascending: false }),
+    db.from('chatak_cmp_photos').select('*').order('created_at')
   ]);
-  for (const r of [cats, fields, options, prices]) if (r.error) throw r.error;
-  return { categories: cats.data ?? [], fields: fields.data ?? [], options: options.data ?? [], prices: prices.data ?? [] };
+  for (const r of [cats, fields, options, prices, photos]) if (r.error) throw r.error;
+  return { categories: cats.data ?? [], fields: fields.data ?? [], options: options.data ?? [], prices: prices.data ?? [], photos: photos.data ?? [] };
+}
+
+// Archived needs, so a name can be restored instead of colliding with the
+// unique (user, lower(name)) index.
+export async function getArchivedCmpCategories() {
+  const { data, error } = await db.from('chatak_cmp_categories').select('id, name').eq('archived', true);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function restoreCmpCategory(id) {
+  const { data, error } = await db.from('chatak_cmp_categories').update({ archived: false }).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// ── compare photos ──
+// Bucket chatak-compare is private: files sit under <user_id>/<option_id>/ and
+// are shown through signed links that expire after an hour.
+const CMP_BUCKET = 'chatak-compare';
+
+// shrunk = ChatakPhoto.shrink() output. The file goes up first, then its row;
+// if the row is refused the file is removed again so nothing is left orphaned.
+export async function uploadCmpPhoto(optionId, shrunk) {
+  const uid = (await session())?.user?.id;
+  if (!uid) throw new Error('Sign in first.');
+  const id = crypto.randomUUID();
+  const path = uid + '/' + optionId + '/' + id + '.jpg';
+  const up = await db.storage.from(CMP_BUCKET).upload(path, shrunk.blob, { contentType: 'image/jpeg', upsert: false });
+  if (up.error) throw up.error;
+  const { data, error } = await db.from('chatak_cmp_photos').insert({
+    id, option_id: optionId, storage_path: path, original_name: shrunk.original_name || null,
+    taken_at: shrunk.taken_at || null, width: shrunk.width, height: shrunk.height, bytes: shrunk.bytes
+  }).select().single();
+  if (error) { await db.storage.from(CMP_BUCKET).remove([path]); throw error; }
+  return data;
+}
+
+// Row first: if the file removal then fails, the photo is already gone from
+// the app and the file stays private under the person's folder.
+export async function deleteCmpPhoto(photo) {
+  const { error } = await db.from('chatak_cmp_photos').delete().eq('id', photo.id);
+  if (error) throw error;
+  await db.storage.from(CMP_BUCKET).remove([photo.storage_path]);
+}
+
+// { storage_path: signedUrl } for the given paths, one request.
+export async function signCmpPhotos(paths, seconds = 3600) {
+  if (!paths.length) return {};
+  const { data, error } = await db.storage.from(CMP_BUCKET).createSignedUrls(paths, seconds);
+  if (error) throw error;
+  const out = {};
+  for (const r of data ?? []) if (r.signedUrl && r.path) out[r.path] = r.signedUrl;
+  return out;
 }
 
 // Folding bed table, slicer, blender. Adds only what is missing.
@@ -453,9 +508,14 @@ export async function setCmpOptionStatus(id, status) {
   if (error) throw error;
 }
 
+// Photo rows go with the option (cascade); their files are removed here, after
+// the option is gone, so a failed delete leaves everything as it was.
 export async function deleteCmpOption(id) {
+  const pics = await db.from('chatak_cmp_photos').select('storage_path').eq('option_id', id);
   const { error } = await db.from('chatak_cmp_options').delete().eq('id', id);
   if (error) throw error;
+  const paths = (pics.data ?? []).map((p) => p.storage_path);
+  if (paths.length) await db.storage.from(CMP_BUCKET).remove(paths);
 }
 
 // Prices are append-only: add a new one, or delete a mistaken one.
