@@ -56,8 +56,8 @@ select t.err($$ insert into chatak_cmp_options (category_id, name, source_kind, 
                 select id, 'No size', 'shop', 'Donki', 'pc' from chatak_cmp_categories limit 1 $$, '23502', 'option without pack size refused');
 select t.err($$ insert into chatak_cmp_options (category_id, name, source_kind, shop_name, pack_qty, pack_unit)
                 select id, 'Odd unit', 'shop', 'Donki', 1, 'boxes' from chatak_cmp_categories limit 1 $$, '23514', 'unknown pack unit refused');
-select t.err($$ insert into chatak_cmp_options (category_id, name, source_kind, store_id, pack_qty, pack_unit)
-                select id, 'VECELO', 'online', 2, 1, 'pc' from chatak_cmp_categories limit 1 $$, '23514', 'online option without URL refused');
+select t.err($$ insert into chatak_cmp_options (category_id, name, source_kind, pack_qty, pack_unit)
+                select id, 'Nowhere', 'online', 1, 'pc' from chatak_cmp_categories limit 1 $$, '23514', 'online option with neither store nor seller refused');
 insert into chatak_cmp_options (id, category_id, name, brand, source_kind, store_id, url, pack_qty, pack_unit, specs)
 select '11111111-0000-0000-0000-000000000002', id, 'Lap desk 70x48', 'VECELO', 'online', 2, 'https://www.amazon.co.jp/dp/EXAMPLE', 1, 'pc',
        '{"width": 70, "depth": 48, "height": 30}'

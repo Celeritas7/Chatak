@@ -1437,8 +1437,11 @@
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
                     <sc-for list="{{ cmp.ed.stores }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
                   </div>
-                  <input value="{{ cmp.ed.url }}" onChange="{{ cmp.ed.onUrl }}" placeholder="Paste the product page URL" inputMode="url" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
-                  <span style="font-size:11px;color:#6F6A62;">Read the listing and type what it says. Nothing is fetched from the shop, and its images are not stored.</span>
+                  <sc-if value="{{ cmp.ed.isOtherSeller }}">
+                    <input value="{{ cmp.ed.seller }}" onChange="{{ cmp.ed.onSeller }}" placeholder="Seller, e.g. ANA Mall or the maker's site" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                  </sc-if>
+                  <input value="{{ cmp.ed.url }}" onChange="{{ cmp.ed.onUrl }}" placeholder="Product page link (optional, https://…)" inputMode="url" style="padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                  <span style="font-size:11px;color:#6F6A62;">Read the listing and type what it says. Nothing is fetched from the shop, and its images are not stored. The link can wait until you have found the page.</span>
                 </sc-if>
               </div>
 
@@ -2766,7 +2769,7 @@ class Component extends DCLogic {
   cmpNewOption() {
     const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
     this.setState({
-      cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', store_id: 2, url: '',
+      cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', seller: '', store_id: 2, url: '',
         qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
       cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
@@ -2777,7 +2780,7 @@ class Component extends DCLogic {
   cmpOpenOption(o) {
     const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
     this.setState({
-      cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
+      cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', seller: o.source_kind === 'online' && o.store_id == null ? (o.shop_name || '') : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
         name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
       cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
@@ -2807,8 +2810,10 @@ class Component extends DCLogic {
       const hit = this.cmpShops().find((s) => s.name.toLowerCase() === name.toLowerCase());
       Object.assign(row, { cost_shop_id: hit && hit.id ? hit.id : null, shop_name: hit ? hit.name : name, store_id: null, url: null });
     } else {
-      if (!/^https?:\/\//i.test(E.url.trim())) return { error: 'Paste the product page URL (it starts with https://).' };
-      Object.assign(row, { cost_shop_id: null, shop_name: null, url: E.url.trim() });
+      const url = (E.url || '').trim(), seller = (E.seller || '').trim();
+      if (url && !/^https?:\/\//i.test(url)) return { error: 'The link must start with https://, or leave it empty for now.' };
+      if (E.store_id == null && !seller) return { error: 'Which seller? Pick a store, or type the seller’s name.' };
+      Object.assign(row, { cost_shop_id: null, shop_name: E.store_id == null ? seller : null, store_id: E.store_id == null ? null : E.store_id, url: url || null });
     }
     return { row };
   }
@@ -2823,8 +2828,10 @@ class Component extends DCLogic {
     if (P.price_kind === 'member' && !P.member_program.trim()) return { error: 'Which card or programme gives the member price?' };
     const cat = (this.state.cmp.categories || []).find((c) => c.id === opt.category_id);
     return { row: {
-      option_id: opt.id, cost_shop_id: opt.cost_shop_id ?? null, shop_name: opt.source_kind === 'shop' ? (opt.shop_name || null) : null,
-      store_id: opt.source_kind === 'online' ? opt.store_id : null, price, tax_basis: basis, tax_rate: cat ? Number(cat.tax_rate) : 10,
+      option_id: opt.id, cost_shop_id: opt.cost_shop_id ?? null,
+      // Online at a seller with no store row (ANA Mall, a maker's site): the price carries its name.
+      shop_name: opt.source_kind === 'shop' || opt.store_id == null ? (opt.shop_name || null) : null,
+      store_id: opt.source_kind === 'online' ? (opt.store_id ?? null) : null, price, tax_basis: basis, tax_rate: cat ? Number(cat.tax_rate) : 10,
       price_kind: P.price_kind, member_program: P.price_kind === 'member' ? P.member_program.trim() : null,
       seen_on: P.seen_on || new Date().toISOString().slice(0, 10), source: opt.source_kind === 'online' ? 'url' : 'manual'
     } };
@@ -3089,15 +3096,15 @@ class Component extends DCLogic {
       const store = online ? this.cmpStores().find((s) => s.id === r.store_id) : null;
       const pics = photosOf(r.id), cover = pics.length ? S.cmpPhotoUrls[pics[pics.length - 1].storage_path] : null;
       return {
-        name: r.name, byline: [r.brand, r.model_code, r.size_label].filter(Boolean).join(' · ') || (online ? 'Online' : this.cmpShopLabel(r)),
+        name: r.name, byline: [r.brand, r.model_code, r.size_label].filter(Boolean).join(' · ') || this.cmpShopLabel(r),
         statusLabel: statusWord[r.status] || '', statusStyle: statusStyle(r.status),
         cardStyle: 'border-radius:20px;background:#fff;border:1px solid ' + (r.status === 'shortlisted' ? '#CFE3DA' : '#EAE5DD') + ';overflow:hidden;' + (r.status === 'rejected' ? 'opacity:0.6;' : ''),
         photoStyle: 'height:150px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;border-bottom:1px solid #EFEAE2;' + (cover
           ? 'background:#F1EDE6 ' + cssUrl(cover) + ' center/cover no-repeat;' : 'background-image:repeating-linear-gradient(135deg,#F1EDE6 0 8px,#F7F4EF 8px 16px);'),
-        photoText: cover ? '' : online ? 'Online listing · no image stored' : 'No photo yet',
+        photoText: cover ? '' : online ? (r.url ? 'Online listing · no image stored' : 'Online · no link yet') : 'No photo yet',
         photoOpen: cover ? () => openViewer(r.id, pics.length - 1) : null,
         photoCount: pics.length > 1 ? pics.length + ' photos' : pics.length ? 'View photo' : '',
-        url: online ? r.url : null, urlLabel: 'Open on ' + (store ? store.name : 'the shop site') + ' ↗',
+        url: online && r.url ? r.url : null, urlLabel: 'Open on ' + (store ? store.name : r.shop_name || 'the shop site') + ' ↗',
         price: r.lead ? C.yen(r.lead.price_incl) : '—', member: memberText(r), priceNote: priceNote(r),
         payText: pay.text, payDiffs: pay.diffs,
         payStyle: 'display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;background:#FBFAF7;border:1px solid #F0ECE4;font-size:11px;line-height:1.45;color:#4A443C;' + (pay.text ? '' : 'display:none;'),
@@ -3157,7 +3164,9 @@ class Component extends DCLogic {
         shop: E.shop, onShop: (e) => set({ shop: e.target.value }),
         shopNote: E.shop && !shopOptions.some((s) => s.name.toLowerCase() === E.shop.trim().toLowerCase())
           ? 'Not a Cost shop yet: saved by name. Add it in Cost to link it.' : (defBasis ? 'Tags here are ' + (defBasis === 'excl' ? 'tax-excluded' : 'tax-included') + '.' : ''),
-        stores: this.cmpStores().map((s) => ({ label: s.name, go: () => set({ store_id: s.id }), style: chip(E.store_id === s.id) })),
+        stores: this.cmpStores().map((s) => ({ label: s.name, go: () => set({ store_id: s.id }), style: chip(E.store_id === s.id) }))
+          .concat([{ label: 'Other seller', go: () => set({ store_id: null }), style: chip(E.store_id == null) }]),
+        isOtherSeller: E.store_id == null, seller: E.seller || '', onSeller: (e) => set({ seller: e.target.value }),
         url: E.url, onUrl: (e) => set({ url: e.target.value.trim() }),
         qty: E.qty, onQty: (e) => set({ qty: e.target.value.replace(/[^\d.,]/g, '') }),
         units: ['pc', 'set', 'pair', 'sheet', 'roll', 'g', 'kg', 'ml', 'L', 'cm', 'm'].map((u) => ({ label: u, go: () => set({ pack_unit: u }), style: chip(E.pack_unit === u) })),

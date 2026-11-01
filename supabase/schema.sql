@@ -695,9 +695,28 @@ create table if not exists public.chatak_cmp_options (
   import_key    text,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
-  check (source_kind <> 'online' or (store_id is not null and url is not null)),
+  -- Online: a known store, or a seller by name (ANA Mall, a maker's site). The
+  -- link is optional: a researched item can be listed before its page is found.
+  constraint chatak_cmp_options_online_source check (source_kind <> 'online' or store_id is not null or shop_name is not null),
   check (source_kind <> 'shop' or cost_shop_id is not null or shop_name is not null)
 );
+-- Upgrade from the first version, where an online option needed both a store
+-- and a link. Found by its definition, not its name: on a fresh install the
+-- generated name chatak_cmp_options_check belongs to the shop rule instead.
+do $$
+declare c record;
+begin
+  for c in select conname from pg_constraint
+            where conrelid = 'public.chatak_cmp_options'::regclass and contype = 'c'
+              and pg_get_constraintdef(oid) like '%store_id IS NOT NULL) AND (url IS NOT NULL%' loop
+    execute format('alter table public.chatak_cmp_options drop constraint %I', c.conname);
+  end loop;
+  if not exists (select 1 from pg_constraint where conrelid = 'public.chatak_cmp_options'::regclass
+                  and conname = 'chatak_cmp_options_online_source') then
+    alter table public.chatak_cmp_options add constraint chatak_cmp_options_online_source
+      check (source_kind <> 'online' or store_id is not null or shop_name is not null);
+  end if;
+end $$;
 create unique index if not exists chatak_cmp_options_import
   on public.chatak_cmp_options (user_id, import_key) where import_key is not null;
 create index if not exists chatak_cmp_options_category on public.chatak_cmp_options (category_id);
