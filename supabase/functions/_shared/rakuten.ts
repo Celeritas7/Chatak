@@ -22,7 +22,8 @@
 //     celeritas7.github.io allowed; RAKUTEN_SITE overrides it.
 // Which one is used follows from the secrets: RAKUTEN_ACCESS_KEY set → current.
 const LEGACY_ENDPOINT = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601';
-const ENDPOINT = 'https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601';
+// 20220601 was retired in 2026: calling it now answers 400 "API Configuration not found".
+const ENDPOINT = 'https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701';
 const DEFAULT_SITE = 'https://celeritas7.github.io/';
 const MIN_INTERVAL_MS = 1100;
 
@@ -97,11 +98,22 @@ export async function search(
     throw new RakutenError(r.status, 'Rakuten returned ' + r.status + ': ' + body + hint);
   }
   const j = await r.json();
-  return (j.Items ?? []).map((w: any) => w.Item as RakutenItem);
+  return (j.Items ?? []).map((w: any) => {
+    const it = w.Item as RakutenItem;
+    return { ...it, itemUrl: cleanUrl(it.itemUrl) };
+  });
+}
+
+/** The plain item page: the 2026 API appends a tracking parameter (rafcid). */
+export function cleanUrl(raw: string): string {
+  try { const u = new URL(raw); u.search = ''; u.hash = ''; return u.toString(); } catch { return raw; }
 }
 
 /**
  * item.rakuten.co.jp/{shop}/{itemcode}/ → "shop:itemcode".
+ * Since the 2026 API, Rakuten's own itemCode can be a numeric id that differs
+ * from the code in the link; prefer the itemCode a search returned, and use
+ * this only for a pasted link.
  * Returns null for anything that is not a recognisable Ichiba item URL.
  */
 export function itemCodeFromUrl(raw: string): string | null {

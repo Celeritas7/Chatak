@@ -245,8 +245,9 @@ export async function testPush() {
 // code, creates product + offer, and writes today's price. It cannot backfill —
 // `history_days` comes back as 1 and the UI should say so rather than draw an
 // empty 90-day frame.
-export async function addByUrl(url) {
-  const { data, error } = await db.functions.invoke('add-product', { body: { url } });
+// itemCode: Rakuten's own id from a search result, when there is one.
+export async function addByUrl(url, itemCode) {
+  const { data, error } = await db.functions.invoke('add-product', { body: itemCode ? { url, itemCode } : { url } });
   if (error) throw new Error(data?.error ?? error.message);
   return data;
 }
@@ -592,8 +593,8 @@ export async function getWishReplies() {
 // puts it on the caller's watchlist; tracking the same listing twice returns
 // the same product. Amazon JP is not collected automatically, so an Amazon
 // option is watched through a Rakuten listing of the same item.
-export async function watchCmpOptionByUrl(optionId, url) {
-  const r = await addByUrl(url);
+export async function watchCmpOptionByUrl(optionId, url, itemCode) {
+  const r = await addByUrl(url, itemCode);
   if (!r || !r.product_id) throw new Error('No product came back for that listing.');
   await setCmpOptionProduct(optionId, r.product_id);
   return r;
