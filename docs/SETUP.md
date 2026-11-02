@@ -31,12 +31,18 @@ the fake-discount thesis works with one store's reference price.
 - Rakuten: https://webservice.rakuten.co.jp/ → register an app → application id
 - Yahoo: https://e.developer.yahoo.co.jp/register → Client ID (app id)
 
-Rakuten hands you four things. Only one of them is wired into this codebase:
+Register it as a **Web Application** (the API/Backend type asks for fixed IP
+addresses, which Supabase functions do not have), with allowed websites
+`celeritas7.github.io` and `<project-ref>.supabase.co`, and only the Rakuten
+Ichiba API scope. `_shared/rakuten.ts` sends `Origin` / `Referer` for the
+first one (override with `RAKUTEN_SITE`).
+
+Rakuten hands you four things. Two of them are wired into this codebase:
 
 | What | Used here | Handling |
 |---|---|---|
 | **Application ID** | yes — `RAKUTEN_APP_ID` | Rides in the URL of every request, so semi-public, but still a credential: the rate limit is **~1 request/second per ID**, so a leaked one gets abused and throttles you. |
-| **Access Key** | no | The real secret, and unused by Ichiba Item Search. Rakuten **cannot regenerate it** — recovering from a leak means deleting the app, which also invalidates the Application ID you *do* use. Password manager only. |
+| **Access Key** | yes, for apps from the current portal — `RAKUTEN_ACCESS_KEY` | Apps registered on the current Rakuten portal must send it with every request (to `openapi.rakuten.co.jp`). Older apps did not; leave the secret unset for one of those and the legacy endpoint is used. Rakuten **cannot regenerate it** — recovering from a leak means deleting the app. Supabase secret and password manager only. |
 | **Affiliate ID** | no, deliberately | Passing it makes the API return a tracked `affiliateUrl` instead of `itemUrl`, which would end up stored in `chatak_offers.url`. Save it; keep it out of the code until monetisation is an actual decision. |
 | **Application URL** | no | Just what you typed at registration. Nothing to protect. |
 
@@ -53,7 +59,7 @@ supabase login
 supabase link --project-ref PROJECT_REF
 
 # secrets merge — setting one key later does not clear the others
-supabase secrets set RAKUTEN_APP_ID=xxx YAHOO_APP_ID=xxx RESEND_API_KEY=xxx
+supabase secrets set RAKUTEN_APP_ID=xxx RAKUTEN_ACCESS_KEY=xxx YAHOO_APP_ID=xxx RESEND_API_KEY=xxx
 
 # or just: ./scripts/deploy.sh PROJECT_REF
 supabase functions deploy collect-prices  --no-verify-jwt

@@ -4,6 +4,7 @@
 //
 // Backs the paste-a-URL and search flows in the UI.
 //   POST { url: "https://item.rakuten.co.jp/shop/code/" }  → resolve + create
+//        (+ itemCode from a search result: Rakuten's own id, used first)
 //   POST { keyword: "オリエントスター" }                     → search, create nothing
 //   POST { jan: "4954628249104" }                          → barcode search, creates nothing
 //
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
-  let body: { url?: string; keyword?: string; jan?: string };
+  let body: { url?: string; keyword?: string; jan?: string; itemCode?: string };
   try { body = await req.json(); } catch { return json({ error: 'expected JSON body' }, 400); }
 
   try {
@@ -83,13 +84,20 @@ Deno.serve(async (req) => {
 
     if (!body.url) return json({ error: 'send a url, a keyword, or a jan' }, 400);
 
-    const itemCode = rakuten.itemCodeFromUrl(body.url);
-    if (!itemCode) {
+    const fromSearch = typeof body.itemCode === 'string' && /^[\w-]+:[\w-]+$/.test(body.itemCode) ? body.itemCode : null;
+    const linkCode = rakuten.itemCodeFromUrl(body.url);
+    if (!fromSearch && !linkCode) {
       return json({ error: 'That is not a Rakuten Ichiba item URL. Rakuten and Yahoo are the only stores wired up today.' }, 422);
     }
 
-    const it = await rakuten.byItemCode(itemCode);
-    if (!it) return json({ error: 'Rakuten has no item at ' + itemCode + '. It may have been delisted.' }, 404);
+    let it = fromSearch ? await rakuten.byItemCode(fromSearch) : null;
+    if (!it && linkCode) it = await rakuten.byItemCode(linkCode);
+    if (!it) {
+      return json({ error: 'Rakuten did not find that item from its link. Search for it by name and pick it from the results instead.' }, 404);
+    }
+    // The offer is keyed by Rakuten's own itemCode, so a search and a pasted
+    // link for the same listing land on one offer.
+    const itemCode = it.itemCode;
 
     // Already tracking this exact offer?
     const { data: existing } = await admin

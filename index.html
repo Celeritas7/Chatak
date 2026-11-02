@@ -2400,10 +2400,10 @@ class Component extends DCLogic {
     this.setState({ live: { status: 'signin' }, authSent: false, authEmail: last, signOutAsking: false, screen: 'matrix', mx: null, mxOpen: null, mxDraft: {} });
   }
 
-  async addLive(url) {
+  async addLive(url, itemCode) {
     this.setState({ urlBusy: true, urlError: null, urlFetched: false, urlLive: null });
     try {
-      const res = await this._api.addByUrl(url);
+      const res = await this._api.addByUrl(url, itemCode);
       this.setState({ urlBusy: false, urlFetched: true, urlLive: res });
     } catch (e) {
       this.setState({ urlBusy: false, urlFetched: false, urlError: String(e.message || e) });
@@ -3481,14 +3481,14 @@ class Component extends DCLogic {
   }
 
   // A Rakuten listing: add-product creates or reuses the product and puts it on Home.
-  async cmpWatchUrl(url) {
+  async cmpWatchUrl(url, itemCode) {
     const W = this.state.cmpWatch;
     if (!W || W.busy) return;
     if (!this.cmpIsRakuten(url)) { this.cmpWatchPatch({ error: 'Paste a Rakuten item link (item.rakuten.co.jp/…). Amazon JP prices are not collected automatically.' }); return; }
     if (!this.cmpLive()) { this.cmpWatchPatch({ error: 'Tracking a listing needs the live app. In the sample, link one of the sample products below.' }); return; }
     this.cmpWatchPatch({ busy: 'Adding the listing…', error: null });
     try {
-      const r = await this._api.watchCmpOptionByUrl(W.id, url.trim());
+      const r = await this._api.watchCmpOptionByUrl(W.id, url.trim(), itemCode);
       await Promise.all([this.loadCompare(), this.loadLive()]);
       this.setState({ cmpWatch: null, cmpInfo: 'Watching ' + (r.name ? r.name.slice(0, 60) : 'the listing') + '. Today’s price is the first one; the verdict needs about two weeks of prices.' });
     } catch (e) {
@@ -3768,7 +3768,7 @@ class Component extends DCLogic {
           busy: W.busy, error: W.error,
           results: (W.results || []).map((x) => ({
             name: x.name, meta: [x.subtitle, x.current ? this.yen(x.current) : ''].filter(Boolean).join(' · '),
-            go: () => this.cmpWatchUrl(x.url)
+            go: () => this.cmpWatchUrl(x.url, x.itemCode)
           })),
           noResults: W.results && !W.results.length ? 'Nothing on Rakuten for that. Try fewer words, or the model number.' : '',
           trackedTitle: tracked.length ? (sample ? 'Sample products' : 'Already on Home') : '',
@@ -5000,7 +5000,7 @@ class Component extends DCLogic {
         ? (S.searchLive || []).map((r) => ({
             name: r.name, sub: (r.source === 'rakuten' ? 'Rakuten · ' : '') + (r.subtitle || ''),
             priceText: r.current != null ? this.yen(r.current) : (r.msrp ? 'List ' + this.yen(r.msrp) : ''),
-            open: r.id ? this.open(r.id) : () => { this.setState({ addTab: 'url', url: r.url, urlFetched: false }); this.addLive(r.url); }
+            open: r.id ? this.open(r.id) : () => { this.setState({ addTab: 'url', url: r.url, urlFetched: false }); this.addLive(r.url, r.itemCode); }
           }))
         : d.products.slice(0, 3).map((q) => ({ name: q.name, sub: q.sub, priceText: this.yen(q.current), open: this.open(q.id) })),
       scanInput: S.scanInput || '',
@@ -5019,7 +5019,7 @@ class Component extends DCLogic {
             candidates: sc.results.map((r) => ({
               name: r.name, shop: 'Rakuten · ' + r.shop, priceText: this.yen(r.price),
               matchLabel: r.jan_match ? 'JAN MATCH' : 'IN LISTING', matchStyle: r.jan_match ? exact : loose,
-              open: () => { this.setState({ addTab: 'url', url: r.url, urlFetched: false }); this.addLive(r.url); }
+              open: () => { this.setState({ addTab: 'url', url: r.url, urlFetched: false }); this.addLive(r.url, r.itemCode); }
             }))
           };
         }
