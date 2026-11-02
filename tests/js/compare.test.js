@@ -104,3 +104,15 @@ test('sample keys match the live starter fields', () => {
   assert.deepEqual(keys, ['width', 'depth', 'height', 'weight', 'load', 'material', 'adjustable', 'tablet_slot', 'cup_holder']);
   assert.equal(S.fields.length, 22);
 });
+
+test('model numbers are found in option names, for shop searches', () => {
+  assert.equal(C.modelCodeOf('MC-AA01-HA cover, grey'), 'MC-AA01-HA');
+  assert.equal(C.modelCodeOf('Sanwa SKB-BT25BK (US layout)'), 'SKB-BT25BK');
+  assert.equal(C.modelCodeOf('Logicool MX Keys Mini for Mac KX700 (US)'), 'KX700');
+  assert.equal(C.modelCodeOf('MC-AA01 (any colour)'), 'MC-AA01');
+  assert.equal(C.modelCodeOf('Galaxy Tab S11 128GB'), null, 'S11 is too short; 128GB starts with a digit');
+  assert.equal(C.modelCodeOf('ProCase folio 9.7"'), null);
+  assert.equal(C.modelCodeOf('MY space table'), null);
+  assert.equal(C.modelCodeOf('Bed table 70x48x30'), null, 'dimensions are not a model number');
+  assert.equal(C.modelCodeOf('Yamazen FMT5535OK'), 'FMT5535OK');
+});
