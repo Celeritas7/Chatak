@@ -72,7 +72,7 @@
   // Nitori tax-included. Online shops show tax-included prices.
   function shopBasis(shop) {
     const n = lc(shop);
-    if (/donki|don quijote|ドン|daiso|ダイソー/.test(n)) return 'excl';
+    if (/donki|don quijote|don kihote|ドン|キホーテ|daiso|ダイソー/.test(n)) return 'excl';
     if (/nitori|ニトリ/.test(n)) return 'incl';
     if (/amazon|rakuten|楽天|yahoo/.test(n)) return 'incl';
     return null;
@@ -110,6 +110,8 @@
   function packOf(size, unit) {
     const s = norm(size), u = norm(unit);
     if (/\d\s*[x×*]\s*\d/i.test(s)) return { qty: 1, unit: 'pc', label: s + (u && !s.includes(u) ? ' ' + u : ''), assumed: false };
+    // A range ("10-30kg", "S〜L") describes the product, not how many are in the pack.
+    if (/\d\s*[-–~〜]\s*\d/.test(s)) return { qty: 1, unit: 'pc', label: s, assumed: false };
     const text = (s + (u && !/[a-zA-Z個枚本入]/.test(s) ? ' ' + u : '')).trim();
     const m = /(\d+(?:[.,]\d+)?)\s*([a-zA-Z]+|個入|枚入|本入|個|枚|本|巻|足|セット)?/.exec(text);
     if (m) {
