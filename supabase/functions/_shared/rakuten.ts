@@ -13,7 +13,17 @@
 // formatVersion is pinned to 1 — the nested Items[].Item shape. Do not
 // "upgrade" to 2 without changing every parser below; v2 flattens it.
 
-const ENDPOINT = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601';
+// Two generations of Rakuten app:
+//   - legacy (webservice.rakuten.co.jp, before 2025): applicationId only, on
+//     app.rakuten.co.jp.
+//   - current portal: applicationId AND accessKey, on openapi.rakuten.co.jp,
+//     and the request must name one of the app's "allowed websites" (Origin /
+//     Referer), or Rakuten answers 403. Chatak's app is a Web Application with
+//     celeritas7.github.io allowed; RAKUTEN_SITE overrides it.
+// Which one is used follows from the secrets: RAKUTEN_ACCESS_KEY set → current.
+const LEGACY_ENDPOINT = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601';
+const ENDPOINT = 'https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601';
+const DEFAULT_SITE = 'https://celeritas7.github.io/';
 const MIN_INTERVAL_MS = 1100;
 
 let chain: Promise<unknown> = Promise.resolve();
@@ -57,15 +67,23 @@ export async function search(
 ): Promise<RakutenItem[]> {
   const appId = Deno.env.get('RAKUTEN_APP_ID');
   if (!appId) throw new RakutenError(0, 'RAKUTEN_APP_ID is not set');
+  const accessKey = Deno.env.get('RAKUTEN_ACCESS_KEY') || '';
+  const site = Deno.env.get('RAKUTEN_SITE') || DEFAULT_SITE;
 
   const qs = new URLSearchParams({
     applicationId: appId,
+    ...(accessKey ? { accessKey } : {}),
     format: 'json',
     formatVersion: '1',
     ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)]))
   });
 
-  const call = () => fetch(ENDPOINT + '?' + qs.toString());
+  // Origin is the site without a trailing slash; Referer the page. Rakuten's
+  // check is reported against either, so both are sent.
+  const headers: Record<string, string> = accessKey
+    ? { Origin: site.replace(/\/+$/, ''), Referer: site.endsWith('/') ? site : site + '/' }
+    : {};
+  const call = () => fetch((accessKey ? ENDPOINT : LEGACY_ENDPOINT) + '?' + qs.toString(), { headers });
 
   let r = await throttled(call);
   if (r.status === 429) {
@@ -73,7 +91,10 @@ export async function search(
     r = await throttled(call);
   }
   if (!r.ok) {
-    throw new RakutenError(r.status, 'Rakuten returned ' + r.status + ': ' + (await r.text()).slice(0, 200));
+    const body = (await r.text()).slice(0, 200);
+    const hint = r.status === 403 ? ' Check that the app lists ' + site + ' under allowed websites.'
+      : r.status === 401 || /accessKey|access_key/i.test(body) ? ' Check RAKUTEN_APP_ID and RAKUTEN_ACCESS_KEY.' : '';
+    throw new RakutenError(r.status, 'Rakuten returned ' + r.status + ': ' + body + hint);
   }
   const j = await r.json();
   return (j.Items ?? []).map((w: any) => w.Item as RakutenItem);
