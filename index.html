@@ -21,6 +21,7 @@
 <script src="./js/chatak-engine.js"></script>
 <script src="./js/chatak-compare.js"></script>
 <script src="./js/chatak-photo.js"></script>
+<script src="./js/chatak-import.js"></script>
 <script src="./js/akatsuki-client.js"></script>
 <style>
   *{box-sizing:border-box;}
@@ -1367,7 +1368,81 @@
                 <button onClick="{{ cmp.createCat }}" style="{{ cmp.createCatStyle }}">Create</button>
                 <span style="font-size:11px;color:#6F6A62;line-height:1.45;">Then add the parameters it should compare under Fields.</span>
               </div>
+              <label style="position:relative;padding:18px;border-radius:20px;background:#FBFAF7;border:1px dashed #DDD7CE;display:flex;flex-direction:column;gap:8px;cursor:pointer;">
+                <span style="font-size:13px;font-weight:700;">Import a spreadsheet</span>
+                <span style="font-size:11px;color:#6F6A62;line-height:1.45;">An .xlsx or .csv of prices: shop, product, price. You review every category before anything is saved.</span>
+                <span style="align-self:flex-start;padding:9px 16px;border-radius:11px;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;">Choose file</span>
+                <input type="file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange="{{ cmp.onImportFile }}" aria-label="Import a spreadsheet" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
+              </label>
             </div>
+          </sc-if>
+
+          <!-- import review -->
+          <sc-if value="{{ cmp.showImport }}">
+            <sc-if value="{{ cmp.imp.busy }}">
+              <div style="padding:28px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;font-size:13px;color:#6F6A62;">{{ cmp.imp.busy }}</div>
+            </sc-if>
+            <sc-if value="{{ cmp.imp.title }}">
+              <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:14px;">
+                <h2 style="margin:0;font-size:16px;font-weight:800;">{{ cmp.imp.title }}</h2>
+                <span style="font-size:12px;color:#6F6A62;line-height:1.5;">{{ cmp.imp.summary }}</span>
+                <sc-if value="{{ cmp.imp.skippedNote }}">
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#6F6A62;">
+                    <span>{{ cmp.imp.skippedNote }} <button onClick="{{ cmp.imp.toggleSkipped }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ cmp.imp.skippedLabel }}</button></span>
+                    <sc-for list="{{ cmp.imp.skipped }}" as="k" hint-placeholder-count="2"><span>{{ k }}</span></sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-for list="{{ cmp.imp.cats }}" as="c" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                      <span style="font-size:14px;font-weight:800;">{{ c.name }}</span>
+                      <button onClick="{{ c.toggle }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ c.toggleLabel }}</button>
+                    </div>
+                    <span style="font-size:11px;color:#6F6A62;">{{ c.meta }}</span>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ c.dests }}" as="d" hint-placeholder-count="3"><button onClick="{{ d.go }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div>
+                    <sc-if value="{{ c.hasRates }}"><div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ c.rates }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div></sc-if>
+                    <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="3">
+                      <div style="{{ r.style }}">
+                        <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                          <span style="font-size:12px;font-weight:600;line-height:1.4;">{{ r.name }}</span>
+                          <span style="font-size:11px;color:#6F6A62;line-height:1.4;">{{ r.meta }}</span>
+                        </span>
+                        <button onClick="{{ r.toggle }}" aria-label="{{ r.line }}" style="flex-shrink:0;padding:5px 9px;border-radius:9px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:11px;font-weight:700;cursor:pointer;">{{ r.toggleLabel }}</button>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+
+                <sc-if value="{{ cmp.imp.hasQuestions }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:#FFF8EC;border:1px solid #F1DFC0;">
+                    <span style="font-size:12px;font-weight:800;color:#7A4F08;">Tax basis not in the sheet</span>
+                    <sc-for list="{{ cmp.imp.questions }}" as="q" hint-placeholder-count="2">
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        <span style="font-size:12px;color:#4A443C;">{{ q.text }}</span>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ q.chips }}" as="b" hint-placeholder-count="2"><button onClick="{{ b.go }}" style="{{ b.style }}">{{ b.label }}</button></sc-for></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ cmp.imp.showPhotos }}">
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <label style="position:relative;padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Choose photos
+                      <input type="file" accept="image/*" multiple="{{ cmp.imp.multi }}" onChange="{{ cmp.imp.onPhotos }}" aria-label="Photos for the import" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
+                    </label>
+                    <span style="font-size:11px;color:#6F6A62;flex:1;min-width:200px;">{{ cmp.imp.photoHint }}</span>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ cmp.imp.already }}"><span style="font-size:11px;color:#6F6A62;">{{ cmp.imp.already }}</span></sc-if>
+                <sc-if value="{{ cmp.imp.error }}"><div style="font-size:12px;color:#B03A31;font-weight:600;">{{ cmp.imp.error }}</div></sc-if>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <button onClick="{{ cmp.imp.run }}" style="{{ cmp.imp.runStyle }}">{{ cmp.imp.runLabel }}</button>
+                  <sc-if value="{{ cmp.imp.cancel }}"><button onClick="{{ cmp.imp.cancel }}" style="padding:10px 14px;border-radius:12px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button></sc-if>
+                </div>
+              </section>
+            </sc-if>
           </sc-if>
 
           <!-- fields of this need -->
@@ -1823,7 +1898,9 @@ class Component extends DCLogic {
     // Photos: signed links by storage path (live) or object URLs (sample and not-yet-saved).
     cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null,
     // Watch price: the option being linked to a tracked product, with its Rakuten search.
-    cmpWatch: null
+    cmpWatch: null,
+    // Import: the spreadsheet being reviewed, then loaded.
+    cmpImp: null
   };
 
   chartRef = React.createRef();
@@ -3085,6 +3162,259 @@ class Component extends DCLogic {
     if (ok) this.setState({ cmpCat: null, cmpFieldsOpen: false, cmpConfirmArchive: false });
   }
 
+  // ---- import (phase 3b) ----
+  // A spreadsheet is read in the browser, shown for review (each category to
+  // Compare, the price matrix, or skipped; tax questions answered per shop),
+  // then written. Import keys make a second run add nothing.
+  cmpSheetJs() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (!this._xlsxLoad) this._xlsxLoad = new Promise((res, rej) => {
+      const el = document.createElement('script');
+      el.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      el.onload = () => (window.XLSX ? res(window.XLSX) : rej(new Error('The spreadsheet reader did not load.')));
+      el.onerror = () => { this._xlsxLoad = null; rej(new Error('The spreadsheet reader could not be downloaded. Check the connection and try again.')); };
+      document.head.appendChild(el);
+    });
+    return this._xlsxLoad;
+  }
+
+  cmpImpPatch(patch) { this.setState((s) => ({ cmpImp: s.cmpImp ? { ...s.cmpImp, ...patch } : null })); }
+
+  async cmpImportFile(file) {
+    const I = window.ChatakImport;
+    if (!file || !I) return;
+    this.setState({ cmpImp: { status: 'reading', file: file.name }, cmpError: null, cmpInfo: null });
+    try {
+      const X = await this.cmpSheetJs();
+      const wb = X.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+      const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      let parsed = null;
+      for (const name of wb.SheetNames) {
+        const p = I.parse(X.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: null }), { today });
+        if (!p.error && p.rows.length) { parsed = { ...p, sheet: name }; break; }
+        if (!parsed) parsed = { ...p, sheet: name };
+      }
+      if (parsed.error || !parsed.rows.length) { this.setState({ cmpImp: null, cmpError: file.name + ': ' + (parsed.error || 'no rows with a product name.') }); return; }
+      const food = /food|drink|tea|coffee|snack|grocer|飲|食|菓子|調味|rice|noodle|beverage/i;
+      const dest = {}, rate = {};
+      for (const c of parsed.categories) { dest[c.name] = 'compare'; rate[c.name] = food.test(c.name) ? 8 : 10; }
+      this.setState({ cmpImp: { status: 'review', file: file.name, sheet: parsed.sheet, rows: parsed.rows, categories: parsed.categories, skipped: parsed.skipped,
+        dest, rate, basisByShop: {}, photos: {}, openCat: null, showSkipped: false } });
+    } catch (e) {
+      this.setState({ cmpImp: null, cmpError: 'Could not read ' + file.name + ': ' + (e.message || e) });
+    }
+  }
+
+  cmpImportPhotos(files) {
+    const m = { ...(this.state.cmpImp.photos || {}) };
+    for (const f of files || []) m[f.name.toLowerCase()] = f;
+    this.cmpImpPatch({ photos: m });
+  }
+
+  // The rows that will be written, with their answered tax basis.
+  cmpImportPlan(S) {
+    const P = S.cmpImp, I = window.ChatakImport, D = S.cmp;
+    const rows = P.rows.map((r) => ({ ...r, tax_basis: r.tax_basis || P.basisByShop[r.shopLabel] || null, dest: P.dest[r.category] }));
+    const live = rows.filter((r) => r.include && r.dest !== 'skip');
+    const optKeys = new Set((D.options || []).map((o) => o.import_key).filter(Boolean));
+    const priceKeys = new Set((D.prices || []).map((p) => p.import_key).filter(Boolean));
+    const cmp = live.filter((r) => r.dest === 'compare'), mx = live.filter((r) => r.dest === 'matrix');
+    const newOpts = cmp.filter((r) => !r.duplicateOf && !optKeys.has(r.import_key));
+    const priced = cmp.filter((r) => r.price != null && r.tax_basis);
+    const newPrices = priced.filter((r) => !priceKeys.has(I.priceKey(r)));
+    const unanswered = live.filter((r) => r.price != null && !r.tax_basis);
+    const photoRows = cmp.filter((r) => r.photo && P.photos[r.photo.toLowerCase()]);
+    return { rows, cmp, mx, newOpts, newPrices, already: cmp.filter((r) => !r.duplicateOf).length - newOpts.length, unanswered, photoRows,
+      photoNames: cmp.filter((r) => r.photo).length, mxPriced: mx.filter((r) => r.price != null && r.tax_basis) };
+  }
+
+  async cmpImportRun() {
+    const S = this.state, P = S.cmpImp, I = window.ChatakImport, Ph = window.ChatakPhoto;
+    if (!P || P.status !== 'review') return;
+    const plan = this.cmpImportPlan(S);
+    if (plan.unanswered.length) { this.cmpImpPatch({ error: 'Answer the tax question first, or leave those rows out.' }); return; }
+    const live = this.cmpLive(), D = S.cmp;
+    const step = (t) => this.cmpImpPatch({ status: 'running', progress: t, error: null });
+    const done = { needs: 0, options: 0, prices: 0, photos: 0, matrix: 0, photoErrors: [] };
+    try {
+      // 1. Needs: an existing one by name, an archived one brought back, or a new one.
+      step('Preparing needs…');
+      const catId = {};
+      const names = [...new Set(plan.cmp.map((r) => r.category))];
+      let archived = [];
+      if (live && names.length) archived = await this._api.getArchivedCmpCategories();
+      let cats = (D.categories || []).slice();
+      for (const name of names) {
+        const hit = cats.find((c) => c.name.toLowerCase() === name.toLowerCase());
+        if (hit) { catId[name] = hit.id; continue; }
+        const old = archived.find((c) => c.name.toLowerCase() === name.toLowerCase());
+        if (old) { await this._api.restoreCmpCategory(old.id); catId[name] = old.id; continue; }
+        const rate = P.rate[name] || 10;
+        const made = live ? await this._api.saveCmpCategory({ name, tax_rate: rate }) : { id: 'c-imp-' + Date.now() + '-' + done.needs, name, tax_rate: rate, sort_order: cats.length };
+        cats = cats.concat([made]); catId[name] = made.id; done.needs++;
+      }
+      const rateOf = (name) => { const c = cats.find((x) => x.id === catId[name]); return c ? Number(c.tax_rate) : (P.rate[name] || 10); };
+
+      // 2. Options not imported before.
+      step('Adding ' + plan.newOpts.length + ' options…');
+      const keyToId = {};
+      for (const o of D.options || []) if (o.import_key) keyToId[o.import_key] = o.id;
+      const optRows = plan.newOpts.map((r) => ({ ...r, category_id: catId[r.category], notes: r.notes || null }));
+      let added = [];
+      if (live) added = optRows.length ? await this._api.importCmpOptions(optRows) : [];
+      else added = optRows.map((r, i) => ({ id: 'o-imp-' + Date.now() + '-' + i, import_key: r.import_key }));
+      for (const a of added) keyToId[a.import_key] = a.id;
+      done.options = added.length;
+
+      // 3. Prices not imported before (one per option, price, basis and day).
+      step('Adding prices…');
+      const seenKeys = new Set();
+      const priceRows = plan.newPrices.filter((r) => { const k = I.priceKey(r); if (seenKeys.has(k)) return false; seenKeys.add(k); return true; }).map((r) => ({
+        option_id: keyToId[r.import_key], store_id: r.source_kind === 'online' ? r.store_id : null, shop_name: r.store_id == null ? r.shop_name : null,
+        price: r.price, tax_basis: r.tax_basis, tax_rate: rateOf(r.category), price_kind: r.source_kind === 'online' ? 'online' : 'shelf', seen_on: r.seen_on,
+        note: (r.price_high ? 'Range in the sheet: ¥' + r.price.toLocaleString('en-US') + ' to ¥' + r.price_high.toLocaleString('en-US') + '. ' : '') + 'From ' + P.file + '.',
+        import_key: I.priceKey(r)
+      })).filter((x) => x.option_id);
+      if (live) { if (priceRows.length) await this._api.importCmpPrices(priceRows); }
+      done.prices = priceRows.length;
+
+      // 4. Matrix rows: the item by name (added when missing), the price tax-included.
+      if (plan.mxPriced.length) {
+        step('Adding ' + plan.mxPriced.length + ' matrix prices…');
+        if (live) await this.cmpEnsureShops();
+        const M = this.state.mx || { items: [], shops: [] };
+        let items = (M.items || []).slice();
+        const byShop = {};
+        for (const r of plan.mxPriced) {
+          let it = items.find((x) => x.name.toLowerCase() === r.name.toLowerCase());
+          if (!it) {
+            it = live ? await this._api.addMatrixItem({ name: r.name, size: r.size_label, category: r.category })
+              : { id: 'mx-imp-' + Date.now() + '-' + items.length, name: r.name, size: r.size_label, cat: r.category };
+            items = items.concat([it]);
+          }
+          (byShop[r.shopLabel] = byShop[r.shopLabel] || []).push({ itemId: it.id, price: I.inclOf(r.price, r.tax_basis, P.rate[r.category] || 10), shelf: true });
+        }
+        const shops = (M.shops || []);
+        for (const name of Object.keys(byShop)) {
+          const sh = shops.find((x) => x.name.toLowerCase() === name.toLowerCase()) || { name, id: null };
+          if (live) await this._api.saveMatrixRow({ name: sh.name, id: sh.id }, byShop[name], { shelf: true });
+          done.matrix += byShop[name].length;
+        }
+        if (!live) {
+          const at = new Date().toISOString();
+          this.mxPatch((m) => {
+            const cells = { ...m.cells };
+            for (const name of Object.keys(byShop)) for (const e of byShop[name]) cells[this.mxKey(name, e.itemId)] = { p: e.price, at, shelf: true };
+            return { ...m, items, cells };
+          });
+        }
+      }
+
+      // 5. Sample: write it all to memory in one go.
+      if (!live) {
+        const optionsNew = optRows.map((r, i) => ({ id: added[i].id, category_id: r.category_id, name: r.name, name_ja: r.name_ja, brand: r.brand, source_kind: r.source_kind,
+          store_id: r.store_id, shop_name: r.shop_name, pack_qty: r.pack_qty, pack_unit: r.pack_unit, size_label: r.size_label, specs: {}, status: 'considering',
+          notes: r.notes, photo_check: r.photo_check, import_key: r.import_key }));
+        let pid = Date.now();
+        this.setState((s) => ({ cmp: { ...s.cmp, categories: cats, options: s.cmp.options.concat(optionsNew),
+          prices: s.cmp.prices.concat(priceRows.map((x) => ({ ...x, id: ++pid, source: 'import' }))) } }));
+      }
+
+      // 6. Photos, matched by file name; one per option per name.
+      if (plan.photoRows.length && Ph) {
+        const have = new Set((D.photos || []).map((p) => p.option_id + '|' + String(p.original_name || '').toLowerCase()));
+        const todo = plan.photoRows.filter((r) => keyToId[r.import_key] && !have.has(keyToId[r.import_key] + '|' + r.photo.toLowerCase()));
+        const uniq = new Map();
+        for (const r of todo) uniq.set(keyToId[r.import_key] + '|' + r.photo.toLowerCase(), r);
+        let n = 0;
+        for (const r of uniq.values()) {
+          step('Photos: ' + (++n) + ' of ' + uniq.size + '…');
+          try {
+            const shrunk = await Ph.shrink(P.photos[r.photo.toLowerCase()]);
+            if (live) await this._api.uploadCmpPhoto(keyToId[r.import_key], shrunk);
+            else {
+              const url = URL.createObjectURL(shrunk.blob);
+              this.setState((s) => ({ cmpPhotoUrls: { ...s.cmpPhotoUrls, [url]: url }, cmp: { ...s.cmp, photos: (s.cmp.photos || []).concat([{ id: 'ph-imp-' + n, option_id: keyToId[r.import_key], storage_path: url, original_name: shrunk.original_name, taken_at: shrunk.taken_at, width: shrunk.width, height: shrunk.height, bytes: shrunk.bytes }]) } }));
+            }
+            done.photos++;
+          } catch (e) { done.photoErrors.push(r.photo + ': ' + (e.message || e)); }
+        }
+      }
+      if (live) await Promise.all([this.loadCompare(), plan.mxPriced.length ? this.loadMatrix() : null]);
+      const parts = [done.options + (done.options === 1 ? ' option' : ' options'), done.prices + (done.prices === 1 ? ' price' : ' prices')];
+      if (done.needs) parts.unshift(done.needs + (done.needs === 1 ? ' new need' : ' new needs'));
+      if (done.photos) parts.push(done.photos + (done.photos === 1 ? ' photo' : ' photos'));
+      if (done.matrix) parts.push(done.matrix + ' matrix prices');
+      this.setState({ cmpImp: null, cmpInfo: 'Imported ' + P.file + ': ' + parts.join(', ') + '.' + (plan.already ? ' ' + plan.already + ' already imported, left as they were.' : '')
+        + (done.photoErrors.length ? ' Photos not added: ' + done.photoErrors.join('; ') : ''), cmpError: null });
+    } catch (e) {
+      // Partial runs are safe to repeat: everything already written is skipped by its key.
+      if (live) await this.loadCompare();
+      this.cmpImpPatch({ status: 'review', progress: null, error: 'Stopped: ' + (e.message || e) + '. What was written stays; run the import again to add the rest.' });
+    }
+  }
+
+  importVals(S) {
+    const P = S.cmpImp, C = window.ChatakCompare, I = window.ChatakImport;
+    const chip = (on) => 'padding:6px 11px;border-radius:999px;border:1px solid ' + (on ? '#1C1A17' : '#DDD7CE') + ';background:' + (on ? '#1C1A17' : '#fff') + ';color:' + (on ? '#fff' : '#4A443C') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;';
+    if (P.status === 'reading') return { busy: 'Reading ' + P.file + '…' };
+    const plan = this.cmpImportPlan(S), D = S.cmp;
+    const running = P.status === 'running';
+    const setDest = (name, d) => this.cmpImpPatch({ dest: { ...P.dest, [name]: d }, error: null });
+    const cats = P.categories.map((c) => {
+      const rows = plan.rows.filter((r) => r.category === c.name);
+      const existing = (D.categories || []).find((x) => x.name.toLowerCase() === c.name.toLowerCase());
+      const allShop = rows.every((r) => r.source_kind === 'shop');
+      const d = P.dest[c.name], open = P.openCat === c.name;
+      return {
+        name: c.name,
+        meta: rows.length + (rows.length === 1 ? ' item' : ' items') + ' · ' + (c.online === rows.length ? 'online' : c.online ? c.online + ' online' : 'in shops')
+          + (d === 'compare' ? (existing ? ' · adds to your need "' + existing.name + '"' : ' · a new need') : d === 'matrix' ? ' · to the price matrix' : ' · left out'),
+        dests: [['compare', 'Compare'], ...(allShop ? [['matrix', 'Price matrix']] : []), ['skip', 'Skip']].map(([k, l]) => ({ label: l, go: () => setDest(c.name, k), style: chip(d === k) })),
+        rates: d === 'skip' || existing ? [] : [[10, '10% tax'], [8, '8% (food, drink)']].map(([k, l]) => ({ label: l, go: () => this.cmpImpPatch({ rate: { ...P.rate, [c.name]: k } }), style: chip((P.rate[c.name] || 10) === k) })),
+        hasRates: !(d === 'skip' || existing),
+        toggle: () => this.cmpImpPatch({ openCat: open ? null : c.name }), toggleLabel: open ? 'Hide items' : 'Show items',
+        rows: open ? rows.map((r) => ({
+          name: r.name + (r.name_ja ? ' · ' + r.name_ja : ''),
+          meta: [r.shopLabel, r.price != null ? (r.tax_basis ? C.yen(I.inclOf(r.price, r.tax_basis, P.rate[c.name])) + ' incl. tax' + (r.tax_basis === 'excl' ? ' (tag ' + C.yen(r.price) + ')' : '') : C.yen(r.price) + ', tax not known') : 'no price',
+            r.price_high ? 'up to ' + C.yen(r.price_high) : '', r.pack_qty + ' ' + r.pack_unit + (r.pack_assumed && r.size_label ? ' (from "' + r.size_label + '")' : ''),
+            r.photo ? (P.photos[r.photo.toLowerCase()] ? 'photo ✓' : 'photo ' + r.photo) : '', r.photo_check ? 'check photo' : '', r.duplicateOf ? 'same item as line ' + r.duplicateOf : ''].filter(Boolean).join(' · '),
+          style: 'display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F2EEE7;' + (r.include ? '' : 'opacity:0.45;'),
+          toggle: () => this.cmpImpPatch({ rows: P.rows.map((x) => (x.line === r.line ? { ...x, include: !x.include } : x)) }),
+          toggleLabel: r.include ? 'Leave out' : 'Include', line: 'Line ' + r.line
+        })) : []
+      };
+    });
+    // Tax questions, one per shop.
+    const askShops = [...new Set(P.rows.filter((r) => r.include && P.dest[r.category] !== 'skip' && r.price != null && !r.tax_basis).map((r) => r.shopLabel))];
+    const questions = askShops.map((shop) => {
+      const n = P.rows.filter((r) => r.shopLabel === shop && r.price != null && !r.tax_basis).length, b = P.basisByShop[shop];
+      return { text: shop + ': ' + n + (n === 1 ? ' price' : ' prices') + '. Were they with or without tax on the tag?',
+        chips: [['excl', 'Tax excluded'], ['incl', 'Tax included']].map(([k, l]) => ({ label: l, go: () => this.cmpImpPatch({ basisByShop: { ...P.basisByShop, [shop]: k }, error: null }), style: chip(b === k) })) };
+    });
+    const nPhotos = Object.keys(P.photos || {}).length;
+    const canRun = !running && !plan.unanswered.length && (plan.newOpts.length || plan.newPrices.length || plan.mxPriced.length);
+    const what = [plan.newOpts.length + (plan.newOpts.length === 1 ? ' option' : ' options'), plan.newPrices.length + (plan.newPrices.length === 1 ? ' price' : ' prices')]
+      .concat(plan.mxPriced.length ? [plan.mxPriced.length + ' matrix prices'] : []).concat(plan.photoRows.length ? [plan.photoRows.length + (plan.photoRows.length === 1 ? ' photo' : ' photos')] : []);
+    return {
+      title: 'Import · ' + P.file,
+      summary: P.rows.length + (P.rows.length === 1 ? ' item' : ' items') + ' in ' + P.categories.length + (P.categories.length === 1 ? ' category' : ' categories')
+        + (P.sheet ? ' (sheet "' + P.sheet + '")' : '') + '. Choose where each category goes. Nothing is written until you press Import.' + (this.cmpLive() ? '' : ' Sample mode: the import stays in this browser tab.'),
+      skippedNote: P.skipped.length ? P.skipped.length + (P.skipped.length === 1 ? ' line was' : ' lines were') + ' not read as items.' : '',
+      toggleSkipped: () => this.cmpImpPatch({ showSkipped: !P.showSkipped }), skippedLabel: P.showSkipped ? 'Hide' : 'Show',
+      skipped: P.showSkipped ? P.skipped.map((x) => 'Line ' + x.line + ': ' + x.why + (x.text ? ' — ' + x.text : '')) : [],
+      cats, questions, hasQuestions: questions.length > 0,
+      photoHint: plan.photoNames ? (nPhotos ? plan.photoRows.length + ' of ' + plan.photoNames + ' named photos matched.' : plan.photoNames + ' rows name a photo. Choose the photo files to attach them (they are shrunk before upload).') : '',
+      onPhotos: (e) => { this.cmpImportPhotos(e.target.files ? Array.from(e.target.files) : []); try { e.target.value = ''; } catch (x) {} },
+      showPhotos: plan.photoNames > 0, multi: true,
+      already: plan.already ? plan.already + ' already imported: left as they are.' : '',
+      run: () => this.cmpImportRun(), runLabel: running ? (P.progress || 'Importing…') : 'Import ' + what.join(', '),
+      runStyle: 'padding:11px 18px;border-radius:12px;border:0;color:#fff;font-size:13px;font-weight:700;background:' + (canRun ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (canRun ? 'pointer' : 'default') + ';',
+      cancel: running ? null : () => this.setState({ cmpImp: null }),
+      error: P.error || null
+    };
+  }
+
   // ---- watch price (phase 5) ----
   // A Compare option points at a tracked product; its card then shows the
   // same Buy / Watch / Wait pill as Home, read from the same built product.
@@ -3169,7 +3499,9 @@ class Component extends DCLogic {
         };
       });
       const can = S.cmpNewCat.trim().length > 0 && !S.cmpBusy;
+      if (S.cmpImp) return { ...base, showImport: true, imp: this.importVals(S), title: 'Compare', subtitle: '' };
       return { ...base, showList: true, cats, title: 'Compare',
+        onImportFile: (e) => { const f = e.target.files && e.target.files[0]; try { e.target.value = ''; } catch (x) {} this.cmpImportFile(f); },
         subtitle: 'What to buy: options for one need side by side, on one tax basis, with your own photos. ' + (sample ? 'Sample data: six folding tables from your notes.' : 'Only you can see these.'),
         newCatName: S.cmpNewCat, onNewCatName: (e) => this.setState({ cmpNewCat: e.target.value, cmpError: null }),
         onNewCatKey: (e) => { if (e.key === 'Enter') this.cmpCreateCategory(); }, createCat: () => this.cmpCreateCategory(), createCatStyle: softBtn(can) };

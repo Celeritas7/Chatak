@@ -529,6 +529,39 @@ export async function addCmpPrice(p) {
   return data;
 }
 
+// ── import (Compare phase 3b) ──
+// Rows arrive already checked by the review screen. Each carries an import_key,
+// and the caller leaves out keys that are already in the database, so running
+// the same sheet twice adds nothing. Inserted in chunks: one request per 200.
+async function insertChunks(table, rows, select) {
+  const out = [];
+  for (let i = 0; i < rows.length; i += 200) {
+    let q = db.from(table).insert(rows.slice(i, i + 200));
+    if (select) q = q.select(select);
+    const { data, error } = await q;
+    if (error) throw error;
+    if (data) out.push(...data);
+  }
+  return out;
+}
+
+export async function importCmpOptions(rows) {
+  return insertChunks('chatak_cmp_options', rows.map((o) => ({
+    category_id: o.category_id, name: o.name, name_ja: o.name_ja || null, brand: o.brand || null,
+    source_kind: o.source_kind, store_id: o.store_id ?? null, shop_name: o.shop_name || null, cost_shop_id: o.cost_shop_id ?? null,
+    pack_qty: o.pack_qty, pack_unit: o.pack_unit, size_label: o.size_label || null, notes: o.notes || null,
+    photo_check: !!o.photo_check, import_key: o.import_key
+  })), 'id, import_key');
+}
+
+export async function importCmpPrices(rows) {
+  return insertChunks('chatak_cmp_prices', rows.map((p) => ({
+    option_id: p.option_id, store_id: p.store_id ?? null, shop_name: p.shop_name || null, cost_shop_id: p.cost_shop_id ?? null,
+    price: p.price, tax_basis: p.tax_basis, tax_rate: p.tax_rate ?? 10, price_kind: p.price_kind || 'shelf',
+    seen_on: p.seen_on, source: 'import', note: p.note || null, import_key: p.import_key, photo_id: p.photo_id ?? null
+  })), null);
+}
+
 // ── watch price (Compare phase 5) ──
 // An option points at a tracked product (chatak_products). Rakuten listings go
 // through add-product, which creates or reuses the product and its offer and
