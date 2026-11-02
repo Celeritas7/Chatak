@@ -72,6 +72,11 @@ Nothing here touches the live project.
 `node --test tests/js/*.test.js` checks Compare's arithmetic in
 `js/chatak-compare.js` (tax basis, best in column, "pay more, get what",
 sorting, filters) on the sample folding tables.
+`tests/js/import.test.js` covers `js/chatak-import.js`, the spreadsheet
+reader: header detection, tax basis by column or shop convention, pack sizes,
+skipped totals and stable import keys. `tests/ui/import.check.js` runs the
+import screen end to end (needs `xlsx@0.18.5` beside the other test packages).
+
 `tests/js/photo.test.js` covers `js/chatak-photo.js`: the 1600 px resize
 maths and reading when a photo was taken (EXIF, or names like
 `IMG20261024192355.jpg`).

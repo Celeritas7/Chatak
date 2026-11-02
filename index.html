@@ -21,6 +21,7 @@
 <script src="./js/chatak-engine.js"></script>
 <script src="./js/chatak-compare.js"></script>
 <script src="./js/chatak-photo.js"></script>
+<script src="./js/chatak-import.js"></script>
 <script src="./js/akatsuki-client.js"></script>
 <style>
   *{box-sizing:border-box;}
@@ -1367,7 +1368,81 @@
                 <button onClick="{{ cmp.createCat }}" style="{{ cmp.createCatStyle }}">Create</button>
                 <span style="font-size:11px;color:#6F6A62;line-height:1.45;">Then add the parameters it should compare under Fields.</span>
               </div>
+              <label style="position:relative;padding:18px;border-radius:20px;background:#FBFAF7;border:1px dashed #DDD7CE;display:flex;flex-direction:column;gap:8px;cursor:pointer;">
+                <span style="font-size:13px;font-weight:700;">Import a spreadsheet</span>
+                <span style="font-size:11px;color:#6F6A62;line-height:1.45;">An .xlsx or .csv of prices: shop, product, price. You review every category before anything is saved.</span>
+                <span style="align-self:flex-start;padding:9px 16px;border-radius:11px;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;">Choose file</span>
+                <input type="file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange="{{ cmp.onImportFile }}" aria-label="Import a spreadsheet" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
+              </label>
             </div>
+          </sc-if>
+
+          <!-- import review -->
+          <sc-if value="{{ cmp.showImport }}">
+            <sc-if value="{{ cmp.imp.busy }}">
+              <div style="padding:28px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;font-size:13px;color:#6F6A62;">{{ cmp.imp.busy }}</div>
+            </sc-if>
+            <sc-if value="{{ cmp.imp.title }}">
+              <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:14px;">
+                <h2 style="margin:0;font-size:16px;font-weight:800;">{{ cmp.imp.title }}</h2>
+                <span style="font-size:12px;color:#6F6A62;line-height:1.5;">{{ cmp.imp.summary }}</span>
+                <sc-if value="{{ cmp.imp.skippedNote }}">
+                  <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#6F6A62;">
+                    <span>{{ cmp.imp.skippedNote }} <button onClick="{{ cmp.imp.toggleSkipped }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ cmp.imp.skippedLabel }}</button></span>
+                    <sc-for list="{{ cmp.imp.skipped }}" as="k" hint-placeholder-count="2"><span>{{ k }}</span></sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-for list="{{ cmp.imp.cats }}" as="c" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:#FBFAF7;border:1px solid #F0ECE4;">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                      <span style="font-size:14px;font-weight:800;">{{ c.name }}</span>
+                      <button onClick="{{ c.toggle }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ c.toggleLabel }}</button>
+                    </div>
+                    <span style="font-size:11px;color:#6F6A62;">{{ c.meta }}</span>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ c.dests }}" as="d" hint-placeholder-count="3"><button onClick="{{ d.go }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div>
+                    <sc-if value="{{ c.hasRates }}"><div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ c.rates }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div></sc-if>
+                    <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="3">
+                      <div style="{{ r.style }}">
+                        <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                          <span style="font-size:12px;font-weight:600;line-height:1.4;">{{ r.name }}</span>
+                          <span style="font-size:11px;color:#6F6A62;line-height:1.4;">{{ r.meta }}</span>
+                        </span>
+                        <button onClick="{{ r.toggle }}" aria-label="{{ r.line }}" style="flex-shrink:0;padding:5px 9px;border-radius:9px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:11px;font-weight:700;cursor:pointer;">{{ r.toggleLabel }}</button>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+
+                <sc-if value="{{ cmp.imp.hasQuestions }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:#FFF8EC;border:1px solid #F1DFC0;">
+                    <span style="font-size:12px;font-weight:800;color:#7A4F08;">Tax basis not in the sheet</span>
+                    <sc-for list="{{ cmp.imp.questions }}" as="q" hint-placeholder-count="2">
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        <span style="font-size:12px;color:#4A443C;">{{ q.text }}</span>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ q.chips }}" as="b" hint-placeholder-count="2"><button onClick="{{ b.go }}" style="{{ b.style }}">{{ b.label }}</button></sc-for></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ cmp.imp.showPhotos }}">
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <label style="position:relative;padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Choose photos
+                      <input type="file" accept="image/*" multiple="{{ cmp.imp.multi }}" onChange="{{ cmp.imp.onPhotos }}" aria-label="Photos for the import" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
+                    </label>
+                    <span style="font-size:11px;color:#6F6A62;flex:1;min-width:200px;">{{ cmp.imp.photoHint }}</span>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ cmp.imp.already }}"><span style="font-size:11px;color:#6F6A62;">{{ cmp.imp.already }}</span></sc-if>
+                <sc-if value="{{ cmp.imp.error }}"><div style="font-size:12px;color:#B03A31;font-weight:600;">{{ cmp.imp.error }}</div></sc-if>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <button onClick="{{ cmp.imp.run }}" style="{{ cmp.imp.runStyle }}">{{ cmp.imp.runLabel }}</button>
+                  <sc-if value="{{ cmp.imp.cancel }}"><button onClick="{{ cmp.imp.cancel }}" style="padding:10px 14px;border-radius:12px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button></sc-if>
+                </div>
+              </section>
+            </sc-if>
           </sc-if>
 
           <!-- fields of this need -->
@@ -1408,6 +1483,48 @@
                 <button onClick="{{ cmp.nf.add }}" style="{{ cmp.nf.addStyle }}">Add field</button>
               </div>
               <button onClick="{{ cmp.archiveCat }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#A5322A;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ cmp.archiveLabel }}</button>
+            </section>
+          </sc-if>
+
+          <!-- watch price -->
+          <sc-if value="{{ cmp.watchPanel }}">
+            <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:12px;">
+              <h2 style="margin:0;font-size:16px;font-weight:800;">{{ cmp.watchPanel.title }}</h2>
+              <span style="font-size:12px;color:#6F6A62;line-height:1.5;">{{ cmp.watchPanel.intro }}</span>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input value="{{ cmp.watchPanel.q }}" onChange="{{ cmp.watchPanel.onQ }}" onKeyDown="{{ cmp.watchPanel.onQKey }}" aria-label="Search Rakuten" placeholder="Item name or model number" style="flex:1;min-width:min(220px,100%);padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                <button onClick="{{ cmp.watchPanel.search }}" style="{{ cmp.watchPanel.searchStyle }}">Search Rakuten</button>
+              </div>
+              <sc-if value="{{ cmp.watchPanel.busy }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.watchPanel.busy }}</span></sc-if>
+              <sc-for list="{{ cmp.watchPanel.results }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #F2EEE7;">
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <span style="font-size:12px;font-weight:600;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ x.name }}</span>
+                    <span style="font-size:11px;color:#6F6A62;">{{ x.meta }}</span>
+                  </span>
+                  <button onClick="{{ x.go }}" style="flex-shrink:0;padding:7px 12px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Watch this</button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ cmp.watchPanel.noResults }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.watchPanel.noResults }}</span></sc-if>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input value="{{ cmp.watchPanel.url }}" onChange="{{ cmp.watchPanel.onUrl }}" inputMode="url" aria-label="Rakuten item link" placeholder="Or paste a Rakuten item link" style="flex:1;min-width:min(220px,100%);padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;font-family:'IBM Plex Mono',monospace;" />
+                <button onClick="{{ cmp.watchPanel.addUrl }}" style="{{ cmp.watchPanel.addUrlStyle }}">Watch link</button>
+              </div>
+              <sc-if value="{{ cmp.watchPanel.trackedTitle }}">
+                <span style="font-size:11px;font-weight:700;color:#6F6A62;margin-top:4px;">{{ cmp.watchPanel.trackedTitle }}</span>
+                <sc-for list="{{ cmp.watchPanel.tracked }}" as="t" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #F2EEE7;">
+                    <span style="{{ t.pill }}">{{ t.label }}</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0;">
+                      <span style="font-size:12px;font-weight:600;">{{ t.name }}</span>
+                      <span style="font-size:11px;color:#6F6A62;">{{ t.meta }}</span>
+                    </span>
+                    <button onClick="{{ t.go }}" style="flex-shrink:0;padding:7px 12px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Link</button>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{ cmp.watchPanel.error }}"><div style="font-size:12px;color:#B03A31;font-weight:600;">{{ cmp.watchPanel.error }}</div></sc-if>
+              <button onClick="{{ cmp.watchPanel.close }}" style="align-self:flex-start;padding:8px 2px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Close</button>
             </section>
           </sc-if>
 
@@ -1607,12 +1724,32 @@
                       </sc-for>
                       <sc-if value="{{ r.missing }}"><span style="font-size:11px;color:#8C877E;padding:4px 6px 0;">{{ r.missing }}</span></sc-if>
                     </div>
+                    <sc-if value="{{ r.watch }}">
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:10px;border:1px solid #F0ECE4;">
+                        <sc-if value="{{ r.watch.pill }}"><span style="{{ r.watch.pill }}">{{ r.watch.label }}</span></sc-if>
+                        <span style="font-size:11px;color:#4A443C;flex:1;min-width:0;">{{ r.watch.text }}</span>
+                        <sc-if value="{{ r.watch.open }}"><button onClick="{{ r.watch.open }}" style="padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Price history</button></sc-if>
+                      </div>
+                    </sc-if>
                     <sc-if value="{{ r.verdict }}"><span style="font-size:12px;font-weight:600;color:#1C1A17;">"{{ r.verdict }}"</span></sc-if>
                     <sc-if value="{{ r.notes }}"><span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ r.notes }}</span></sc-if>
                     <div style="display:flex;gap:8px;">
                       <button onClick="{{ r.edit }}" style="padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#1C1A17;font-size:12px;font-weight:700;cursor:pointer;">Edit</button>
                       <button onClick="{{ r.shortlist }}" style="{{ r.shortlistStyle }}">{{ r.shortlistLabel }}</button>
+                      <sc-if value="{{ r.canWatch }}"><button onClick="{{ r.startWatch }}" style="padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">Watch price</button></sc-if>
+                      <sc-if value="{{ r.unwatch }}"><button onClick="{{ r.unwatch }}" style="padding:8px 4px;border:0;background:none;color:#8C877E;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Stop watching</button></sc-if>
                     </div>
+                    <sc-if value="{{ r.wishText }}"><span style="{{ r.wishStyle }}">{{ r.wishText }}</span></sc-if>
+                    <sc-if value="{{ r.wishConfirm }}">
+                      <div style="display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:12px;background:#FBFAF7;border:1px solid #E6DFD3;">
+                        <span style="font-size:12px;color:#1C1A17;line-height:1.45;">{{ r.wishConfirm }}</span>
+                        <div style="display:flex;gap:8px;">
+                          <button onClick="{{ r.wishGo }}" style="padding:8px 14px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Send</button>
+                          <button onClick="{{ r.wishCancel }}" style="padding:8px 10px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ r.showWishBtn }}"><button onClick="{{ r.askWish }}" style="align-self:flex-start;padding:7px 12px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">{{ r.wishLabel }}</button></sc-if>
                   </div>
                 </article>
               </sc-for>
@@ -1770,7 +1907,13 @@ class Component extends DCLogic {
     cmpNewField: { label: '', unit: '', kind: 'number', better: 'none', choices: '' }, cmpNewCat: '',
     cmpBusy: false, cmpError: null, cmpInfo: null, cmpConfirmDel: false, cmpConfirmArchive: false,
     // Photos: signed links by storage path (live) or object URLs (sample and not-yet-saved).
-    cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null
+    cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null,
+    // Watch price: the option being linked to a tracked product, with its Rakuten search.
+    cmpWatch: null,
+    // Import: the spreadsheet being reviewed, then loaded.
+    cmpImp: null,
+    // Send to wishlist: the option awaiting confirmation, and Cost's replies by request id.
+    cmpWishConfirm: null, cmpWishReplies: {}
   };
 
   chartRef = React.createRef();
@@ -2710,7 +2853,10 @@ class Component extends DCLogic {
       // Signed links last an hour; every load renews them. A failure here only hides the images.
       let urls = {};
       try { urls = await this._api.signCmpPhotos((d.photos || []).map((p) => p.storage_path)); } catch (e) { console.warn('[cmp] photo links', e); }
-      this.setState({ cmp: { status: 'ready', ...d }, cmpPhotoUrls: urls });
+      // Cost's answers to wishlist requests; a hub hiccup only hides the status.
+      let wish = this.state.cmpWishReplies;
+      if ((d.options || []).some((o) => o.wish_request_id)) { try { wish = await this._api.getWishReplies(); } catch (e) { console.warn('[cmp] wishlist replies', e); } }
+      this.setState({ cmp: { status: 'ready', ...d }, cmpPhotoUrls: urls, cmpWishReplies: wish });
     } catch (e) {
       this.setState({ cmp: { status: 'error', message: String(e.message || e), categories: [], fields: [], options: [], prices: [] } });
     }
@@ -2772,7 +2918,7 @@ class Component extends DCLogic {
       cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', seller: '', store_id: 2, url: '',
         qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -2783,7 +2929,7 @@ class Component extends DCLogic {
       cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', seller: o.source_kind === 'online' && o.store_id == null ? (o.shop_name || '') : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
         name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -3032,6 +3178,338 @@ class Component extends DCLogic {
     if (ok) this.setState({ cmpCat: null, cmpFieldsOpen: false, cmpConfirmArchive: false });
   }
 
+  // ---- import (phase 3b) ----
+  // A spreadsheet is read in the browser, shown for review (each category to
+  // Compare, the price matrix, or skipped; tax questions answered per shop),
+  // then written. Import keys make a second run add nothing.
+  cmpSheetJs() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (!this._xlsxLoad) this._xlsxLoad = new Promise((res, rej) => {
+      const el = document.createElement('script');
+      el.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      el.onload = () => (window.XLSX ? res(window.XLSX) : rej(new Error('The spreadsheet reader did not load.')));
+      el.onerror = () => { this._xlsxLoad = null; rej(new Error('The spreadsheet reader could not be downloaded. Check the connection and try again.')); };
+      document.head.appendChild(el);
+    });
+    return this._xlsxLoad;
+  }
+
+  cmpImpPatch(patch) { this.setState((s) => ({ cmpImp: s.cmpImp ? { ...s.cmpImp, ...patch } : null })); }
+
+  async cmpImportFile(file) {
+    const I = window.ChatakImport;
+    if (!file || !I) return;
+    this.setState({ cmpImp: { status: 'reading', file: file.name }, cmpError: null, cmpInfo: null });
+    try {
+      const X = await this.cmpSheetJs();
+      const wb = X.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+      const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      let parsed = null;
+      for (const name of wb.SheetNames) {
+        const p = I.parse(X.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: null }), { today });
+        if (!p.error && p.rows.length) { parsed = { ...p, sheet: name }; break; }
+        if (!parsed) parsed = { ...p, sheet: name };
+      }
+      if (parsed.error || !parsed.rows.length) { this.setState({ cmpImp: null, cmpError: file.name + ': ' + (parsed.error || 'no rows with a product name.') }); return; }
+      const food = /food|drink|tea|coffee|snack|grocer|飲|食|菓子|調味|rice|noodle|beverage/i;
+      const dest = {}, rate = {};
+      for (const c of parsed.categories) { dest[c.name] = 'compare'; rate[c.name] = food.test(c.name) ? 8 : 10; }
+      this.setState({ cmpImp: { status: 'review', file: file.name, sheet: parsed.sheet, rows: parsed.rows, categories: parsed.categories, skipped: parsed.skipped,
+        dest, rate, basisByShop: {}, photos: {}, openCat: null, showSkipped: false } });
+    } catch (e) {
+      this.setState({ cmpImp: null, cmpError: 'Could not read ' + file.name + ': ' + (e.message || e) });
+    }
+  }
+
+  cmpImportPhotos(files) {
+    const m = { ...(this.state.cmpImp.photos || {}) };
+    for (const f of files || []) m[f.name.toLowerCase()] = f;
+    this.cmpImpPatch({ photos: m });
+  }
+
+  // The rows that will be written, with their answered tax basis.
+  cmpImportPlan(S) {
+    const P = S.cmpImp, I = window.ChatakImport, D = S.cmp;
+    const rows = P.rows.map((r) => ({ ...r, tax_basis: r.tax_basis || P.basisByShop[r.shopLabel] || null, dest: P.dest[r.category] }));
+    const live = rows.filter((r) => r.include && r.dest !== 'skip');
+    const optKeys = new Set((D.options || []).map((o) => o.import_key).filter(Boolean));
+    const priceKeys = new Set((D.prices || []).map((p) => p.import_key).filter(Boolean));
+    const cmp = live.filter((r) => r.dest === 'compare'), mx = live.filter((r) => r.dest === 'matrix');
+    const newOpts = cmp.filter((r) => !r.duplicateOf && !optKeys.has(r.import_key));
+    const priced = cmp.filter((r) => r.price != null && r.tax_basis);
+    const newPrices = priced.filter((r) => !priceKeys.has(I.priceKey(r)));
+    const unanswered = live.filter((r) => r.price != null && !r.tax_basis);
+    const photoRows = cmp.filter((r) => r.photo && P.photos[r.photo.toLowerCase()]);
+    return { rows, cmp, mx, newOpts, newPrices, already: cmp.filter((r) => !r.duplicateOf).length - newOpts.length, unanswered, photoRows,
+      photoNames: cmp.filter((r) => r.photo).length, mxPriced: mx.filter((r) => r.price != null && r.tax_basis) };
+  }
+
+  async cmpImportRun() {
+    const S = this.state, P = S.cmpImp, I = window.ChatakImport, Ph = window.ChatakPhoto;
+    if (!P || P.status !== 'review') return;
+    const plan = this.cmpImportPlan(S);
+    if (plan.unanswered.length) { this.cmpImpPatch({ error: 'Answer the tax question first, or leave those rows out.' }); return; }
+    const live = this.cmpLive(), D = S.cmp;
+    const step = (t) => this.cmpImpPatch({ status: 'running', progress: t, error: null });
+    const done = { needs: 0, options: 0, prices: 0, photos: 0, matrix: 0, photoErrors: [] };
+    try {
+      // 1. Needs: an existing one by name, an archived one brought back, or a new one.
+      step('Preparing needs…');
+      const catId = {};
+      const names = [...new Set(plan.cmp.map((r) => r.category))];
+      let archived = [];
+      if (live && names.length) archived = await this._api.getArchivedCmpCategories();
+      let cats = (D.categories || []).slice();
+      for (const name of names) {
+        const hit = cats.find((c) => c.name.toLowerCase() === name.toLowerCase());
+        if (hit) { catId[name] = hit.id; continue; }
+        const old = archived.find((c) => c.name.toLowerCase() === name.toLowerCase());
+        if (old) { await this._api.restoreCmpCategory(old.id); catId[name] = old.id; continue; }
+        const rate = P.rate[name] || 10;
+        const made = live ? await this._api.saveCmpCategory({ name, tax_rate: rate }) : { id: 'c-imp-' + Date.now() + '-' + done.needs, name, tax_rate: rate, sort_order: cats.length };
+        cats = cats.concat([made]); catId[name] = made.id; done.needs++;
+      }
+      const rateOf = (name) => { const c = cats.find((x) => x.id === catId[name]); return c ? Number(c.tax_rate) : (P.rate[name] || 10); };
+
+      // 2. Options not imported before.
+      step('Adding ' + plan.newOpts.length + ' options…');
+      const keyToId = {};
+      for (const o of D.options || []) if (o.import_key) keyToId[o.import_key] = o.id;
+      const optRows = plan.newOpts.map((r) => ({ ...r, category_id: catId[r.category], notes: r.notes || null }));
+      let added = [];
+      if (live) added = optRows.length ? await this._api.importCmpOptions(optRows) : [];
+      else added = optRows.map((r, i) => ({ id: 'o-imp-' + Date.now() + '-' + i, import_key: r.import_key }));
+      for (const a of added) keyToId[a.import_key] = a.id;
+      done.options = added.length;
+
+      // 3. Prices not imported before (one per option, price, basis and day).
+      step('Adding prices…');
+      const seenKeys = new Set();
+      const priceRows = plan.newPrices.filter((r) => { const k = I.priceKey(r); if (seenKeys.has(k)) return false; seenKeys.add(k); return true; }).map((r) => ({
+        option_id: keyToId[r.import_key], store_id: r.source_kind === 'online' ? r.store_id : null, shop_name: r.store_id == null ? r.shop_name : null,
+        price: r.price, tax_basis: r.tax_basis, tax_rate: rateOf(r.category), price_kind: r.source_kind === 'online' ? 'online' : 'shelf', seen_on: r.seen_on,
+        note: (r.price_high ? 'Range in the sheet: ¥' + r.price.toLocaleString('en-US') + ' to ¥' + r.price_high.toLocaleString('en-US') + '. ' : '') + 'From ' + P.file + '.',
+        import_key: I.priceKey(r)
+      })).filter((x) => x.option_id);
+      if (live) { if (priceRows.length) await this._api.importCmpPrices(priceRows); }
+      done.prices = priceRows.length;
+
+      // 4. Matrix rows: the item by name (added when missing), the price tax-included.
+      if (plan.mxPriced.length) {
+        step('Adding ' + plan.mxPriced.length + ' matrix prices…');
+        if (live) await this.cmpEnsureShops();
+        const M = this.state.mx || { items: [], shops: [] };
+        let items = (M.items || []).slice();
+        const byShop = {};
+        for (const r of plan.mxPriced) {
+          let it = items.find((x) => x.name.toLowerCase() === r.name.toLowerCase());
+          if (!it) {
+            it = live ? await this._api.addMatrixItem({ name: r.name, size: r.size_label, category: r.category })
+              : { id: 'mx-imp-' + Date.now() + '-' + items.length, name: r.name, size: r.size_label, cat: r.category };
+            items = items.concat([it]);
+          }
+          (byShop[r.shopLabel] = byShop[r.shopLabel] || []).push({ itemId: it.id, price: I.inclOf(r.price, r.tax_basis, P.rate[r.category] || 10), shelf: true });
+        }
+        const shops = (M.shops || []);
+        for (const name of Object.keys(byShop)) {
+          const sh = shops.find((x) => x.name.toLowerCase() === name.toLowerCase()) || { name, id: null };
+          if (live) await this._api.saveMatrixRow({ name: sh.name, id: sh.id }, byShop[name], { shelf: true });
+          done.matrix += byShop[name].length;
+        }
+        if (!live) {
+          const at = new Date().toISOString();
+          this.mxPatch((m) => {
+            const cells = { ...m.cells };
+            for (const name of Object.keys(byShop)) for (const e of byShop[name]) cells[this.mxKey(name, e.itemId)] = { p: e.price, at, shelf: true };
+            return { ...m, items, cells };
+          });
+        }
+      }
+
+      // 5. Sample: write it all to memory in one go.
+      if (!live) {
+        const optionsNew = optRows.map((r, i) => ({ id: added[i].id, category_id: r.category_id, name: r.name, name_ja: r.name_ja, brand: r.brand, source_kind: r.source_kind,
+          store_id: r.store_id, shop_name: r.shop_name, pack_qty: r.pack_qty, pack_unit: r.pack_unit, size_label: r.size_label, specs: {}, status: 'considering',
+          notes: r.notes, photo_check: r.photo_check, import_key: r.import_key }));
+        let pid = Date.now();
+        this.setState((s) => ({ cmp: { ...s.cmp, categories: cats, options: s.cmp.options.concat(optionsNew),
+          prices: s.cmp.prices.concat(priceRows.map((x) => ({ ...x, id: ++pid, source: 'import' }))) } }));
+      }
+
+      // 6. Photos, matched by file name; one per option per name.
+      if (plan.photoRows.length && Ph) {
+        const have = new Set((D.photos || []).map((p) => p.option_id + '|' + String(p.original_name || '').toLowerCase()));
+        const todo = plan.photoRows.filter((r) => keyToId[r.import_key] && !have.has(keyToId[r.import_key] + '|' + r.photo.toLowerCase()));
+        const uniq = new Map();
+        for (const r of todo) uniq.set(keyToId[r.import_key] + '|' + r.photo.toLowerCase(), r);
+        let n = 0;
+        for (const r of uniq.values()) {
+          step('Photos: ' + (++n) + ' of ' + uniq.size + '…');
+          try {
+            const shrunk = await Ph.shrink(P.photos[r.photo.toLowerCase()]);
+            if (live) await this._api.uploadCmpPhoto(keyToId[r.import_key], shrunk);
+            else {
+              const url = URL.createObjectURL(shrunk.blob);
+              this.setState((s) => ({ cmpPhotoUrls: { ...s.cmpPhotoUrls, [url]: url }, cmp: { ...s.cmp, photos: (s.cmp.photos || []).concat([{ id: 'ph-imp-' + n, option_id: keyToId[r.import_key], storage_path: url, original_name: shrunk.original_name, taken_at: shrunk.taken_at, width: shrunk.width, height: shrunk.height, bytes: shrunk.bytes }]) } }));
+            }
+            done.photos++;
+          } catch (e) { done.photoErrors.push(r.photo + ': ' + (e.message || e)); }
+        }
+      }
+      if (live) await Promise.all([this.loadCompare(), plan.mxPriced.length ? this.loadMatrix() : null]);
+      const parts = [done.options + (done.options === 1 ? ' option' : ' options'), done.prices + (done.prices === 1 ? ' price' : ' prices')];
+      if (done.needs) parts.unshift(done.needs + (done.needs === 1 ? ' new need' : ' new needs'));
+      if (done.photos) parts.push(done.photos + (done.photos === 1 ? ' photo' : ' photos'));
+      if (done.matrix) parts.push(done.matrix + ' matrix prices');
+      this.setState({ cmpImp: null, cmpInfo: 'Imported ' + P.file + ': ' + parts.join(', ') + '.' + (plan.already ? ' ' + plan.already + ' already imported, left as they were.' : '')
+        + (done.photoErrors.length ? ' Photos not added: ' + done.photoErrors.join('; ') : ''), cmpError: null });
+    } catch (e) {
+      // Partial runs are safe to repeat: everything already written is skipped by its key.
+      if (live) await this.loadCompare();
+      this.cmpImpPatch({ status: 'review', progress: null, error: 'Stopped: ' + (e.message || e) + '. What was written stays; run the import again to add the rest.' });
+    }
+  }
+
+  importVals(S) {
+    const P = S.cmpImp, C = window.ChatakCompare, I = window.ChatakImport;
+    const chip = (on) => 'padding:6px 11px;border-radius:999px;border:1px solid ' + (on ? '#1C1A17' : '#DDD7CE') + ';background:' + (on ? '#1C1A17' : '#fff') + ';color:' + (on ? '#fff' : '#4A443C') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;';
+    if (P.status === 'reading') return { busy: 'Reading ' + P.file + '…' };
+    const plan = this.cmpImportPlan(S), D = S.cmp;
+    const running = P.status === 'running';
+    const setDest = (name, d) => this.cmpImpPatch({ dest: { ...P.dest, [name]: d }, error: null });
+    const cats = P.categories.map((c) => {
+      const rows = plan.rows.filter((r) => r.category === c.name);
+      const existing = (D.categories || []).find((x) => x.name.toLowerCase() === c.name.toLowerCase());
+      const allShop = rows.every((r) => r.source_kind === 'shop');
+      const d = P.dest[c.name], open = P.openCat === c.name;
+      return {
+        name: c.name,
+        meta: rows.length + (rows.length === 1 ? ' item' : ' items') + ' · ' + (c.online === rows.length ? 'online' : c.online ? c.online + ' online' : 'in shops')
+          + (d === 'compare' ? (existing ? ' · adds to your need "' + existing.name + '"' : ' · a new need') : d === 'matrix' ? ' · to the price matrix' : ' · left out'),
+        dests: [['compare', 'Compare'], ...(allShop ? [['matrix', 'Price matrix']] : []), ['skip', 'Skip']].map(([k, l]) => ({ label: l, go: () => setDest(c.name, k), style: chip(d === k) })),
+        rates: d === 'skip' || existing ? [] : [[10, '10% tax'], [8, '8% (food, drink)']].map(([k, l]) => ({ label: l, go: () => this.cmpImpPatch({ rate: { ...P.rate, [c.name]: k } }), style: chip((P.rate[c.name] || 10) === k) })),
+        hasRates: !(d === 'skip' || existing),
+        toggle: () => this.cmpImpPatch({ openCat: open ? null : c.name }), toggleLabel: open ? 'Hide items' : 'Show items',
+        rows: open ? rows.map((r) => ({
+          name: r.name + (r.name_ja ? ' · ' + r.name_ja : ''),
+          meta: [r.shopLabel, r.price != null ? (r.tax_basis ? C.yen(I.inclOf(r.price, r.tax_basis, P.rate[c.name])) + ' incl. tax' + (r.tax_basis === 'excl' ? ' (tag ' + C.yen(r.price) + ')' : '') : C.yen(r.price) + ', tax not known') : 'no price',
+            r.price_high ? 'up to ' + C.yen(r.price_high) : '', r.pack_qty + ' ' + r.pack_unit + (r.pack_assumed && r.size_label ? ' (from "' + r.size_label + '")' : ''),
+            r.photo ? (P.photos[r.photo.toLowerCase()] ? 'photo ✓' : 'photo ' + r.photo) : '', r.photo_check ? 'check photo' : '', r.duplicateOf ? 'same item as line ' + r.duplicateOf : ''].filter(Boolean).join(' · '),
+          style: 'display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F2EEE7;' + (r.include ? '' : 'opacity:0.45;'),
+          toggle: () => this.cmpImpPatch({ rows: P.rows.map((x) => (x.line === r.line ? { ...x, include: !x.include } : x)) }),
+          toggleLabel: r.include ? 'Leave out' : 'Include', line: 'Line ' + r.line
+        })) : []
+      };
+    });
+    // Tax questions, one per shop.
+    const askShops = [...new Set(P.rows.filter((r) => r.include && P.dest[r.category] !== 'skip' && r.price != null && !r.tax_basis).map((r) => r.shopLabel))];
+    const questions = askShops.map((shop) => {
+      const n = P.rows.filter((r) => r.shopLabel === shop && r.price != null && !r.tax_basis).length, b = P.basisByShop[shop];
+      return { text: shop + ': ' + n + (n === 1 ? ' price' : ' prices') + '. Were they with or without tax on the tag?',
+        chips: [['excl', 'Tax excluded'], ['incl', 'Tax included']].map(([k, l]) => ({ label: l, go: () => this.cmpImpPatch({ basisByShop: { ...P.basisByShop, [shop]: k }, error: null }), style: chip(b === k) })) };
+    });
+    const nPhotos = Object.keys(P.photos || {}).length;
+    const canRun = !running && !plan.unanswered.length && (plan.newOpts.length || plan.newPrices.length || plan.mxPriced.length);
+    const what = [plan.newOpts.length + (plan.newOpts.length === 1 ? ' option' : ' options'), plan.newPrices.length + (plan.newPrices.length === 1 ? ' price' : ' prices')]
+      .concat(plan.mxPriced.length ? [plan.mxPriced.length + ' matrix prices'] : []).concat(plan.photoRows.length ? [plan.photoRows.length + (plan.photoRows.length === 1 ? ' photo' : ' photos')] : []);
+    return {
+      title: 'Import · ' + P.file,
+      summary: P.rows.length + (P.rows.length === 1 ? ' item' : ' items') + ' in ' + P.categories.length + (P.categories.length === 1 ? ' category' : ' categories')
+        + (P.sheet ? ' (sheet "' + P.sheet + '")' : '') + '. Choose where each category goes. Nothing is written until you press Import.' + (this.cmpLive() ? '' : ' Sample mode: the import stays in this browser tab.'),
+      skippedNote: P.skipped.length ? P.skipped.length + (P.skipped.length === 1 ? ' line was' : ' lines were') + ' not read as items.' : '',
+      toggleSkipped: () => this.cmpImpPatch({ showSkipped: !P.showSkipped }), skippedLabel: P.showSkipped ? 'Hide' : 'Show',
+      skipped: P.showSkipped ? P.skipped.map((x) => 'Line ' + x.line + ': ' + x.why + (x.text ? ' — ' + x.text : '')) : [],
+      cats, questions, hasQuestions: questions.length > 0,
+      photoHint: plan.photoNames ? (nPhotos ? plan.photoRows.length + ' of ' + plan.photoNames + ' named photos matched.' : plan.photoNames + ' rows name a photo. Choose the photo files to attach them (they are shrunk before upload).') : '',
+      onPhotos: (e) => { this.cmpImportPhotos(e.target.files ? Array.from(e.target.files) : []); try { e.target.value = ''; } catch (x) {} },
+      showPhotos: plan.photoNames > 0, multi: true,
+      already: plan.already ? plan.already + ' already imported: left as they are.' : '',
+      run: () => this.cmpImportRun(), runLabel: running ? (P.progress || 'Importing…') : 'Import ' + what.join(', '),
+      runStyle: 'padding:11px 18px;border-radius:12px;border:0;color:#fff;font-size:13px;font-weight:700;background:' + (canRun ? '#0E6B4E' : '#A9C9BC') + ';cursor:' + (canRun ? 'pointer' : 'default') + ';',
+      cancel: running ? null : () => this.setState({ cmpImp: null }),
+      error: P.error || null
+    };
+  }
+
+  // ---- send to wishlist (phase 4) ----
+  // A purchase_request to Cost through the hub, like Sukkiri's and WF's. Cost
+  // shows it in its purchase inbox and answers logged or rejected.
+  cmpWishPayload(o, lead, catName) {
+    const id = 'cmp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const yen = lead ? lead.price_incl : null;
+    const note = [[o.brand, o.model_code, o.size_label].filter(Boolean).join(' · '), o.url || '', 'From Chatak Compare' + (o.notes ? ': ' + o.notes : '')].filter(Boolean).join('\n');
+    return { id, items: [{ name: o.name, yen, category: catName }], totalYen: yen, currency: 'JPY', category: catName, source: 'chatak',
+      preferred_shop: lead ? this.cmpShopLabel(lead) : this.cmpShopLabel(o), note: note.slice(0, 500), requestedAt: new Date().toISOString() };
+  }
+
+  async cmpSendWish(o, lead, catName) {
+    if (!lead) { this.setState({ cmpError: 'Add a price first: Cost needs an amount for the wishlist.' }); return; }
+    const payload = this.cmpWishPayload(o, lead, catName);
+    let queued = false;
+    const ok = await this.cmpWrite(async () => { const r = await this._api.sendCmpToWishlist(o, payload); queued = r && r.status === 'queued'; },
+      (c) => ({ ...c, options: c.options.map((x) => (x.id === o.id ? { ...x, wish_request_id: payload.id, wish_sent_at: payload.requestedAt } : x)) }), null);
+    if (ok) this.setState({ cmpWishConfirm: null, cmpInfo: queued ? o.name + ' is queued for Cost’s wishlist: it is sent when the connection is back.'
+      : 'Sent ' + o.name + ' to Cost’s wishlist at ' + window.ChatakCompare.yen(payload.totalYen) + '. Cost’s answer will show on the card.' });
+  }
+
+  // ---- watch price (phase 5) ----
+  // A Compare option points at a tracked product; its card then shows the
+  // same Buy / Watch / Wait pill as Home, read from the same built product.
+  cmpIsRakuten(url) { return /^https?:\/\/(item|www)\.rakuten\.co\.jp\//i.test(String(url || '').trim()); }
+
+  cmpOpenWatch(o) {
+    this.setState({
+      cmpWatch: { id: o.id, q: [o.brand, o.name].filter(Boolean).join(' '), url: this.cmpIsRakuten(o.url) ? o.url : '', results: null, busy: null, error: null },
+      cmpEdit: null, cmpPrice: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
+    });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  cmpWatchPatch(patch) { this.setState((s) => ({ cmpWatch: s.cmpWatch ? { ...s.cmpWatch, ...patch } : null })); }
+
+  async cmpWatchSearch() {
+    const W = this.state.cmpWatch;
+    if (!W || W.busy || !W.q.trim()) return;
+    if (!this.cmpLive()) { this.cmpWatchPatch({ error: 'Rakuten search needs the live app. In the sample, link one of the sample products below.' }); return; }
+    this.cmpWatchPatch({ busy: 'Searching Rakuten…', error: null, results: null });
+    try {
+      const results = (await this._api.searchRakuten(W.q.trim())).filter((r) => r.url);
+      this.cmpWatchPatch({ busy: null, results });
+    } catch (e) {
+      this.cmpWatchPatch({ busy: null, error: 'Rakuten search failed: ' + (e.message || e) });
+    }
+  }
+
+  // A Rakuten listing: add-product creates or reuses the product and puts it on Home.
+  async cmpWatchUrl(url) {
+    const W = this.state.cmpWatch;
+    if (!W || W.busy) return;
+    if (!this.cmpIsRakuten(url)) { this.cmpWatchPatch({ error: 'Paste a Rakuten item link (item.rakuten.co.jp/…). Amazon JP prices are not collected automatically.' }); return; }
+    if (!this.cmpLive()) { this.cmpWatchPatch({ error: 'Tracking a listing needs the live app. In the sample, link one of the sample products below.' }); return; }
+    this.cmpWatchPatch({ busy: 'Adding the listing…', error: null });
+    try {
+      const r = await this._api.watchCmpOptionByUrl(W.id, url.trim());
+      await Promise.all([this.loadCompare(), this.loadLive()]);
+      this.setState({ cmpWatch: null, cmpInfo: 'Watching ' + (r.name ? r.name.slice(0, 60) : 'the listing') + '. Today’s price is the first one; the verdict needs about two weeks of prices.' });
+    } catch (e) {
+      this.cmpWatchPatch({ busy: null, error: 'Not added: ' + (e.message || e) });
+    }
+  }
+
+  async cmpWatchLink(productId, name) {
+    const W = this.state.cmpWatch;
+    if (!W) return;
+    const ok = await this.cmpWrite(() => this._api.setCmpOptionProduct(W.id, productId),
+      (c) => ({ ...c, options: c.options.map((o) => (o.id === W.id ? { ...o, product_id: productId } : o)) }), 'Watching ' + name + '.');
+    if (ok) this.setState({ cmpWatch: null });
+  }
+
+  cmpUnwatch(o) {
+    return this.cmpWrite(() => this._api.setCmpOptionProduct(o.id, null),
+      (c) => ({ ...c, options: c.options.map((x) => (x.id === o.id ? { ...x, product_id: null } : x)) }),
+      'Stopped watching from Compare. The product stays on Home until you remove it there.');
+  }
+
   compareVals(S) {
     const C = window.ChatakCompare, D = S.cmp;
     const chip = (on) => 'padding:6px 11px;border-radius:999px;border:1px solid ' + (on ? '#1C1A17' : '#DDD7CE') + ';background:' + (on ? '#1C1A17' : '#fff') + ';color:' + (on ? '#fff' : '#4A443C') + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;';
@@ -3053,12 +3531,14 @@ class Component extends DCLogic {
           count: v.all.length ? v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · ' + v.fields.length + ' fields' : 'No options yet · ' + v.fields.length + ' fields',
           range: ps.length ? C.yen(Math.min(...ps)) + (ps.length > 1 ? ' – ' + C.yen(Math.max(...ps)) : '') + ' incl. tax' : '—',
           shortlisted: sl ? sl + ' shortlisted' : '',
-          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
+          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
             cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} }, cmpConfirmArchive: false })
         };
       });
       const can = S.cmpNewCat.trim().length > 0 && !S.cmpBusy;
+      if (S.cmpImp) return { ...base, showImport: true, imp: this.importVals(S), title: 'Compare', subtitle: '' };
       return { ...base, showList: true, cats, title: 'Compare',
+        onImportFile: (e) => { const f = e.target.files && e.target.files[0]; try { e.target.value = ''; } catch (x) {} this.cmpImportFile(f); },
         subtitle: 'What to buy: options for one need side by side, on one tax basis, with your own photos. ' + (sample ? 'Sample data: six folding tables from your notes.' : 'Only you can see these.'),
         newCatName: S.cmpNewCat, onNewCatName: (e) => this.setState({ cmpNewCat: e.target.value, cmpError: null }),
         onNewCatKey: (e) => { if (e.key === 'Enter') this.cmpCreateCategory(); }, createCat: () => this.cmpCreateCategory(), createCatStyle: softBtn(can) };
@@ -3087,6 +3567,17 @@ class Component extends DCLogic {
       return { text: L.text, diffs: L.diffs.length ? L.diffs.join(' · ') : L.note };
     };
     const tint = 'background:#F0F8F4;';
+    // Tracked products, as Home builds them. Live: only the real watchlist, never
+    // the fixtures build() falls back to when nothing is tracked yet.
+    const built = this.build();
+    const tracked = sample ? (built.products || []) : (built.live ? built.products || [] : []);
+    const watchOf = (r) => {
+      if (!r.product_id) return null;
+      const q = tracked.find((p) => String(p.id) === String(r.product_id));
+      if (!q) return { pill: null, label: '', text: 'Watching · prices are being collected' };
+      return { pill: this.pill(q.verdict), label: this.vlabel(q.verdict), open: this.open(q.id),
+        text: q.bestStore + ' ' + this.yen(q.current) + (q.median ? ' · ' + q.medianLabel + ' ' + this.yen(q.median) : '') };
+    };
     const photosOf = (id) => (D.photos || []).filter((p) => p.option_id === id && S.cmpPhotoUrls[p.storage_path]);
     const cssUrl = (u) => 'url("' + String(u).replace(/["\\\n]/g, '') + '")';
     const openViewer = (id, i) => this.setState({ cmpViewPhoto: { option: id, i } });
@@ -3119,6 +3610,24 @@ class Component extends DCLogic {
           return !n ? '' : n === fields.length ? 'No specs recorded yet.' : n + ' of ' + fields.length + ' specs not recorded.';
         })(),
         verdict: r.verdict || '', notes: r.notes || '',
+        watch: watchOf(r),
+        ...(() => {
+          const sent = r.wish_request_id ? (S.cmpWishReplies[r.wish_request_id] || {}) : null;
+          const day = r.wish_sent_at ? String(r.wish_sent_at).slice(0, 10) : '';
+          const wishText = !sent ? '' : sent.status === 'logged' ? 'Logged in Cost' + (sent.at ? ' · ' + String(sent.at).slice(0, 10) : '')
+            : sent.status === 'rejected' ? 'Cost declined the wishlist request' + (sent.at ? ' · ' + String(sent.at).slice(0, 10) : '')
+            : 'In Cost’s wishlist inbox · sent ' + day;
+          const confirming = S.cmpWishConfirm === r.id;
+          return {
+            wishText, wishStyle: 'font-size:11px;font-weight:700;padding:6px 10px;border-radius:9px;' + (sent && sent.status === 'logged' ? 'background:#E3F3EC;color:#0F6B4F;' : sent && sent.status === 'rejected' ? 'background:#F1EDE6;color:#6F6A62;' : 'background:#FBEFD9;color:#7A4F08;'),
+            showWishBtn: (!sent || sent.status === 'rejected') && !confirming, wishLabel: sent && sent.status === 'rejected' ? 'Send again' : 'Send to wishlist',
+            askWish: () => (r.lead ? this.setState({ cmpWishConfirm: r.id, cmpError: null }) : this.setState({ cmpError: 'Add a price first: Cost needs an amount for the wishlist.' })),
+            wishConfirm: confirming ? 'Send ' + r.name + ' at ' + (r.lead ? C.yen(r.lead.price_incl) : '') + ' (' + (r.lead ? this.cmpShopLabel(r.lead) : '') + ') to Cost’s wishlist?' : '',
+            wishGo: () => this.cmpSendWish(r, r.lead, cat.name), wishCancel: () => this.setState({ cmpWishConfirm: null })
+          };
+        })(),
+        canWatch: online && !r.product_id, startWatch: () => this.cmpOpenWatch(r),
+        unwatch: r.product_id ? () => this.cmpUnwatch(r) : null,
         edit: () => this.cmpOpenOption(r),
         shortlist: () => this.cmpSetStatus(r, r.status === 'shortlisted' ? 'considering' : 'shortlisted'),
         shortlistLabel: r.status === 'shortlisted' ? '★ Shortlisted' : '☆ Shortlist',
@@ -3136,6 +3645,10 @@ class Component extends DCLogic {
       { label: 'Price (incl. tax)', cells: v.rows.map((r) => ({ text: r.lead ? C.yen(r.lead.price_incl) : '—', sub: r.lead ? this.cmpShopLabel(r.lead) + (r.lead.tax_basis === 'excl' ? ' · tag ' + C.yen(r.lead.price) + ' + tax' : '') : '', style: cell("font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;") })) },
       { label: 'Member price', cells: v.rows.map((r) => ({ text: r.member ? C.yen(r.member.price_incl) : '—', sub: r.member ? r.member.member_program : '', style: cell("font-family:'IBM Plex Mono',monospace;") })) },
       { label: 'Pay more, get what', cells: v.rows.map((r) => { const p = payFor(r); return { text: p.text || '—', sub: p.diffs, style: cell('font-size:11px;') }; }) },
+      ...(v.rows.some((r) => r.product_id) ? [{ label: 'Price watch', cells: v.rows.map((r) => {
+        const w = watchOf(r);
+        return { text: w ? (w.label || 'Watching') : '—', sub: w ? w.text : '', style: cell(w && w.label ? 'font-weight:700;' : '') };
+      }) }] : []),
       { label: 'Size', cells: v.rows.map((r) => ({ text: r.pack_qty + ' ' + r.pack_unit + (r.size_label ? ' · ' + r.size_label : ''), style: cell() })) }
     ].concat(v.per.unit ? [{ label: 'Per ' + v.per.unit, cells: v.rows.map((r) => ({ text: v.per.values[r.id] != null ? C.yen(v.per.values[r.id]) : '—', style: cell("font-family:'IBM Plex Mono',monospace;") })) }] : [])
       .concat(fields.map((f) => ({ label: f.label + (f.unit ? ' (' + f.unit + ')' : ''), cells: v.rows.map((r) => {
@@ -3237,6 +3750,34 @@ class Component extends DCLogic {
     const betterWord = { higher: 'higher is better', lower: 'lower is better', none: '' };
 
     const anyFilter = filters.maxPrice || F.statuses.length || F.source !== 'all' || F.mustHave.length || Object.values(filters.min).some((x) => x > 0);
+    let watchPanel = null;
+    if (S.cmpWatch) {
+      const W = S.cmpWatch, opt = (D.options || []).find((o) => o.id === W.id);
+      if (opt) {
+        const isAmazon = opt.store_id === 2;
+        watchPanel = {
+          title: 'Watch price · ' + opt.name,
+          intro: isAmazon
+            ? 'Amazon JP prices are not collected automatically. Pick the same item on Rakuten and Chatak will record its price every morning.'
+            : 'Pick the Rakuten listing for this item, or paste its link. Chatak records its price every morning and shows the verdict here and on Home.',
+          q: W.q, onQ: (e) => this.cmpWatchPatch({ q: e.target.value, error: null }),
+          onQKey: (e) => { if (e.key === 'Enter') this.cmpWatchSearch(); },
+          search: () => this.cmpWatchSearch(), searchStyle: softBtn(!!W.q.trim() && !W.busy),
+          url: W.url, onUrl: (e) => this.cmpWatchPatch({ url: e.target.value.trim(), error: null }),
+          addUrl: () => this.cmpWatchUrl(W.url), addUrlStyle: softBtn(this.cmpIsRakuten(W.url) && !W.busy),
+          busy: W.busy, error: W.error,
+          results: (W.results || []).map((x) => ({
+            name: x.name, meta: [x.subtitle, x.current ? this.yen(x.current) : ''].filter(Boolean).join(' · '),
+            go: () => this.cmpWatchUrl(x.url)
+          })),
+          noResults: W.results && !W.results.length ? 'Nothing on Rakuten for that. Try fewer words, or the model number.' : '',
+          trackedTitle: tracked.length ? (sample ? 'Sample products' : 'Already on Home') : '',
+          tracked: tracked.map((p) => ({ name: p.short || p.name, meta: p.bestStore + ' ' + this.yen(p.current), pill: this.pill(p.verdict), label: this.vlabel(p.verdict), go: () => this.cmpWatchLink(p.id, p.short || p.name) })),
+          close: () => this.setState({ cmpWatch: null })
+        };
+      }
+    }
+
     let viewer = null;
     if (S.cmpViewPhoto) {
       const pics = photosOf(S.cmpViewPhoto.option), n = pics.length;
@@ -3259,11 +3800,11 @@ class Component extends DCLogic {
       }
     }
 
-    return { ...base, inCat: true, title: cat.name, viewer,
+    return { ...base, inCat: true, title: cat.name, viewer, watchPanel,
       subtitle: v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · prices compared tax-included · the green tint marks the best value in a column where you said which way is better. Nothing is scored.',
-      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
+      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
       views: [['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => ({ label: l, go: () => this.setState({ cmpView: k }), style: this.seg(S.cmpView === k) })),
-      toggleFields: () => this.setState({ cmpFieldsOpen: !S.cmpFieldsOpen, cmpEdit: null, cmpError: null, cmpConfirmArchive: false }),
+      toggleFields: () => this.setState({ cmpFieldsOpen: !S.cmpFieldsOpen, cmpEdit: null, cmpWatch: null, cmpError: null, cmpConfirmArchive: false }),
       fieldsBtnStyle: chip(S.cmpFieldsOpen).replace('padding:6px 11px', 'padding:9px 14px').replace('border-radius:999px', 'border-radius:12px'),
       newOption: () => this.cmpNewOption(),
       fieldsOpen: S.cmpFieldsOpen,
