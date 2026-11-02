@@ -211,7 +211,17 @@
     return { categories, fields: F, options, prices, photos: [] };
   }
 
-  const api = { yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
+  // A maker's model number in a name: "MC-AA01-HA cover, grey" → "MC-AA01-HA",
+  // "Sanwa SKB-BT25BK (US layout)" → "SKB-BT25BK". Starts with a letter, has a
+  // digit, at least 4 characters; the longest wins. null when there is none.
+  // Shop searches match every word, so this is what finds a listing.
+  function modelCodeOf(text) {
+    const hits = String(text || '').match(/[A-Za-z][A-Za-z0-9]*(?:[-‐][A-Za-z0-9]+)*/g) || [];
+    const codes = hits.filter((t) => /\d/.test(t) && t.replace(/[-‐]/g, '').length >= 4 && !/^[xX\d.]+$/.test(t));  // not "x48x30"
+    return codes.sort((a, b) => b.length - a.length)[0] || null;
+  }
+
+  const api = { modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakCompare = api;
 })(typeof window !== 'undefined' ? window : globalThis);

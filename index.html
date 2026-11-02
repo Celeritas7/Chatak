@@ -1507,6 +1507,7 @@
                 <button onClick="{{ cmp.watchPanel.search }}" style="{{ cmp.watchPanel.searchStyle }}">Search Rakuten</button>
               </div>
               <sc-if value="{{ cmp.watchPanel.busy }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.watchPanel.busy }}</span></sc-if>
+              <sc-if value="{{ cmp.watchPanel.retried }}"><span style="font-size:12px;color:#7A4F08;">{{ cmp.watchPanel.retried }}</span></sc-if>
               <sc-for list="{{ cmp.watchPanel.results }}" as="x" hint-placeholder-count="3">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #F2EEE7;">
                   <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
@@ -3477,7 +3478,9 @@ class Component extends DCLogic {
 
   cmpOpenWatch(o) {
     this.setState({
-      cmpWatch: { id: o.id, q: [o.brand, o.name].filter(Boolean).join(' '), url: this.cmpIsRakuten(o.url) ? o.url : '', results: null, busy: null, error: null },
+      // Rakuten matches every word against Japanese listings, so the model
+      // number alone finds far more than an English name does.
+      cmpWatch: { id: o.id, q: window.ChatakCompare.modelCodeOf([o.model_code, o.name].filter(Boolean).join(' ')) || [o.brand, o.name].filter(Boolean).join(' '), url: this.cmpIsRakuten(o.url) ? o.url : '', results: null, busy: null, error: null },
       cmpEdit: null, cmpPrice: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending()
     });
     try { window.scrollTo(0, 0); } catch (e) {}
@@ -3489,10 +3492,18 @@ class Component extends DCLogic {
     const W = this.state.cmpWatch;
     if (!W || W.busy || !W.q.trim()) return;
     if (!this.cmpLive()) { this.cmpWatchPatch({ error: 'Rakuten search needs the live app. In the sample, link one of the sample products below.' }); return; }
-    this.cmpWatchPatch({ busy: 'Searching Rakuten…', error: null, results: null });
+    this.cmpWatchPatch({ busy: 'Searching Rakuten…', error: null, results: null, retried: null });
     try {
-      const results = (await this._api.searchRakuten(W.q.trim())).filter((r) => r.url);
-      this.cmpWatchPatch({ busy: null, results });
+      const q = W.q.trim();
+      let results = (await this._api.searchRakuten(q)).filter((r) => r.url);
+      // Nothing for the whole phrase: try the model number in it, and say so.
+      const code = window.ChatakCompare.modelCodeOf(q);
+      let retried = null;
+      if (!results.length && code && code !== q) {
+        results = (await this._api.searchRakuten(code)).filter((r) => r.url);
+        retried = 'Nothing for "' + q + '", so these are for the model number ' + code + '.';
+      }
+      this.cmpWatchPatch({ busy: null, results, retried: results.length ? retried : null });
     } catch (e) {
       this.cmpWatchPatch({ busy: null, error: 'Rakuten search failed: ' + (e.message || e) });
     }
@@ -3803,7 +3814,8 @@ class Component extends DCLogic {
             name: x.name, meta: [x.subtitle, x.current ? this.yen(x.current) : ''].filter(Boolean).join(' · '),
             go: () => this.cmpWatchUrl(x.url, x.itemCode)
           })),
-          noResults: W.results && !W.results.length ? 'Nothing on Rakuten for that. Try fewer words, or the model number.' : '',
+          noResults: W.results && !W.results.length ? 'Nothing on Rakuten for that. Rakuten matches every word, in Japanese listings: try the model number alone, or the Japanese name (e.g. 象印 ボトルカバー).' : '',
+          retried: W.retried || '',
           trackedTitle: tracked.length ? (sample ? 'Sample products' : 'Already on Home') : '',
           tracked: tracked.map((p) => ({ name: p.short || p.name, meta: p.bestStore + ' ' + this.yen(p.current), pill: this.pill(p.verdict), label: this.vlabel(p.verdict), go: () => this.cmpWatchLink(p.id, p.short || p.name) })),
           close: () => this.setState({ cmpWatch: null })
