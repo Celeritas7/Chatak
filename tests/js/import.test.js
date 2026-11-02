@@ -99,6 +99,8 @@ test('import keys are stable and a repeated row is marked, not added twice', () 
 });
 
 test('helpers', () => {
+  assert.deepEqual(I.packOf('10-30kg'), { qty: 1, unit: 'pc', label: '10-30kg', assumed: false }, 'a range is a description, not a pack');
+  assert.deepEqual(I.packOf('500〜750ml'), { qty: 1, unit: 'pc', label: '500〜750ml', assumed: false });
   assert.equal(I.yenOf('¥1,639'), 1639);
   assert.equal(I.yenOf('１６３９円'), 1639);
   assert.equal(I.yenOf(''), null);
