@@ -18,6 +18,7 @@ async function page(b, w, h) {
     const map = (u) => path.join(NM, u.includes('react-dom@') ? 'react-dom/umd/react-dom.production.min.js' : u.includes('react@') ? 'react/umd/react.production.min.js' : '@babel/standalone/babel.min.js');
     await p.route('https://unpkg.com/**', (r) => r.fulfill({ path: map(r.request().url()), contentType: 'application/javascript' }));
   }
+  await p.route('**/js/chatak-public-config.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // stay on sample data
   await p.route('**/js/chatak-config.js', (r) => r.fulfill({ body: "window.CHATAK_CONFIG={signedOutView:'sample'};", contentType: 'application/javascript' }));
   p._errors = [];
   p.on('pageerror', (e) => p._errors.push(e.message));
@@ -218,13 +219,24 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   await d.getByText('Folding bed table').first().click();
   await d.waitForSelector('text=Price (incl. tax)');
   const rows = await d.$$eval("div[style*='grid-template-columns: 170px']", (r) => r.map((x) => x.innerText.split('\n')[0]));
-  ok(rows.length === 14 && rows[0] === 'Option' && rows.includes('Load capacity (kg)'), 'desktop opens the table: 5 rows + 9 fields');
+  ok(rows.length === 15 && rows[0] === 'Option' && rows[1] === 'Actions' && rows.includes('Load capacity (kg)'), 'desktop opens the table: 6 rows + 9 fields');
   const widthRow = await d.$$eval("div[style*='grid-template-columns: 170px']", (r) => {
     const row = r.find((x) => x.innerText.startsWith('Width'));
     return [...row.children].slice(1).map((c) => [c.innerText.trim(), getComputedStyle(c).backgroundColor]);
   });
   ok(widthRow.filter(([, bg]) => bg === 'rgb(240, 248, 244)').map(([v]) => v).join() === '70', 'table: only the 70 cm width cell is tinted');
   await d.screenshot({ path: path.join(OUT, 'compare-desktop-table.png') });
+  // the table has the cards' actions: watch price, send to wishlist, shortlist
+  const actions = d.locator("div[style*='grid-template-columns: 170px']").nth(1);
+  ok(await actions.getByRole('button', { name: 'Watch price' }).count() === 4, 'table: Watch price for the 4 online options');
+  ok(await actions.getByRole('button', { name: 'Send to wishlist' }).count() === 6, 'table: Send to wishlist for every option');
+  await actions.getByRole('button', { name: 'Watch price' }).first().click();
+  await d.waitForSelector('text=Search Rakuten');
+  ok((await d.evaluate(() => document.body.innerText)).includes('Watch price · '), 'table: Watch price opens the Rakuten panel');
+  await d.getByRole('button', { name: 'Close' }).click();
+  await actions.getByRole('button', { name: 'Send to wishlist' }).first().click();
+  ok(await actions.getByRole('button', { name: 'Send', exact: true }).count() === 1 && (await actions.innerText()).includes('to Cost’s wishlist?'), 'table: Send to wishlist asks first');
+  await actions.getByRole('button', { name: 'Cancel' }).click();
   // the other screens still render with Compare added
   for (const tab of ['Home', 'Price matrix', 'Deal feed', 'Season calendar', 'Alerts', 'Settings', 'Compare']) {
     await d.locator('aside button', { hasText: tab }).first().click();
