@@ -132,6 +132,13 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   await m.getByRole('button', { name: 'Add option' }).click();
   await m.waitForSelector('text=Added Photo first table.');
   ok(await m.locator('article', { hasText: 'Photo first table' }).getByRole('button', { name: 'View photo' }).count() === 1, 'new option saved with its photo');
+  await m.getByRole('button', { name: 'Table', exact: true }).click();
+  const photoRow = m.locator("div[style*='grid-template-columns: 170px']").filter({ has: m.getByRole('button', { name: 'Open the photo of Photo first table' }) });
+  ok(await photoRow.count() === 1 && (await photoRow.innerText()).startsWith('Photo'), 'table: a Photo row with a thumbnail');
+  await m.getByRole('button', { name: 'Open the photo of Photo first table' }).click();
+  ok(await m.locator('[role=dialog]').count() === 1, 'table: the thumbnail opens the photo');
+  await m.keyboard.press('Escape');
+  await m.getByRole('button', { name: 'Cards', exact: true }).click();
 
   // online, at a seller with no store row, before its page is found
   await m.getByRole('button', { name: '+ Option' }).click();
