@@ -221,7 +221,30 @@
     return codes.sort((a, b) => b.length - a.length)[0] || null;
   }
 
-  const api = { modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
+  // What a pasted product link says by itself: the store (ids as chatak_stores:
+  // 1 Rakuten, 2 Amazon JP, 5 Yahoo Shopping) and, for Amazon links that carry
+  // one, the product name in the path (amazon.co.jp/<name>/dp/<ASIN>).
+  // Nothing is fetched; null fields mean the link does not say.
+  function linkInfo(raw) {
+    let u;
+    try { u = new URL(String(raw || '').trim()); } catch (e) { return { store_id: null, name: null, asin: null }; }
+    const h = u.hostname.toLowerCase(), path = u.pathname;
+    let store_id = null, name = null, asin = null;
+    if (/(^|\.)amazon\.co\.jp$|(^|\.)amzn\.(asia|to)$/.test(h)) {
+      store_id = 2;
+      const m = /^\/(?:([^/]+)\/)?(?:dp|gp\/product)\/([A-Z0-9]{10})/i.exec(path);
+      if (m) {
+        asin = m[2].toUpperCase();
+        if (m[1] && m[1] !== 'dp') {
+          try { name = decodeURIComponent(m[1]).replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim() || null; } catch (e) { name = null; }
+        }
+      }
+    } else if (/(^|\.)rakuten\.co\.jp$/.test(h)) store_id = 1;
+    else if (/(^|\.)shopping\.yahoo\.co\.jp$|(^|\.)store\.shopping\.yahoo\.co\.jp$/.test(h)) store_id = 5;
+    return { store_id, name, asin };
+  }
+
+  const api = { linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakCompare = api;
 })(typeof window !== 'undefined' ? window : globalThis);

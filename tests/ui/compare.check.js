@@ -187,6 +187,27 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   await m.waitForSelector('text=Stopped watching from Compare.');
   ok(await card('Bed table 70x48x30').getByRole('button', { name: 'Watch price' }).count() === 1, 'stop watching: back to Watch price');
 
+  // + From Rakuten: results become options with a price; adding twice does nothing
+  await m.getByRole('button', { name: '+ From Rakuten' }).click();
+  ok(await m.getByLabel('Search Rakuten to add').inputValue() === 'Folding bed table', 'add from Rakuten: the search starts with the need name');
+  await m.getByRole('button', { name: 'Search Rakuten' }).click();
+  await m.getByRole('button', { name: /^Add: SAIJI bed desk, height/ }).click();
+  await m.waitForSelector('text=Added SAIJI bed desk');
+  ok(await m.getByRole('button', { name: /^Added ✓: SAIJI bed desk, height/ }).count() === 1, 'add from Rakuten: the result shows as added');
+  await m.getByRole('button', { name: 'Done' }).click();
+  const saiji = (await m.$$eval('article', (a) => a.map((x) => x.innerText))).find((x) => x.includes('SAIJI bed desk, height')) || '';
+  ok(saiji.includes('¥4,578') && saiji.includes('Rakuten'), 'add from Rakuten: the option has its price and store');
+  // + Option: an Amazon link sets the store and fills the name
+  await m.getByRole('button', { name: '+ Option' }).click();
+  await m.getByRole('button', { name: 'Online', exact: true }).first().click();
+  await m.getByRole('button', { name: 'Rakuten', exact: true }).first().click();
+  await m.getByPlaceholder('Product page link (optional, https://…)').fill('https://www.amazon.co.jp/SAIJI-Bed-Desk-Foldable/dp/B0ABCDEF12/ref=sr_1_1');
+  ok(await m.getByPlaceholder('e.g. MY space table').inputValue() === 'SAIJI Bed Desk Foldable', 'Amazon link: the name comes from the link');
+  ok(await m.getByPlaceholder('e.g. CTY-6045NA').inputValue() === 'B0ABCDEF12', 'Amazon link: the ASIN goes in Model');
+  const amazonChip = await m.getByRole('button', { name: 'Amazon JP', exact: true }).first().evaluate((b) => getComputedStyle(b).backgroundColor);
+  ok(amazonChip === 'rgb(28, 26, 23)', 'Amazon link: Amazon JP is selected as the store');
+  await m.getByRole('button', { name: 'Cancel' }).click();
+
   // send to wishlist: asks first, says what goes to Cost, then shows the request on the card
   await card('MY space table').getByRole('button', { name: 'Send to wishlist' }).click();
   ok((await card('MY space table').innerText()).includes('Send MY space table at ¥1,802 (Donki) to Cost’s wishlist?'), 'wishlist: confirm names the item, the price incl. tax and the shop');

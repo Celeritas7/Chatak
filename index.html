@@ -1347,6 +1347,7 @@
                   </sc-for>
                 </div>
                 <button onClick="{{ cmp.toggleFields }}" style="{{ cmp.fieldsBtnStyle }}">Fields</button>
+                <button onClick="{{ cmp.openAdd }}" style="padding:9px 14px;border-radius:12px;border:1px solid #CFE3DA;background:#F3F9F6;color:#0E6B4E;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">+ From Rakuten</button>
                 <button onClick="{{ cmp.newOption }}" style="padding:9px 14px;border-radius:12px;border:0;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Option</button>
               </div>
             </sc-if>
@@ -1494,6 +1495,31 @@
                 <button onClick="{{ cmp.nf.add }}" style="{{ cmp.nf.addStyle }}">Add field</button>
               </div>
               <button onClick="{{ cmp.archiveCat }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#A5322A;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">{{ cmp.archiveLabel }}</button>
+            </section>
+          </sc-if>
+
+          <!-- + From Rakuten -->
+          <sc-if value="{{ cmp.addPanel }}">
+            <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:12px;">
+              <h2 style="margin:0;font-size:16px;font-weight:800;">Add options from Rakuten</h2>
+              <span style="font-size:12px;color:#6F6A62;line-height:1.5;">Search, then press Add on each listing you want to compare. Each becomes an option with its shop, link and today's price. Amazon has no price feed: add Amazon items with + Option and paste the link.</span>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input value="{{ cmp.addPanel.q }}" onChange="{{ cmp.addPanel.onQ }}" onKeyDown="{{ cmp.addPanel.onQKey }}" aria-label="Search Rakuten to add" placeholder="Brand and a Japanese word, e.g. SAIJI ベッドデスク" style="flex:1;min-width:min(220px,100%);padding:9px 11px;border-radius:10px;border:1px solid #DDD7CE;background:#FBFAF7;font-size:16px;color:#1C1A17;outline:none;" />
+                <button onClick="{{ cmp.addPanel.search }}" style="{{ cmp.addPanel.searchStyle }}">Search Rakuten</button>
+              </div>
+              <sc-if value="{{ cmp.addPanel.busy }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.addPanel.busy }}</span></sc-if>
+              <sc-for list="{{ cmp.addPanel.results }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #F2EEE7;">
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <a href="{{ x.url }}" target="_blank" rel="noopener noreferrer" style="font-size:12px;font-weight:600;line-height:1.4;color:#1C1A17;text-decoration:none;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ x.name }}</a>
+                    <span style="font-size:11px;color:#6F6A62;">{{ x.meta }}</span>
+                  </span>
+                  <button onClick="{{ x.go }}" aria-label="{{ x.aria }}" style="{{ x.style }}">{{ x.label }}</button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ cmp.addPanel.noResults }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.addPanel.noResults }}</span></sc-if>
+              <sc-if value="{{ cmp.addPanel.error }}"><div style="font-size:12px;color:#B03A31;font-weight:600;">{{ cmp.addPanel.error }}</div></sc-if>
+              <button onClick="{{ cmp.addPanel.close }}" style="align-self:flex-start;padding:8px 2px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Done</button>
             </section>
           </sc-if>
 
@@ -1934,7 +1960,9 @@ class Component extends DCLogic {
     // Import: the spreadsheet being reviewed, then loaded.
     cmpImp: null,
     // Send to wishlist: the option awaiting confirmation, and Cost's replies by request id.
-    cmpWishConfirm: null, cmpWishReplies: {}
+    cmpWishConfirm: null, cmpWishReplies: {},
+    // + From Rakuten: search results to add as options, and which ones were added.
+    cmpAdd: null
   };
 
   chartRef = React.createRef();
@@ -2939,7 +2967,7 @@ class Component extends DCLogic {
       cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', seller: '', store_id: 2, url: '',
         qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null, cmpAdd: null
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -2950,7 +2978,7 @@ class Component extends DCLogic {
       cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', seller: o.source_kind === 'online' && o.store_id == null ? (o.shop_name || '') : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
         name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null, cmpAdd: null
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -3474,6 +3502,70 @@ class Component extends DCLogic {
     };
   }
 
+  // ---- + From Rakuten: options straight from search results ----
+  // Each result becomes an online Rakuten option with today's price. The import
+  // key rakuten:<itemCode> makes adding the same listing twice a no-op.
+  cmpOpenAdd() {
+    const cat = (this.state.cmp.categories || []).find((c) => c.id === this.state.cmpCat);
+    this.setState({ cmpAdd: { q: cat ? cat.name : '', results: null, busy: null, error: null, added: {} },
+      cmpEdit: null, cmpPrice: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  cmpAddPatch(patch) { this.setState((s) => ({ cmpAdd: s.cmpAdd ? { ...s.cmpAdd, ...patch } : null })); }
+
+  async cmpAddSearch() {
+    const A = this.state.cmpAdd;
+    if (!A || A.busy || !A.q.trim()) return;
+    if (!this.cmpLive()) {
+      // Sample data: two example listings, so the flow can be tried without an account.
+      this.cmpAddPatch({ error: null, results: [
+        { itemCode: 'sample:saiji-m', name: 'SAIJI bed desk, height and angle adjustable, medium (sample listing)', subtitle: 'Sample shop', current: 4578, url: 'https://item.rakuten.co.jp/sample/saiji-m/' },
+        { itemCode: 'sample:saiji-l', name: 'SAIJI bed desk, large (sample listing)', subtitle: 'Sample shop', current: 5980, url: 'https://item.rakuten.co.jp/sample/saiji-l/' }] });
+      return;
+    }
+    this.cmpAddPatch({ busy: 'Searching Rakuten…', error: null, results: null });
+    try {
+      const q = A.q.trim();
+      let results = (await this._api.searchRakuten(q)).filter((r) => r.url && r.itemCode);
+      const code = window.ChatakCompare.modelCodeOf(q);
+      if (!results.length && code && code !== q) results = (await this._api.searchRakuten(code)).filter((r) => r.url && r.itemCode);
+      this.cmpAddPatch({ busy: null, results });
+    } catch (e) {
+      this.cmpAddPatch({ busy: null, error: 'Rakuten search failed: ' + (e.message || e) });
+    }
+  }
+
+  async cmpAddResult(x) {
+    const A = this.state.cmpAdd, cat = this.state.cmpCat;
+    if (!A || A.busy || A.added[x.itemCode]) return;
+    const key = 'rakuten:' + cat + ':' + x.itemCode;   // per need: one listing can sit in two needs
+    if ((this.state.cmp.options || []).some((o) => o.import_key === key)) { this.cmpAddPatch({ added: { ...A.added, [x.itemCode]: true } }); return; }
+    const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+    const name = String(x.name || '').replace(/[【\[][^】\]]*[】\]]/g, ' ').replace(/\s+/g, ' ').trim();
+    const row = { category_id: cat, name: name.length > 80 ? name.slice(0, 78) + '…' : name, name_ja: name.length > 80 ? name.slice(0, 200) : null,
+      source_kind: 'online', store_id: 1, shop_name: null, url: x.url, pack_qty: 1, pack_unit: 'pc', size_label: null,
+      notes: 'Rakuten shop: ' + (x.subtitle || 'unknown') + '. Added from a Rakuten search on ' + today + '.', photo_check: false, import_key: key };
+    const price = x.current > 0 ? { store_id: 1, shop_name: null, price: x.current, tax_basis: 'incl', tax_rate: 10, price_kind: 'online', seen_on: today,
+      note: 'Rakuten, ' + (x.subtitle || 'shop not given') + '.', import_key: key + ':' + today + ':' + x.current } : null;
+    this.cmpAddPatch({ busy: 'Adding…', error: null });
+    try {
+      if (this.cmpLive()) {
+        const [o] = await this._api.importCmpOptions([row]);
+        if (price && o) await this._api.importCmpPrices([{ ...price, option_id: o.id }]);
+        await this.loadCompare();
+      } else {
+        const id = 'o-r-' + Date.now();
+        this.setState((s) => ({ cmp: { ...s.cmp, options: s.cmp.options.concat([{ ...row, id, specs: {}, status: 'considering' }]),
+          prices: price ? s.cmp.prices.concat([{ ...price, id: Date.now(), option_id: id, source: 'url' }]) : s.cmp.prices } }));
+      }
+      this.setState((s) => ({ cmpAdd: s.cmpAdd ? { ...s.cmpAdd, busy: null, added: { ...s.cmpAdd.added, [x.itemCode]: true } } : null,
+        cmpInfo: 'Added ' + row.name.slice(0, 50) + (price ? ' at ' + window.ChatakCompare.yen(price.price) : '') + '.' }));
+    } catch (e) {
+      this.cmpAddPatch({ busy: null, error: 'Not added: ' + (e.message || e) });
+    }
+  }
+
   // ---- send to wishlist (phase 4) ----
   // A purchase_request to Cost through the hub, like Sukkiri's and WF's. Cost
   // shows it in its purchase inbox and answers logged or rejected.
@@ -3584,7 +3676,7 @@ class Component extends DCLogic {
           count: v.all.length ? v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · ' + v.fields.length + ' fields' : 'No options yet · ' + v.fields.length + ' fields',
           range: ps.length ? C.yen(Math.min(...ps)) + (ps.length > 1 ? ' – ' + C.yen(Math.max(...ps)) : '') + ' incl. tax' : '—',
           shortlisted: sl ? sl + ' shortlisted' : '',
-          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
+          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpWatch: null, cmpAdd: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
             cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} }, cmpConfirmArchive: false })
         };
       });
@@ -3755,7 +3847,14 @@ class Component extends DCLogic {
         stores: this.cmpStores().map((s) => ({ label: s.name, go: () => set({ store_id: s.id }), style: chip(E.store_id === s.id) }))
           .concat([{ label: 'Other seller', go: () => set({ store_id: null }), style: chip(E.store_id == null) }]),
         isOtherSeller: E.store_id == null, seller: E.seller || '', onSeller: (e) => set({ seller: e.target.value }),
-        url: E.url, onUrl: (e) => set({ url: e.target.value.trim() }),
+        url: E.url, onUrl: (e) => {
+          // The link says which store it is, and Amazon links often carry the name.
+          const url = e.target.value.trim(), L = window.ChatakCompare.linkInfo(url), patch = { url };
+          if (L.store_id && this.cmpStores().some((x) => x.id === L.store_id)) patch.store_id = L.store_id;
+          if (L.name && !E.name.trim()) patch.name = L.name;
+          if (L.asin && !E.model_code) patch.model_code = L.asin;
+          set(patch);
+        },
         qty: E.qty, onQty: (e) => set({ qty: e.target.value.replace(/[^\d.,]/g, '') }),
         units: ['pc', 'set', 'pair', 'sheet', 'roll', 'g', 'kg', 'ml', 'L', 'cm', 'm'].map((u) => ({ label: u, go: () => set({ pack_unit: u }), style: chip(E.pack_unit === u) })),
         noFields: !myFields.length,
@@ -3878,11 +3977,27 @@ class Component extends DCLogic {
 
     return { ...base, inCat: true, title: cat.name, viewer, watchPanel,
       subtitle: v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · prices compared tax-included · the green tint marks the best value in a column where you said which way is better. Nothing is scored.',
-      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpWatch: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
+      back: () => this.setState({ cmpCat: null, cmpEdit: null, cmpWatch: null, cmpAdd: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null }),
       views: [['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => ({ label: l, go: () => this.setState({ cmpView: k }), style: this.seg(S.cmpView === k) })),
       toggleFields: () => this.setState({ cmpFieldsOpen: !S.cmpFieldsOpen, cmpEdit: null, cmpWatch: null, cmpError: null, cmpConfirmArchive: false }),
       fieldsBtnStyle: chip(S.cmpFieldsOpen).replace('padding:6px 11px', 'padding:9px 14px').replace('border-radius:999px', 'border-radius:12px'),
       newOption: () => this.cmpNewOption(),
+      openAdd: () => this.cmpOpenAdd(),
+      addPanel: S.cmpAdd ? (() => {
+        const A = S.cmpAdd;
+        return {
+          q: A.q, onQ: (e) => this.cmpAddPatch({ q: e.target.value, error: null }), onQKey: (e) => { if (e.key === 'Enter') this.cmpAddSearch(); },
+          search: () => this.cmpAddSearch(), searchStyle: softBtn(!!A.q.trim() && !A.busy), busy: A.busy, error: A.error,
+          results: (A.results || []).map((x) => {
+            const done = !!A.added[x.itemCode] || (D.options || []).some((o) => o.import_key === 'rakuten:' + cat.id + ':' + x.itemCode);
+            return { name: x.name, meta: [x.subtitle, x.current ? C.yen(x.current) + ' incl. tax' : ''].filter(Boolean).join(' · '), url: x.url,
+              go: () => this.cmpAddResult(x), label: done ? 'Added ✓' : 'Add', aria: (done ? 'Added ✓: ' : 'Add: ') + x.name,
+              style: 'flex-shrink:0;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:' + (done ? 'default' : 'pointer') + ';' + (done ? 'border:1px solid #CFE3DA;background:#F3F9F6;color:#0E6B4E;' : 'border:0;background:#0E6B4E;color:#fff;') };
+          }),
+          noResults: A.results && !A.results.length ? 'Nothing on Rakuten for that. Rakuten matches every word, in Japanese listings: try the brand and a Japanese word (e.g. SAIJI ベッドデスク).' : '',
+          close: () => this.setState({ cmpAdd: null })
+        };
+      })() : null,
       fieldsOpen: S.cmpFieldsOpen,
       fieldRows: fields.map((f) => ({ label: f.label, meta: [{ number: 'Number', bool: 'Yes / no', choice: 'Choice: ' + (f.choices || []).join(', '), text: 'Text' }[f.kind], f.unit, betterWord[f.better]].filter(Boolean).join(' · '),
         remove: () => this.cmpRemoveField(f) })),
