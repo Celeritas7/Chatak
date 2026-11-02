@@ -35,6 +35,7 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
     await m.route('https://unpkg.com/**', (r) => r.fulfill({ path: map(r.request().url()), contentType: 'application/javascript' }));
   }
   if (XL) await m.route('https://cdnjs.cloudflare.com/ajax/libs/xlsx/**', (r) => r.fulfill({ path: XL, contentType: 'application/javascript' }));
+  await m.route('**/js/chatak-public-config.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // stay on sample data
   await m.route('**/js/chatak-config.js', (r) => r.fulfill({ body: "window.CHATAK_CONFIG={signedOutView:'sample'};", contentType: 'application/javascript' }));
   const errors = [];
   m.on('pageerror', (e) => errors.push(e.message));

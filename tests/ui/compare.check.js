@@ -18,6 +18,7 @@ async function page(b, w, h) {
     const map = (u) => path.join(NM, u.includes('react-dom@') ? 'react-dom/umd/react-dom.production.min.js' : u.includes('react@') ? 'react/umd/react.production.min.js' : '@babel/standalone/babel.min.js');
     await p.route('https://unpkg.com/**', (r) => r.fulfill({ path: map(r.request().url()), contentType: 'application/javascript' }));
   }
+  await p.route('**/js/chatak-public-config.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // stay on sample data
   await p.route('**/js/chatak-config.js', (r) => r.fulfill({ body: "window.CHATAK_CONFIG={signedOutView:'sample'};", contentType: 'application/javascript' }));
   p._errors = [];
   p.on('pageerror', (e) => p._errors.push(e.message));

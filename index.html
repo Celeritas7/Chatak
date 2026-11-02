@@ -17,7 +17,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="./js/chatak-public-config.js"></script>
 <script src="./js/chatak-config.js"></script>
+<script>
+  // The local config (gitignored) wins where it is filled in; otherwise the
+  // published project from chatak-public-config.js is used.
+  (function () {
+    var pub = window.CHATAK_PUBLIC_CONFIG || {}, own = window.CHATAK_CONFIG || {};
+    var cfg = Object.assign({}, own);
+    if (!cfg.url || !cfg.anonKey) { cfg.url = pub.url || ''; cfg.anonKey = pub.anonKey || ''; }
+    window.CHATAK_CONFIG = cfg;
+  })();
+</script>
 <script src="./js/chatak-engine.js"></script>
 <script src="./js/chatak-compare.js"></script>
 <script src="./js/chatak-photo.js"></script>

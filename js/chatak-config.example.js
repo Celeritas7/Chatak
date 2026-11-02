@@ -3,8 +3,8 @@
 // gitignored and never shipped, so an upgrade cannot wipe your credentials.
 //
 // Paste your Supabase project URL and anon key below. The app reads this file
-// at startup: with both values filled in it loads your real watchlist; with
-// them blank it runs on generated sample data.
+// at startup: with both values filled in it uses that project; with them
+// blank it uses the published one (js/chatak-public-config.js).
 //
 //   url     Supabase dashboard → Project Settings → API → Project URL
 //   anonKey Supabase dashboard → Project Settings → API → anon / public key
@@ -12,8 +12,9 @@
 // The anon key is designed to be public — row-level security is what protects
 // the data, not the key. Never put the service_role key here.
 //
-// KEEP THIS FILE OUT OF GIT. The published GitHub Pages copy therefore has no
-// credentials and runs on sample data, which is deliberate.
+// KEEP THIS FILE OUT OF GIT. The published site reads the project from
+// js/chatak-public-config.js instead (URL + anon key only); leave url/anonKey
+// blank here to use that same project, or fill them in to point elsewhere.
 
 window.CHATAK_CONFIG = {
   url: '',
