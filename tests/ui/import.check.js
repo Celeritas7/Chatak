@@ -104,7 +104,7 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   await m.getByRole('button', { name: 'Cancel' }).click();
 
   // a bare Price column at a shop with no known convention: asked once per shop
-  const csv = 'Shop,Item,Price\nCorner shop,Barley rice,98\nCorner shop,Mugicha bags,198\nDonki,Cup noodle,198\n';
+  const csv = 'Shop,Item,Price\nCorner shop,Barley rice,98\nCorner shop,Mugicha bags,198\nDonki,Cup noodle,198\nDaiso,Sponge,110\n';
   await m.getByLabel('Import a spreadsheet').setInputFiles({ name: 'quick.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
   await m.waitForSelector('text=Import · quick.csv');
   t = await text();
@@ -112,10 +112,13 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   ok(!t.includes('Donki: '), 'Donki is not asked about: its tags are tax-excluded');
   await m.getByRole('button', { name: /^Import / }).click();
   ok((await text()).includes('Answer the tax question first'), 'import waits for the answer');
+  await m.getByRole('button', { name: 'Show items' }).click();
+  t = await text();
+  ok(t.includes('Corner shop (not in Cost: saved by name)') && /Daiso · /.test(t) && !t.includes('Daiso (not in Cost'), 'review: a shop that is in Cost is linked, others are named as kept by name');
   await m.getByRole('button', { name: 'Tax excluded' }).click();
   await m.getByRole('button', { name: /^Import / }).click();
   await m.waitForSelector('text=Imported quick.csv');
-  ok((await text()).includes('Imported quick.csv: 1 new need, 3 options, 3 prices.'), 'csv imported into one need ("Imported")');
+  ok((await text()).includes('Imported quick.csv: 1 new need, 4 options, 4 prices.'), 'csv imported into one need ("Imported")');
 
   // the matrix has the drinks, tax-included
   await m.locator('.ck-tab', { hasText: 'Matrix' }).click();

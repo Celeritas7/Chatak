@@ -72,7 +72,7 @@
   // Nitori tax-included. Online shops show tax-included prices.
   function shopBasis(shop) {
     const n = lc(shop);
-    if (/donki|don quijote|ドン|daiso|ダイソー/.test(n)) return 'excl';
+    if (/donki|don quijote|don kihote|ドン|キホーテ|daiso|ダイソー/.test(n)) return 'excl';
     if (/nitori|ニトリ/.test(n)) return 'incl';
     if (/amazon|rakuten|楽天|yahoo/.test(n)) return 'incl';
     return null;

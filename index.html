@@ -2920,7 +2920,7 @@ class Component extends DCLogic {
   // Anything else is left for you to choose, never guessed.
   cmpShopBasis(name) {
     const n = String(name || '').toLowerCase();
-    if (/donki|don quijote|ドン|daiso|ダイソー/.test(n)) return 'excl';
+    if (/donki|don quijote|don kihote|ドン|キホーテ|daiso|ダイソー/.test(n)) return 'excl';
     if (/nitori|ニトリ/.test(n)) return 'incl';
     return null;
   }
@@ -3294,7 +3294,16 @@ class Component extends DCLogic {
       step('Adding ' + plan.newOpts.length + ' options…');
       const keyToId = {};
       for (const o of D.options || []) if (o.import_key) keyToId[o.import_key] = o.id;
-      const optRows = plan.newOpts.map((r) => ({ ...r, category_id: catId[r.category], notes: r.notes || null }));
+      // In-shop rows whose shop name matches one of Cost's shops are linked by
+      // its id, the way the option editor links them; others keep the name.
+      if (live && plan.newOpts.some((r) => r.source_kind === 'shop')) await this.cmpEnsureShops();
+      const costShops = this.cmpShops();
+      const costIdOf = (r) => {
+        if (r.source_kind !== 'shop') return null;
+        const hit = costShops.find((x) => x.id && x.name.toLowerCase() === String(r.shop_name || '').toLowerCase());
+        return hit ? hit.id : null;
+      };
+      const optRows = plan.newOpts.map((r) => ({ ...r, category_id: catId[r.category], cost_shop_id: costIdOf(r), notes: r.notes || null }));
       let added = [];
       if (live) added = optRows.length ? await this._api.importCmpOptions(optRows) : [];
       else added = optRows.map((r, i) => ({ id: 'o-imp-' + Date.now() + '-' + i, import_key: r.import_key }));
@@ -3305,7 +3314,7 @@ class Component extends DCLogic {
       step('Adding prices…');
       const seenKeys = new Set();
       const priceRows = plan.newPrices.filter((r) => { const k = I.priceKey(r); if (seenKeys.has(k)) return false; seenKeys.add(k); return true; }).map((r) => ({
-        option_id: keyToId[r.import_key], store_id: r.source_kind === 'online' ? r.store_id : null, shop_name: r.store_id == null ? r.shop_name : null,
+        option_id: keyToId[r.import_key], store_id: r.source_kind === 'online' ? r.store_id : null, shop_name: r.store_id == null ? r.shop_name : null, cost_shop_id: costIdOf(r),
         price: r.price, tax_basis: r.tax_basis, tax_rate: rateOf(r.category), price_kind: r.source_kind === 'online' ? 'online' : 'shelf', seen_on: r.seen_on,
         note: (r.price_high ? 'Range in the sheet: ¥' + r.price.toLocaleString('en-US') + ' to ¥' + r.price_high.toLocaleString('en-US') + '. ' : '') + 'From ' + P.file + '.',
         import_key: I.priceKey(r)
@@ -3348,7 +3357,7 @@ class Component extends DCLogic {
       // 5. Sample: write it all to memory in one go.
       if (!live) {
         const optionsNew = optRows.map((r, i) => ({ id: added[i].id, category_id: r.category_id, name: r.name, name_ja: r.name_ja, brand: r.brand, source_kind: r.source_kind,
-          store_id: r.store_id, shop_name: r.shop_name, pack_qty: r.pack_qty, pack_unit: r.pack_unit, size_label: r.size_label, specs: {}, status: 'considering',
+          store_id: r.store_id, shop_name: r.shop_name, cost_shop_id: r.cost_shop_id, pack_qty: r.pack_qty, pack_unit: r.pack_unit, size_label: r.size_label, specs: {}, status: 'considering',
           notes: r.notes, photo_check: r.photo_check, import_key: r.import_key }));
         let pid = Date.now();
         this.setState((s) => ({ cmp: { ...s.cmp, categories: cats, options: s.cmp.options.concat(optionsNew),
@@ -3395,6 +3404,7 @@ class Component extends DCLogic {
     if (P.status === 'reading') return { busy: 'Reading ' + P.file + '…' };
     const plan = this.cmpImportPlan(S), D = S.cmp;
     const running = P.status === 'running';
+    const costNames = new Set(this.cmpShops().filter((x) => x.id).map((x) => x.name.toLowerCase()));
     const setDest = (name, d) => this.cmpImpPatch({ dest: { ...P.dest, [name]: d }, error: null });
     const cats = P.categories.map((c) => {
       const rows = plan.rows.filter((r) => r.category === c.name);
@@ -3411,7 +3421,7 @@ class Component extends DCLogic {
         toggle: () => this.cmpImpPatch({ openCat: open ? null : c.name }), toggleLabel: open ? 'Hide items' : 'Show items',
         rows: open ? rows.map((r) => ({
           name: r.name + (r.name_ja ? ' · ' + r.name_ja : ''),
-          meta: [r.shopLabel, r.price != null ? (r.tax_basis ? C.yen(I.inclOf(r.price, r.tax_basis, P.rate[c.name])) + ' incl. tax' + (r.tax_basis === 'excl' ? ' (tag ' + C.yen(r.price) + ')' : '') : C.yen(r.price) + ', tax not known') : 'no price',
+          meta: [r.shopLabel + (r.source_kind === 'shop' && !costNames.has(String(r.shop_name || '').toLowerCase()) ? ' (not in Cost: saved by name)' : ''), r.price != null ? (r.tax_basis ? C.yen(I.inclOf(r.price, r.tax_basis, P.rate[c.name])) + ' incl. tax' + (r.tax_basis === 'excl' ? ' (tag ' + C.yen(r.price) + ')' : '') : C.yen(r.price) + ', tax not known') : 'no price',
             r.price_high ? 'up to ' + C.yen(r.price_high) : '', r.pack_qty + ' ' + r.pack_unit + (r.pack_assumed && r.size_label ? ' (from "' + r.size_label + '")' : ''),
             r.photo ? (P.photos[r.photo.toLowerCase()] ? 'photo ✓' : 'photo ' + r.photo) : '', r.photo_check ? 'check photo' : '', r.duplicateOf ? 'same item as line ' + r.duplicateOf : ''].filter(Boolean).join(' · '),
           style: 'display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F2EEE7;' + (r.include ? '' : 'opacity:0.45;'),
