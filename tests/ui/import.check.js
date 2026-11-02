@@ -101,7 +101,15 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   t = await text();
   ok(t.includes('3 already imported: left as they are.'), 'second run: the options are recognised');
   ok((await m.getByRole('button', { name: /^Import / }).innerText()) === 'Import 0 options, 0 prices', 'second run: nothing new to write');
-  await m.getByRole('button', { name: 'Cancel' }).click();
+  // photos only: the one attached last time is not sent again; a new one is
+  await m.getByLabel('Photos for the import').setInputFiles([
+    { name: 'IMG20261024192355.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') },
+    { name: 'IMG20261025101500.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') }]);
+  ok((await text()).includes('2 of 2 named photos matched (1 already attached or shared by rows of one item).'), 'second run: an attached photo is not sent twice');
+  ok((await m.getByRole('button', { name: /^Import / }).innerText()) === 'Import 0 options, 0 prices, 1 photo', 'second run: photos alone can be imported');
+  await m.getByRole('button', { name: /^Import / }).click();
+  await m.waitForSelector('text=Imported shelf-renamed.xlsx', { timeout: 20000 });
+  ok((await text()).includes('Imported shelf-renamed.xlsx: 0 options, 0 prices, 1 photo.'), 'second run: the missing photo is attached');
 
   // a bare Price column at a shop with no known convention: asked once per shop
   const csv = 'Shop,Item,Price\nCorner shop,Barley rice,98\nCorner shop,Mugicha bags,198\nDonki,Cup noodle,198\nDaiso,Sponge,110\n';

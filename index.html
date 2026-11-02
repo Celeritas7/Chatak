@@ -3258,9 +3258,21 @@ class Component extends DCLogic {
     const priced = cmp.filter((r) => r.price != null && r.tax_basis);
     const newPrices = priced.filter((r) => !priceKeys.has(I.priceKey(r)));
     const unanswered = live.filter((r) => r.price != null && !r.tax_basis);
-    const photoRows = cmp.filter((r) => r.photo && P.photos[r.photo.toLowerCase()]);
+    // Photos still to attach: matched by file name, and not already on that
+    // option (by original name). An earlier import's options count too, so a
+    // second run of the same sheet can add just the photos.
+    const optByKey = {};
+    for (const o of D.options || []) if (o.import_key) optByKey[o.import_key] = o.id;
+    const have = new Set((D.photos || []).map((x) => x.option_id + '|' + String(x.original_name || '').toLowerCase()));
+    const photoRows = [], photoSeen = new Set();
+    for (const r of cmp) {
+      if (!r.photo || !P.photos[r.photo.toLowerCase()]) continue;
+      const k = (optByKey[r.import_key] || r.import_key) + '|' + r.photo.toLowerCase();
+      if (photoSeen.has(k) || (optByKey[r.import_key] && have.has(k))) continue;
+      photoSeen.add(k); photoRows.push(r);
+    }
     return { rows, cmp, mx, newOpts, newPrices, already: cmp.filter((r) => !r.duplicateOf).length - newOpts.length, unanswered, photoRows,
-      photoNames: cmp.filter((r) => r.photo).length, mxPriced: mx.filter((r) => r.price != null && r.tax_basis) };
+      photoNames: cmp.filter((r) => r.photo).length, photoMatched: cmp.filter((r) => r.photo && P.photos[r.photo.toLowerCase()]).length, mxPriced: mx.filter((r) => r.price != null && r.tax_basis) };
   }
 
   async cmpImportRun() {
@@ -3438,7 +3450,7 @@ class Component extends DCLogic {
         chips: [['excl', 'Tax excluded'], ['incl', 'Tax included']].map(([k, l]) => ({ label: l, go: () => this.cmpImpPatch({ basisByShop: { ...P.basisByShop, [shop]: k }, error: null }), style: chip(b === k) })) };
     });
     const nPhotos = Object.keys(P.photos || {}).length;
-    const canRun = !running && !plan.unanswered.length && (plan.newOpts.length || plan.newPrices.length || plan.mxPriced.length);
+    const canRun = !running && !plan.unanswered.length && (plan.newOpts.length || plan.newPrices.length || plan.mxPriced.length || plan.photoRows.length);
     const what = [plan.newOpts.length + (plan.newOpts.length === 1 ? ' option' : ' options'), plan.newPrices.length + (plan.newPrices.length === 1 ? ' price' : ' prices')]
       .concat(plan.mxPriced.length ? [plan.mxPriced.length + ' matrix prices'] : []).concat(plan.photoRows.length ? [plan.photoRows.length + (plan.photoRows.length === 1 ? ' photo' : ' photos')] : []);
     return {
@@ -3449,7 +3461,7 @@ class Component extends DCLogic {
       toggleSkipped: () => this.cmpImpPatch({ showSkipped: !P.showSkipped }), skippedLabel: P.showSkipped ? 'Hide' : 'Show',
       skipped: P.showSkipped ? P.skipped.map((x) => 'Line ' + x.line + ': ' + x.why + (x.text ? ' — ' + x.text : '')) : [],
       cats, questions, hasQuestions: questions.length > 0,
-      photoHint: plan.photoNames ? (nPhotos ? plan.photoRows.length + ' of ' + plan.photoNames + ' named photos matched.' : plan.photoNames + ' rows name a photo. Choose the photo files to attach them (they are shrunk before upload).') : '',
+      photoHint: plan.photoNames ? (nPhotos ? plan.photoMatched + ' of ' + plan.photoNames + ' named photos matched' + (plan.photoMatched > plan.photoRows.length ? ' (' + (plan.photoMatched - plan.photoRows.length) + ' already attached or shared by rows of one item).' : '.') : plan.photoNames + ' rows name a photo. Choose the photo files to attach them (they are shrunk before upload).') : '',
       onPhotos: (e) => { this.cmpImportPhotos(e.target.files ? Array.from(e.target.files) : []); try { e.target.value = ''; } catch (x) {} },
       showPhotos: plan.photoNames > 0, multi: true,
       already: plan.already ? plan.already + ' already imported: left as they are.' : '',
