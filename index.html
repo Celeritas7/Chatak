@@ -1768,6 +1768,13 @@
                         <span>{{ c.text }}</span>
                         <sc-if value="{{ c.sub }}"><span style="font-size:10px;color:#8C877E;font-weight:600;">{{ c.sub }}</span></sc-if>
                         <sc-if value="{{ c.edit }}"><button onClick="{{ c.edit }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#0F6B4F;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Edit</button></sc-if>
+                        <sc-if value="{{ c.acts }}">
+                          <sc-if value="{{ c.pill }}"><span style="{{ c.pill }}">{{ c.pillLabel }}</span></sc-if>
+                          <sc-if value="{{ c.note }}"><span style="font-size:10px;color:#6F6A62;font-weight:600;line-height:1.4;">{{ c.note }}</span></sc-if>
+                          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;">
+                            <sc-for list="{{ c.acts }}" as="a" hint-placeholder-count="3"><button onClick="{{ a.go }}" style="{{ a.style }}">{{ a.label }}</button></sc-for>
+                          </div>
+                        </sc-if>
                       </div>
                     </sc-for>
                   </div>
@@ -3640,8 +3647,23 @@ class Component extends DCLogic {
     const rowStyle = (head) => 'display:grid;grid-template-columns:' + cols + ';border-bottom:1px solid #F2EEE7;' + (head ? 'background:#FBFAF7;' : '');
     const headCell = (head) => 'position:sticky;left:0;z-index:1;padding:10px 14px;font-size:11px;font-weight:700;color:#6F6A62;display:flex;align-items:center;background:' + (head ? '#FBFAF7' : '#fff') + ';border-right:1px solid #F2EEE7;';
     const cell = (extra) => 'display:flex;flex-direction:column;gap:3px;justify-content:center;padding:10px 12px;font-size:12px;border-left:1px solid #F2EEE7;min-width:0;' + (extra || '');
+    // The same actions as the cards, so the table (the desktop default) is not read-only.
+    const actBtn = (strong) => 'padding:5px 9px;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;' +
+      (strong ? 'border:0;background:#0E6B4E;color:#fff;' : 'border:1px solid #DDD7CE;background:#fff;color:#4A443C;');
+    const actionCells = cards.map((k) => {
+      const acts = k.wishConfirm
+        ? [{ label: 'Send', go: k.wishGo, style: actBtn(true) }, { label: 'Cancel', go: k.wishCancel, style: actBtn(false) }]
+        : [{ label: k.shortlistLabel, go: k.shortlist, style: actBtn(false) }]
+          .concat(k.canWatch ? [{ label: 'Watch price', go: k.startWatch, style: actBtn(false) }] : [])
+          .concat(k.showWishBtn ? [{ label: k.wishLabel, go: k.askWish, style: actBtn(false) }] : [])
+          .concat(k.unwatch ? [{ label: 'Stop watching', go: k.unwatch, style: actBtn(false) }] : []);
+      return { text: '', style: cell('gap:6px;justify-content:flex-start;'), acts,
+        pill: k.watch && k.watch.pill ? k.watch.pill : null, pillLabel: k.watch ? k.watch.label : '',
+        note: k.wishConfirm || [k.watch ? k.watch.text : '', k.wishText].filter(Boolean).join(' · ') };
+    });
     const tableRows = [
       { label: 'Option', head: true, cells: v.rows.map((r) => ({ text: r.name, sub: [r.brand, r.model_code].filter(Boolean).join(' · ') + (statusWord[r.status] ? ' · ' + statusWord[r.status] : ''), style: cell('font-weight:700;font-size:13px;'), edit: () => this.cmpOpenOption(r) })) },
+      { label: 'Actions', cells: actionCells },
       { label: 'Price (incl. tax)', cells: v.rows.map((r) => ({ text: r.lead ? C.yen(r.lead.price_incl) : '—', sub: r.lead ? this.cmpShopLabel(r.lead) + (r.lead.tax_basis === 'excl' ? ' · tag ' + C.yen(r.lead.price) + ' + tax' : '') : '', style: cell("font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;") })) },
       { label: 'Member price', cells: v.rows.map((r) => ({ text: r.member ? C.yen(r.member.price_incl) : '—', sub: r.member ? r.member.member_program : '', style: cell("font-family:'IBM Plex Mono',monospace;") })) },
       { label: 'Pay more, get what', cells: v.rows.map((r) => { const p = payFor(r); return { text: p.text || '—', sub: p.diffs, style: cell('font-size:11px;') }; }) },
