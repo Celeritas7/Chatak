@@ -717,6 +717,12 @@ begin
       check (source_kind <> 'online' or store_id is not null or shop_name is not null);
   end if;
 end $$;
+-- Phase 4: "Send to wishlist" publishes a purchase_request to Cost through the
+-- hub. The option keeps the request id it sent (the hub row's src_addr.id) so
+-- Cost's reply, logged or rejected, can be shown on the card.
+alter table public.chatak_cmp_options add column if not exists wish_request_id text;
+alter table public.chatak_cmp_options add column if not exists wish_sent_at timestamptz;
+
 create unique index if not exists chatak_cmp_options_import
   on public.chatak_cmp_options (user_id, import_key) where import_key is not null;
 create index if not exists chatak_cmp_options_category on public.chatak_cmp_options (category_id);

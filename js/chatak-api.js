@@ -562,6 +562,30 @@ export async function importCmpPrices(rows) {
   })), null);
 }
 
+// ── send to wishlist (Compare phase 4) ──
+// A hub purchase_request to Cost, the same kind Sukkiri and WF send. Published
+// once per request id (key chatak:<id>); sending again after a rejection mints
+// a new id. Cost answers on the same row: { id, status: logged | rejected }.
+export async function sendCmpToWishlist(option, payload) {
+  if (!hub) throw new Error('The Akatsuki hub is not available in this build.');
+  const r = await hub.publish({ to: 'cost', kind: 'purchase_request', addr: { id: payload.id }, payload, key: 'chatak:' + payload.id });
+  const { error } = await db.from('chatak_cmp_options').update({ wish_request_id: payload.id, wish_sent_at: payload.requestedAt }).eq('id', option.id);
+  if (error) throw error;
+  return r;   // status: pending | queued (offline: sent when back online)
+}
+
+// Cost's answers to Chatak's requests, by request id: { status, at, expense_ids }.
+export async function getWishReplies() {
+  if (!hub) return {};
+  const rows = await hub.replies('purchase_request', 0);
+  const out = {};
+  for (const r of rows || []) {
+    const id = r.src_addr && r.src_addr.id;
+    if (id) out[id] = { status: (r.reply && r.reply.status) || null, at: (r.reply && r.reply.at) || null, delivery: r.status || null };
+  }
+  return out;
+}
+
 // ── watch price (Compare phase 5) ──
 // An option points at a tracked product (chatak_products). Rakuten listings go
 // through add-product, which creates or reuses the product and its offer and

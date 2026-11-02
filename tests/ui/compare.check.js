@@ -179,6 +179,19 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   await m.waitForSelector('text=Stopped watching from Compare.');
   ok(await card('Bed table 70x48x30').getByRole('button', { name: 'Watch price' }).count() === 1, 'stop watching: back to Watch price');
 
+  // send to wishlist: asks first, says what goes to Cost, then shows the request on the card
+  await card('MY space table').getByRole('button', { name: 'Send to wishlist' }).click();
+  ok((await card('MY space table').innerText()).includes('Send MY space table at ¥1,802 (Donki) to Cost’s wishlist?'), 'wishlist: confirm names the item, the price incl. tax and the shop');
+  await card('MY space table').getByRole('button', { name: 'Cancel' }).click();
+  ok(!(await card('MY space table').innerText()).includes('to Cost’s wishlist?'), 'wishlist: cancel sends nothing');
+  await card('MY space table').getByRole('button', { name: 'Send to wishlist' }).click();
+  await card('MY space table').getByRole('button', { name: 'Send', exact: true }).click();
+  await m.waitForSelector('text=Sent MY space table to Cost’s wishlist at ¥1,802.');
+  const sentCard = await card('MY space table').innerText();
+  ok(/In Cost’s wishlist inbox · sent \d{4}-\d\d-\d\d/.test(sentCard) && !sentCard.includes('Send to wishlist'), 'wishlist: the card shows the request, and no second send');
+  await card('Photo first table').getByRole('button', { name: 'Send to wishlist' }).click();
+  ok((await text(m)).includes('Add a price first'), 'wishlist: an option without a price is not sent');
+
   // a tax-excluded tag at an unknown shop must be decided, not guessed
   await m.locator('article', { hasText: 'Wide table test' }).getByRole('button', { name: 'Edit' }).click();
   await m.getByPlaceholder('Shop, as named in Cost').fill('Corner shop');

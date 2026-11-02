@@ -1739,6 +1739,17 @@
                       <sc-if value="{{ r.canWatch }}"><button onClick="{{ r.startWatch }}" style="padding:8px 14px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">Watch price</button></sc-if>
                       <sc-if value="{{ r.unwatch }}"><button onClick="{{ r.unwatch }}" style="padding:8px 4px;border:0;background:none;color:#8C877E;font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;">Stop watching</button></sc-if>
                     </div>
+                    <sc-if value="{{ r.wishText }}"><span style="{{ r.wishStyle }}">{{ r.wishText }}</span></sc-if>
+                    <sc-if value="{{ r.wishConfirm }}">
+                      <div style="display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:12px;background:#FBFAF7;border:1px solid #E6DFD3;">
+                        <span style="font-size:12px;color:#1C1A17;line-height:1.45;">{{ r.wishConfirm }}</span>
+                        <div style="display:flex;gap:8px;">
+                          <button onClick="{{ r.wishGo }}" style="padding:8px 14px;border-radius:10px;border:0;background:#0E6B4E;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Send</button>
+                          <button onClick="{{ r.wishCancel }}" style="padding:8px 10px;border:0;background:none;color:#6F6A62;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ r.showWishBtn }}"><button onClick="{{ r.askWish }}" style="align-self:flex-start;padding:7px 12px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;color:#4A443C;font-size:12px;font-weight:700;cursor:pointer;">{{ r.wishLabel }}</button></sc-if>
                   </div>
                 </article>
               </sc-for>
@@ -1900,7 +1911,9 @@ class Component extends DCLogic {
     // Watch price: the option being linked to a tracked product, with its Rakuten search.
     cmpWatch: null,
     // Import: the spreadsheet being reviewed, then loaded.
-    cmpImp: null
+    cmpImp: null,
+    // Send to wishlist: the option awaiting confirmation, and Cost's replies by request id.
+    cmpWishConfirm: null, cmpWishReplies: {}
   };
 
   chartRef = React.createRef();
@@ -2840,7 +2853,10 @@ class Component extends DCLogic {
       // Signed links last an hour; every load renews them. A failure here only hides the images.
       let urls = {};
       try { urls = await this._api.signCmpPhotos((d.photos || []).map((p) => p.storage_path)); } catch (e) { console.warn('[cmp] photo links', e); }
-      this.setState({ cmp: { status: 'ready', ...d }, cmpPhotoUrls: urls });
+      // Cost's answers to wishlist requests; a hub hiccup only hides the status.
+      let wish = this.state.cmpWishReplies;
+      if ((d.options || []).some((o) => o.wish_request_id)) { try { wish = await this._api.getWishReplies(); } catch (e) { console.warn('[cmp] wishlist replies', e); } }
+      this.setState({ cmp: { status: 'ready', ...d }, cmpPhotoUrls: urls, cmpWishReplies: wish });
     } catch (e) {
       this.setState({ cmp: { status: 'error', message: String(e.message || e), categories: [], fields: [], options: [], prices: [] } });
     }
@@ -3415,6 +3431,27 @@ class Component extends DCLogic {
     };
   }
 
+  // ---- send to wishlist (phase 4) ----
+  // A purchase_request to Cost through the hub, like Sukkiri's and WF's. Cost
+  // shows it in its purchase inbox and answers logged or rejected.
+  cmpWishPayload(o, lead, catName) {
+    const id = 'cmp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const yen = lead ? lead.price_incl : null;
+    const note = [[o.brand, o.model_code, o.size_label].filter(Boolean).join(' · '), o.url || '', 'From Chatak Compare' + (o.notes ? ': ' + o.notes : '')].filter(Boolean).join('\n');
+    return { id, items: [{ name: o.name, yen, category: catName }], totalYen: yen, currency: 'JPY', category: catName, source: 'chatak',
+      preferred_shop: lead ? this.cmpShopLabel(lead) : this.cmpShopLabel(o), note: note.slice(0, 500), requestedAt: new Date().toISOString() };
+  }
+
+  async cmpSendWish(o, lead, catName) {
+    if (!lead) { this.setState({ cmpError: 'Add a price first: Cost needs an amount for the wishlist.' }); return; }
+    const payload = this.cmpWishPayload(o, lead, catName);
+    let queued = false;
+    const ok = await this.cmpWrite(async () => { const r = await this._api.sendCmpToWishlist(o, payload); queued = r && r.status === 'queued'; },
+      (c) => ({ ...c, options: c.options.map((x) => (x.id === o.id ? { ...x, wish_request_id: payload.id, wish_sent_at: payload.requestedAt } : x)) }), null);
+    if (ok) this.setState({ cmpWishConfirm: null, cmpInfo: queued ? o.name + ' is queued for Cost’s wishlist: it is sent when the connection is back.'
+      : 'Sent ' + o.name + ' to Cost’s wishlist at ' + window.ChatakCompare.yen(payload.totalYen) + '. Cost’s answer will show on the card.' });
+  }
+
   // ---- watch price (phase 5) ----
   // A Compare option points at a tracked product; its card then shows the
   // same Buy / Watch / Wait pill as Home, read from the same built product.
@@ -3574,6 +3611,21 @@ class Component extends DCLogic {
         })(),
         verdict: r.verdict || '', notes: r.notes || '',
         watch: watchOf(r),
+        ...(() => {
+          const sent = r.wish_request_id ? (S.cmpWishReplies[r.wish_request_id] || {}) : null;
+          const day = r.wish_sent_at ? String(r.wish_sent_at).slice(0, 10) : '';
+          const wishText = !sent ? '' : sent.status === 'logged' ? 'Logged in Cost' + (sent.at ? ' · ' + String(sent.at).slice(0, 10) : '')
+            : sent.status === 'rejected' ? 'Cost declined the wishlist request' + (sent.at ? ' · ' + String(sent.at).slice(0, 10) : '')
+            : 'In Cost’s wishlist inbox · sent ' + day;
+          const confirming = S.cmpWishConfirm === r.id;
+          return {
+            wishText, wishStyle: 'font-size:11px;font-weight:700;padding:6px 10px;border-radius:9px;' + (sent && sent.status === 'logged' ? 'background:#E3F3EC;color:#0F6B4F;' : sent && sent.status === 'rejected' ? 'background:#F1EDE6;color:#6F6A62;' : 'background:#FBEFD9;color:#7A4F08;'),
+            showWishBtn: (!sent || sent.status === 'rejected') && !confirming, wishLabel: sent && sent.status === 'rejected' ? 'Send again' : 'Send to wishlist',
+            askWish: () => (r.lead ? this.setState({ cmpWishConfirm: r.id, cmpError: null }) : this.setState({ cmpError: 'Add a price first: Cost needs an amount for the wishlist.' })),
+            wishConfirm: confirming ? 'Send ' + r.name + ' at ' + (r.lead ? C.yen(r.lead.price_incl) : '') + ' (' + (r.lead ? this.cmpShopLabel(r.lead) : '') + ') to Cost’s wishlist?' : '',
+            wishGo: () => this.cmpSendWish(r, r.lead, cat.name), wishCancel: () => this.setState({ cmpWishConfirm: null })
+          };
+        })(),
         canWatch: online && !r.product_id, startWatch: () => this.cmpOpenWatch(r),
         unwatch: r.product_id ? () => this.cmpUnwatch(r) : null,
         edit: () => this.cmpOpenOption(r),

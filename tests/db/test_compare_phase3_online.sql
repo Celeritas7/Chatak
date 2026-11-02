@@ -36,3 +36,10 @@ insert into chatak_cmp_prices (option_id, shop_name, price, tax_basis, price_kin
 select id, 'Zojirushi official', 1210, 'incl', 'online', 'import' from chatak_cmp_options where import_key = 'test:2';
 select t.ok((select price_incl from chatak_cmp_prices where shop_name = 'Zojirushi official') = 1210, 'price from a seller by name');
 reset role;
+
+-- Phase 4: the request id an option sent to Cost.
+set role authenticated;
+select t.signin('00000000-0000-0000-0000-00000000000a');
+update chatak_cmp_options set wish_request_id = 'cmp_test1', wish_sent_at = now() where import_key = 'test:1';
+select t.ok((select wish_request_id from chatak_cmp_options where import_key = 'test:1') = 'cmp_test1', 'an option keeps the wishlist request it sent');
+reset role;
