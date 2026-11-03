@@ -19,6 +19,8 @@ export const db = isConfigured()
 // js/akatsuki-client.js is a classic script loaded by index.html before this module.
 export const hub = db && typeof window !== 'undefined' && window.Akatsuki ? window.Akatsuki(db, 'chatak') : null;
 if (typeof window !== 'undefined' && db) window.chatak = { supabase: db, hub };
+// Akatsuki broadcast overlay (index.html loads js/akatsuki-broadcast.js before this module).
+if (typeof window !== 'undefined' && db && window.AkatsukiBroadcast) window.AkatsukiBroadcast(db, 'chatak').start();
 
 // ── auth ──
 // Both paths are gated server-side by the allow-list trigger on
