@@ -126,3 +126,22 @@ test('a pasted link gives the store, and an Amazon name when the link has one', 
   assert.equal(C.linkInfo('https://store.shopping.yahoo.co.jp/shop/item.html').store_id, 5);
   assert.deepEqual(C.linkInfo('not a link'), { store_id: null, name: null, asin: null });
 });
+
+test('moving an option carries the specs the other need can hold', () => {
+  const from = [
+    { key: 'width', label: 'Width', kind: 'number' },
+    { key: 'colour', label: 'Colour', kind: 'choice', choices: ['white', 'oak'] },
+    { key: 'foldable', label: 'Foldable', kind: 'bool' },
+    { key: 'note', label: 'Note', kind: 'text' }
+  ];
+  const to = [
+    { key: 'width', label: 'Width', kind: 'number' },
+    { key: 'colour', label: 'Colour', kind: 'choice', choices: ['white', 'black'] },
+    { key: 'foldable', label: 'Foldable', kind: 'text' }
+  ];
+  const r = C.carrySpecs({ width: 60, colour: 'oak', foldable: true, note: 'x', empty: null }, from, to);
+  assert.deepEqual(r.specs, { width: 60 });
+  assert.deepEqual(r.dropped, ['Colour', 'Foldable', 'Note']);
+  assert.deepEqual(C.carrySpecs({ colour: 'white' }, from, to), { specs: { colour: 'white' }, dropped: [] });
+  assert.deepEqual(C.carrySpecs(null, from, to), { specs: {}, dropped: [] });
+});

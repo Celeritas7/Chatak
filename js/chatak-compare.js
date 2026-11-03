@@ -168,6 +168,26 @@
     return /^[a-z]/.test(k) ? k : k ? 'f_' + k.slice(0, 38) : '';
   };
 
+  // Moving an option to another need: its specs must fit that need's fields
+  // (the database refuses unknown keys and wrong types). A value is carried
+  // when the target has a field with the same key that can hold it; the rest
+  // are listed by their old label so the person knows what was left behind.
+  function carrySpecs(specs, fromFields, toFields) {
+    const out = {}, dropped = [];
+    for (const [k, v] of Object.entries(specs || {})) {
+      if (!has(v)) continue;
+      const from = (fromFields || []).find((f) => f.key === k), to = (toFields || []).find((f) => f.key === k);
+      const label = from ? from.label : k;
+      const fits = to && (
+        (to.kind === 'number' && typeof v === 'number' && isFinite(v)) ||
+        (to.kind === 'bool' && typeof v === 'boolean') ||
+        (to.kind === 'text' && typeof v === 'string') ||
+        (to.kind === 'choice' && typeof v === 'string' && (to.choices || []).includes(v)));
+      if (fits) out[k] = v; else dropped.push(label);
+    }
+    return { specs: out, dropped };
+  }
+
   // ── sample set: the six folding tables from the brief, as given ──
   // Unknown specs stay empty; nothing is invented to fill the grid.
   function sample() {
@@ -244,7 +264,7 @@
     return { store_id, name, asin };
   }
 
-  const api = { linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
+  const api = { carrySpecs, linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakCompare = api;
 })(typeof window !== 'undefined' ? window : globalThis);
