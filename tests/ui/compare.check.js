@@ -232,6 +232,23 @@ const text = (p) => p.evaluate(() => document.body.innerText);
   ok((await text(m)).includes('¥1,100 incl. tax'), 'added price shows as ¥1,100 incl. tax');
   await m.getByRole('button', { name: 'Cancel' }).click();
 
+  // move an option to another need: prices go with it, specs only where they fit
+  await m.locator('article', { hasText: 'MISM folding table' }).getByRole('button', { name: 'Edit' }).click();
+  await m.getByRole('button', { name: 'Move to another need…' }).click();
+  await m.getByRole('button', { name: 'Slicer', exact: true }).click();
+  t = await text(m);
+  ok(t.includes('Moves to Slicer when you save.') && t.includes('Not carried, as that need has no matching field: Width, Depth.'), 'move: says where it goes and which specs stay behind');
+  ok(t.includes('Blades included'), 'move: the specs grid shows the new need\'s fields');
+  await m.getByRole('button', { name: 'Folding bed table', exact: true }).click();
+  ok(!(await text(m)).includes('Not carried'), 'move: switching back restores the specs');
+  await m.getByRole('button', { name: 'Slicer', exact: true }).click();
+  await m.getByRole('button', { name: 'Save', exact: true }).click();
+  await m.waitForSelector('text=Moved MISM folding table to Slicer.');
+  ok(await m.locator('article', { hasText: 'MISM folding table' }).count() === 0, 'move: gone from Folding bed table');
+  await m.getByRole('button', { name: '+ Option' }).first().click();
+  ok(await m.getByRole('button', { name: 'Move to another need…' }).count() === 0, 'move: not offered on a new option');
+  await m.getByRole('button', { name: 'Cancel' }).click();
+
   // a new field
   await m.getByRole('button', { name: 'Fields' }).click();
   await m.getByPlaceholder('Label, e.g. Weight').fill('Colour');

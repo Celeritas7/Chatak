@@ -1608,6 +1608,17 @@
                 </div>
               </div>
 
+              <sc-if value="{{ cmp.ed.showMoveLink }}">
+                <button onClick="{{ cmp.ed.moveToggle }}" style="align-self:flex-start;padding:0;border:0;background:none;color:#0E6B4E;font-size:12px;font-weight:700;cursor:pointer;">Move to another need…</button>
+              </sc-if>
+              <sc-if value="{{ cmp.ed.moveOpen }}">
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <span style="font-size:11px;font-weight:700;color:#6F6A62;">Need</span>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ cmp.ed.needs }}" as="n" hint-placeholder-count="4"><button onClick="{{ n.go }}" style="{{ n.style }}">{{ n.label }}</button></sc-for></div>
+                  <span style="font-size:11px;color:#6F6A62;">{{ cmp.ed.moveNote }}</span>
+                </div>
+              </sc-if>
+
               <div style="display:flex;flex-direction:column;gap:8px;">
                 <span style="font-size:11px;font-weight:700;color:#6F6A62;">Specs</span>
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:10px;">
@@ -2967,7 +2978,7 @@ class Component extends DCLogic {
       cmpEdit: { id: null, category_id: this.state.cmpCat, name: '', name_ja: '', brand: '', model_code: '', source_kind: 'shop', shop: '', seller: '', store_id: 2, url: '',
         qty: '1', pack_unit: 'pc', size_label: '', specs: {}, status: 'considering', verdict: '', notes: '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null, cmpAdd: null
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null, cmpAdd: null, cmpMoveOpen: false
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -2975,10 +2986,10 @@ class Component extends DCLogic {
   cmpOpenOption(o) {
     const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
     this.setState({
-      cmpEdit: { ...o, shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', seller: o.source_kind === 'online' && o.store_id == null ? (o.shop_name || '') : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
+      cmpEdit: { ...o, orig_category_id: o.category_id, orig_specs: { ...(o.specs || {}) }, moveDropped: [], shop: o.source_kind === 'shop' ? this.cmpShopLabel(o) : '', seller: o.source_kind === 'online' && o.store_id == null ? (o.shop_name || '') : '', qty: String(o.pack_qty), specs: { ...(o.specs || {}) },
         name_ja: o.name_ja || '', brand: o.brand || '', model_code: o.model_code || '', url: o.url || '', size_label: o.size_label || '', verdict: o.verdict || '', notes: o.notes || '' },
       cmpPrice: { price: '', tax_basis: null, price_kind: o.source_kind === 'online' ? 'online' : 'shelf', member_program: '', seen_on: today },
-      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null, cmpAdd: null
+      cmpFieldsOpen: false, cmpConfirmDel: false, cmpError: null, cmpInfo: null, cmpPending: this.cmpDropPending(), cmpWatch: null, cmpAdd: null, cmpMoveOpen: false
     });
     try { window.scrollTo(0, 0); } catch (e) {}
   }
@@ -3062,7 +3073,8 @@ class Component extends DCLogic {
         const id = row.id || 'o-' + Date.now();
         const pend = this.state.cmpPending || [];
         this.setState((s) => {
-          const options = isNew ? s.cmp.options.concat([{ ...row, id }]) : s.cmp.options.map((o) => (o.id === id ? { ...o, ...row } : o));
+          const { orig_category_id, orig_specs, moveDropped, ...clean } = row;
+          const options = isNew ? s.cmp.options.concat([{ ...clean, id }]) : s.cmp.options.map((o) => (o.id === id ? { ...o, ...clean } : o));
           const prices = pr.row ? s.cmp.prices.concat([{ ...pr.row, id: Date.now(), option_id: id }]) : s.cmp.prices;
           const added = pend.map((x, i) => ({ id: 'ph-' + Date.now() + '-' + i, option_id: id, storage_path: x.url, original_name: x.original_name, taken_at: x.taken_at, width: x.width, height: x.height, bytes: x.bytes, created_at: new Date().toISOString() }));
           const urls = { ...s.cmpPhotoUrls };
@@ -3070,7 +3082,10 @@ class Component extends DCLogic {
           return { cmp: { ...s.cmp, options, prices, photos: (s.cmp.photos || []).concat(added) }, cmpPhotoUrls: urls, cmpPending: [] };
         });
       }
-      this.setState({ cmpBusy: false, cmpEdit: null, cmpPrice: null, cmpInfo: (isNew ? 'Added ' : 'Saved ') + row.name + '.' });
+      const moved = !isNew && row.orig_category_id && row.category_id !== row.orig_category_id
+        ? ((this.state.cmp.categories || []).find((c) => c.id === row.category_id) || {}).name : null;
+      this.setState({ cmpBusy: false, cmpEdit: null, cmpPrice: null, cmpMoveOpen: false,
+        cmpInfo: moved ? 'Moved ' + row.name + ' to ' + moved + '.' : (isNew ? 'Added ' : 'Saved ') + row.name + '.' });
     } catch (e) {
       const msg = String(e.message || e);
       const lead = step === 'price' ? row.name + ' was saved, but its price was not: '
@@ -3858,6 +3873,29 @@ class Component extends DCLogic {
         qty: E.qty, onQty: (e) => set({ qty: e.target.value.replace(/[^\d.,]/g, '') }),
         units: ['pc', 'set', 'pair', 'sheet', 'roll', 'g', 'kg', 'ml', 'L', 'cm', 'm'].map((u) => ({ label: u, go: () => set({ pack_unit: u }), style: chip(E.pack_unit === u) })),
         noFields: !myFields.length,
+        // Move to another need: prices, photos and links stay with the option;
+        // specs are carried where the other need has a field that can hold them.
+        moveOpen: !!E.id && D.categories.length > 1 && (S.cmpMoveOpen || E.category_id !== E.orig_category_id),
+        moveToggle: () => this.setState({ cmpMoveOpen: true }),
+        showMoveLink: !!E.id && D.categories.length > 1 && !S.cmpMoveOpen && E.category_id === E.orig_category_id,
+        needs: D.categories.map((c) => ({ label: c.name, style: chip(E.category_id === c.id), go: () => {
+          // Saved values, overlaid with what is typed now, so switching back and forth loses nothing.
+          const orig = D.fields.filter((f) => f.category_id === E.orig_category_id), cur = D.fields.filter((f) => f.category_id === E.category_id);
+          const pool = { ...E.orig_specs };
+          for (const f of cur) {
+            const v = E.specs[f.key];
+            if (v === undefined) continue;
+            if (v === null || v === '') { delete pool[f.key]; continue; }
+            const n = Number(String(v).replace(',', '.'));
+            pool[f.key] = f.kind === 'number' ? (isFinite(n) ? n : v) : v;
+          }
+          const r = C.carrySpecs(pool, cur.concat(orig), D.fields.filter((f) => f.category_id === c.id));
+          set({ category_id: c.id, specs: r.specs, moveDropped: r.dropped });
+        } })),
+        moveNote: E.id && E.category_id !== E.orig_category_id
+          ? 'Moves to ' + ((D.categories.find((c) => c.id === E.category_id) || {}).name || 'the other need') + ' when you save. Its prices, photos and links go with it.'
+            + ((E.moveDropped || []).length ? ' Not carried, as that need has no matching field: ' + E.moveDropped.join(', ') + '.' : '')
+          : 'Pick the need this option belongs to.',
         specs: myFields.map((f) => {
           const val = E.specs[f.key], setV = (x) => set({ specs: { ...E.specs, [f.key]: x } });
           const label = f.label + (f.unit ? ' (' + f.unit + ')' : '');
