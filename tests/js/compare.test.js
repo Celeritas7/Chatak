@@ -116,3 +116,13 @@ test('model numbers are found in option names, for shop searches', () => {
   assert.equal(C.modelCodeOf('Bed table 70x48x30'), null, 'dimensions are not a model number');
   assert.equal(C.modelCodeOf('Yamazen FMT5535OK'), 'FMT5535OK');
 });
+
+test('a pasted link gives the store, and an Amazon name when the link has one', () => {
+  const a = C.linkInfo('https://www.amazon.co.jp/SAIJI-%E3%83%99%E3%83%83%E3%83%89%E3%83%87%E3%82%B9%E3%82%AF-adjustable/dp/B0ABCDEF12/ref=sr_1_3?keywords=x');
+  assert.deepEqual(a, { store_id: 2, name: 'SAIJI ベッドデスク adjustable', asin: 'B0ABCDEF12' });
+  assert.deepEqual(C.linkInfo('https://www.amazon.co.jp/dp/B0ABCDEF12'), { store_id: 2, name: null, asin: 'B0ABCDEF12' });
+  assert.deepEqual(C.linkInfo('https://amzn.asia/d/abc123'), { store_id: 2, name: null, asin: null });
+  assert.equal(C.linkInfo('https://item.rakuten.co.jp/hanamaruryohin/20260831140721_240/').store_id, 1);
+  assert.equal(C.linkInfo('https://store.shopping.yahoo.co.jp/shop/item.html').store_id, 5);
+  assert.deepEqual(C.linkInfo('not a link'), { store_id: null, name: null, asin: null });
+});
