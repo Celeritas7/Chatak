@@ -159,3 +159,24 @@ test('tax is rounded the way the shop rounds its tags', () => {
   assert.equal(p(216, 'half_up', 8), 233);
   assert.equal(C.inclOf({ price: 1639, tax_basis: 'incl', tax_rounding: 'up' }), 1639);
 });
+
+test('photos attach to the options whose notes name them', () => {
+  assert.equal(C.photoKey('IMG_20261026_184525.jpg'), C.photoKey('IMG20261026184525.JPEG'));
+  const options = [
+    { id: 'a', notes: 'Price 3,990 on the tag. Photo IMG_20261026_184525.jpg.' },
+    { id: 'b', notes: 'Ceramic set. Photo IMG20261024191712.jpg, also IMG20261024191713.jpg' },
+    { id: 'c', notes: 'Also photographed in IMG20261024185604.jpg (table top, no tag).' },
+    { id: 'd', notes: null }
+  ];
+  const prices = [{ option_id: 'd', note: 'Read from IMG20261024191712.jpg.' }];
+  const photos = [{ option_id: 'c', original_name: 'IMG20261024185604.jpg' }];
+  const r = C.matchPhotos(['IMG20261026184525.jpg', 'IMG20261024191712.jpg', 'IMG20261024185604.jpg', 'IMG20261024191712.jpg', 'IMG20990101000000.jpg', 'notes.txt'],
+    options, prices, photos);
+  assert.deepEqual(r.matches, [
+    { file: 'IMG20261026184525.jpg', option_id: 'a' },
+    { file: 'IMG20261024191712.jpg', option_id: 'b' },
+    { file: 'IMG20261024191712.jpg', option_id: 'd' }
+  ]);
+  assert.deepEqual(r.already, [{ file: 'IMG20261024185604.jpg', option_id: 'c' }]);
+  assert.deepEqual(r.unmatched, ['IMG20990101000000.jpg', 'notes.txt']);
+});

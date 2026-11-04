@@ -194,6 +194,37 @@
     return { specs: out, dropped };
   }
 
+  // ── attach photos by file name ──
+  // Options read from photos name their photo in the notes ("Photo
+  // IMG20261024191712.jpg."). A file matches by its name without the
+  // extension, letters and digits only, so IMG_20261026_184525.jpg and
+  // IMG20261026184525.jpeg are the same photo.
+  const photoKey = (name) => String(name || '').toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '').replace(/[^a-z0-9]/g, '');
+  const PHOTO_NAME = /[\w.-]+\.(?:jpe?g|png|heic|heif|webp)\b/gi;
+  const photoNamesIn = (text) => (String(text || '').match(PHOTO_NAME) || []);
+
+  // files: [name]. Returns
+  //   matches:   [{ file, option_id }]  to upload, one per option per photo
+  //   already:   [{ file, option_id }]  that option already has this photo
+  //   unmatched: [file]                 no option or price note names it
+  function matchPhotos(files, options, prices, photos) {
+    const named = new Map();  // photo key → Set(option id)
+    const add = (text, id) => { for (const n of photoNamesIn(text)) { const k = photoKey(n); if (!named.has(k)) named.set(k, new Set()); named.get(k).add(id); } };
+    for (const o of options || []) add(o.notes, o.id);
+    for (const p of prices || []) add(p.note, p.option_id);
+    const have = new Set((photos || []).map((p) => p.option_id + '|' + photoKey(p.original_name)));
+    const out = { matches: [], already: [], unmatched: [] }, seen = new Set();
+    for (const f of files || []) {
+      const k = photoKey(f);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      const ids = named.get(k);
+      if (!ids) { out.unmatched.push(f); continue; }
+      for (const id of ids) (have.has(id + '|' + k) ? out.already : out.matches).push({ file: f, option_id: id });
+    }
+    return out;
+  }
+
   // ── sample set: the six folding tables from the brief, as given ──
   // Unknown specs stay empty; nothing is invented to fill the grid.
   function sample() {
@@ -270,7 +301,7 @@
     return { store_id, name, asin };
   }
 
-  const api = { withTax, carrySpecs, linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
+  const api = { photoKey, matchPhotos, withTax, carrySpecs, linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakCompare = api;
 })(typeof window !== 'undefined' ? window : globalThis);
