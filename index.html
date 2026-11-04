@@ -26,6 +26,8 @@
     var pub = window.CHATAK_PUBLIC_CONFIG || {}, own = window.CHATAK_CONFIG || {};
     var cfg = Object.assign({}, own);
     if (!cfg.url || !cfg.anonKey) { cfg.url = pub.url || ''; cfg.anonKey = pub.anonKey || ''; }
+    // The push key travels with the published project, unless the local config names one.
+    if (!cfg.vapidPublicKey && cfg.url === pub.url) cfg.vapidPublicKey = pub.vapidPublicKey || '';
     window.CHATAK_CONFIG = cfg;
   })();
 </script>
