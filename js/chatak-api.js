@@ -225,22 +225,31 @@ export async function deletePushSubscription(endpoint) {
   if (error) throw error;
 }
 
+// Edge functions answer errors as { error } with a non-2xx status; supabase-js
+// then leaves data empty and says only "non-2xx", so the message is read from
+// the response. add-product needs a signed-in user (since the hub's 2026-10-28
+// audit): signed out, it is not called at all.
+async function invokeFn(name, body, signedInMsg) {
+  if (signedInMsg && !(await session())) throw new Error(signedInMsg);
+  const { data, error } = await db.functions.invoke(name, { body });
+  if (error) {
+    let msg = data?.error;
+    if (!msg) { try { msg = (await error.context.json()).error; } catch (e) {} }
+    if (!msg && error.context?.status === 401 && signedInMsg) msg = signedInMsg;
+    throw new Error(msg || error.message);
+  }
+  return data;
+}
+const SIGN_IN_RAKUTEN = 'Sign in to search Rakuten or watch a price.';
+
 // Deliver anything pending now (a matrix save may just have created alerts).
 // Fire-and-forget from the caller: failure only delays the push to the next run.
 export async function sendPushNow() {
-  const { data, error } = await db.functions.invoke('send-push', { body: {} });
-  if (error) throw new Error(data?.error ?? error.message);
-  return data;
+  return invokeFn('send-push', {});
 }
 
 export async function testPush() {
-  const { data, error } = await db.functions.invoke('send-push', { body: { test: true } });
-  if (error) {
-    let msg = error.message;
-    try { msg = (await error.context.json()).error || msg; } catch (e) {}
-    throw new Error(msg);
-  }
-  return data;
+  return invokeFn('send-push', { test: true });
 }
 
 // Paste-a-URL flow: the add-product edge function resolves the Rakuten item
@@ -249,9 +258,7 @@ export async function testPush() {
 // empty 90-day frame.
 // itemCode: Rakuten's own id from a search result, when there is one.
 export async function addByUrl(url, itemCode) {
-  const { data, error } = await db.functions.invoke('add-product', { body: itemCode ? { url, itemCode } : { url } });
-  if (error) throw new Error(data?.error ?? error.message);
-  return data;
+  return invokeFn('add-product', itemCode ? { url, itemCode } : { url }, SIGN_IN_RAKUTEN);
 }
 
 // Local catalog first (instant, free); fall back to live Rakuten search when we
@@ -267,14 +274,12 @@ export async function searchCatalog(q) {
 // Barcode scan → candidate listings. Returns [] when nothing mentions the code;
 // the caller should then fall back to a name search rather than claim a match.
 export async function searchByJan(jan) {
-  const { data, error } = await db.functions.invoke('add-product', { body: { jan } });
-  if (error) throw new Error(data?.error ?? error.message);
+  const data = await invokeFn('add-product', { jan }, SIGN_IN_RAKUTEN);
   return { results: data.results ?? [], note: data.note };
 }
 
 export async function searchRakuten(keyword) {
-  const { data, error } = await db.functions.invoke('add-product', { body: { keyword } });
-  if (error) throw new Error(data?.error ?? error.message);
+  const data = await invokeFn('add-product', { keyword }, SIGN_IN_RAKUTEN);
   return (data.results ?? []).map((r) => ({
     id: null, itemCode: r.itemCode, name: r.name, subtitle: r.shop,
     msrp: null, current: r.price, url: r.url, image: r.image, source: 'rakuten'
