@@ -108,3 +108,16 @@ test('helpers', () => {
   assert.equal(I.dayOf('2026/10/5'), '2026-10-05');
   assert.equal(I.parse([['a', 'b'], [1, 2]]).error.slice(0, 19), 'No header row found');
 });
+
+test('shops round tax by their own rule; import agrees with Compare', () => {
+  const C = require('../../js/chatak-compare.js');
+  assert.equal(I.shopRounding('Donki Musashi-Urawa'), 'half_up');
+  assert.equal(I.shopRounding('ドン・キホーテ'), 'half_up');
+  assert.equal(I.shopRounding('Daiso'), 'down');
+  assert.equal(I.shopRounding(''), 'down');
+  assert.equal(I.inclOf(898, 'excl', 10, 'half_up'), 988);
+  assert.equal(I.inclOf(898, 'excl', 10), 987);
+  for (const r of ['down', 'half_up', 'up']) for (let price = 1; price < 3000; price += 7) for (const rate of [8, 10]) {
+    assert.equal(I.inclOf(price, 'excl', rate, r), C.inclOf({ price, tax_basis: 'excl', tax_rate: rate, tax_rounding: r }));
+  }
+});

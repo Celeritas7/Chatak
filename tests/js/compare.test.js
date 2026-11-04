@@ -145,3 +145,17 @@ test('moving an option carries the specs the other need can hold', () => {
   assert.deepEqual(C.carrySpecs({ colour: 'white' }, from, to), { specs: { colour: 'white' }, dropped: [] });
   assert.deepEqual(C.carrySpecs(null, from, to), { specs: {}, dropped: [] });
 });
+
+test('tax is rounded the way the shop rounds its tags', () => {
+  const p = (price, tax_rounding, tax_rate = 10) => C.inclOf({ price, tax_basis: 'excl', tax_rate, tax_rounding });
+  assert.equal(p(898, 'half_up'), 988);    // Donki tag
+  assert.equal(p(699, 'half_up'), 769);    // Donki tag
+  assert.equal(p(1999, 'half_up'), 2199);  // Donki tag
+  assert.equal(p(898), 987);               // no rule given: down, as before
+  assert.equal(p(1235, 'half_up'), 1359);  // exactly .5
+  assert.equal(p(1234, 'half_up'), 1357);
+  assert.equal(p(1234, 'up'), 1358);
+  assert.equal(p(1490, 'half_up'), 1639);
+  assert.equal(p(216, 'half_up', 8), 233);
+  assert.equal(C.inclOf({ price: 1639, tax_basis: 'incl', tax_rounding: 'up' }), 1639);
+});

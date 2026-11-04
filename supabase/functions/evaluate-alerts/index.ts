@@ -1,5 +1,5 @@
 // supabase/functions/evaluate-alerts/index.ts
-// Deploy: supabase functions deploy evaluate-alerts --no-verify-jwt
+// Deploy: supabase functions deploy evaluate-alerts --no-verify-jwt   (caller checked in code: isService — collect-prices sends the secret key)
 // Secrets: supabase secrets set RESEND_API_KEY=... APP_URL=https://you.github.io/chatak
 //
 // Runs straight after collection. Evaluates every active rule against the
@@ -9,10 +9,28 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const db = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-);
+// Keys (2026-10-28 key migration, done by the Akatsuki hub after its audit): prefer the new secret key,
+// fall back to the legacy service_role key.  Server-to-server callers are checked in code (isService).
+const SECRET_KEYS: string[] = (() => { try { return Object.values(JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}')).map(String); } catch { return []; } })();
+const ADMIN_KEY = (() => { try { return JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}').default; } catch { return null; } })() || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const db = createClient(Deno.env.get('SUPABASE_URL')!, ADMIN_KEY, { auth: { persistSession: false } });
+
+// A server caller: the project secret key (apikey or bearer), or a legacy service_role JWT the admin API accepts.
+async function isService(req: Request): Promise<boolean> {
+  const apikey = (req.headers.get('apikey') || '').trim();
+  const bearer = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if ((apikey && SECRET_KEYS.includes(apikey)) || (bearer && SECRET_KEYS.includes(bearer))) return true;
+  if (!bearer || bearer.startsWith('sb_')) return false;
+  try {
+    const t = bearer.split('.')[1];
+    if (JSON.parse(atob(t.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(t.length / 4) * 4, '='))).role !== 'service_role') return false;
+  } catch { return false; }
+  const { error } = await createClient(Deno.env.get('SUPABASE_URL')!, bearer, { auth: { persistSession: false } }).auth.admin.listUsers({ page: 1, perPage: 1 });
+  return !error;
+}
+// Calling the next function in the chain: the secret key on apikey (and as bearer, which a legacy key needs).
+const SERVICE_HEADERS = { apikey: ADMIN_KEY, Authorization: 'Bearer ' + ADMIN_KEY, 'Content-Type': 'application/json' };
+
 const yen = (n: number) => '¥' + n.toLocaleString('en-US');
 // chatak_product_stats takes the last 90 recorded days, so a young product has a
 // shorter median than 90 days. Never claim a span the record cannot support.
@@ -31,7 +49,8 @@ async function sendEmail(to: string, subject: string, html: string) {
   });
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  if (!(await isService(req))) return new Response('service only', { status: 401 });
   const { data: rules } = await db
     .from('chatak_alert_rules')
     .select('id, user_id, product_id, kind, target_price, product:chatak_products(name)')
@@ -112,7 +131,7 @@ Deno.serve(async () => {
   try {
     const res = await fetch(Deno.env.get('SUPABASE_URL') + '/functions/v1/send-push', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'), 'Content-Type': 'application/json' },
+      headers: SERVICE_HEADERS,
       body: '{}'
     });
     push = await res.json().catch(() => res.status);

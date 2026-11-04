@@ -19,6 +19,7 @@ async function page(b, w, h) {
     await p.route('https://unpkg.com/**', (r) => r.fulfill({ path: map(r.request().url()), contentType: 'application/javascript' }));
   }
   await p.route('**/js/chatak-public-config.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // stay on sample data
+  await p.route('**/Akatsuki/js/akatsuki-broadcast.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // the hub's overlay: not part of these checks
   await p.route('**/js/chatak-config.js', (r) => r.fulfill({ body: "window.CHATAK_CONFIG={signedOutView:'sample'};", contentType: 'application/javascript' }));
   p._errors = [];
   p.on('pageerror', (e) => p._errors.push(e.message));

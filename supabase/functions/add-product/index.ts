@@ -1,5 +1,6 @@
 // supabase/functions/add-product/index.ts
-// Deploy: supabase functions deploy add-product
+// Deploy: supabase functions deploy add-product --no-verify-jwt   (the signed-in user is checked in code; since the
+//         2026-10-28 audit every path needs one — before, the public key alone could search and create products)
 // Secrets: RAKUTEN_APP_ID
 //
 // Backs the paste-a-URL and search flows in the UI.
@@ -33,14 +34,20 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
 const RAKUTEN_STORE_ID = 1;
+// Keys (2026-10-28 key migration, done by the Akatsuki hub after its audit): prefer the new secret key,
+// fall back to the legacy service_role key.
+const ADMIN_KEY = (() => { try { return JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}').default; } catch { return null; } })() || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
-  const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  );
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, ADMIN_KEY, { auth: { persistSession: false } });
+
+  // Signed-in users only: searches spend Rakuten quota and a URL creates shared products.
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  const { data: who } = !token || token.startsWith('sb_') ? { data: null } : await admin.auth.getUser(token);
+  const user = who?.user;
+  if (!user) return json({ error: 'Sign in to search or add products.' }, 401);
 
   let body: { url?: string; keyword?: string; jan?: string; itemCode?: string };
   try { body = await req.json(); } catch { return json({ error: 'expected JSON body' }, 400); }
@@ -150,20 +157,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Watchlist it for the caller, if this request carries a user.
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      const asUser = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      const { data: { user } } = await asUser.auth.getUser();
-      if (user) {
-        await admin.from('chatak_watchlist')
-          .upsert({ user_id: user.id, product_id: productId }, { onConflict: 'user_id,product_id' });
-      }
-    }
+    // Watchlist it for the caller.
+    await admin.from('chatak_watchlist')
+      .upsert({ user_id: user.id, product_id: productId }, { onConflict: 'user_id,product_id' });
 
     return json({
       product_id: productId,

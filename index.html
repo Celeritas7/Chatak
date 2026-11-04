@@ -3039,6 +3039,7 @@ class Component extends DCLogic {
       // Online at a seller with no store row (ANA Mall, a maker's site): the price carries its name.
       shop_name: opt.source_kind === 'shop' || opt.store_id == null ? (opt.shop_name || null) : null,
       store_id: opt.source_kind === 'online' ? (opt.store_id ?? null) : null, price, tax_basis: basis, tax_rate: cat ? Number(cat.tax_rate) : 10,
+      tax_rounding: basis === 'excl' ? window.ChatakImport.shopRounding(opt.shop_name || opt.shop) : 'down',
       price_kind: P.price_kind, member_program: P.price_kind === 'member' ? P.member_program.trim() : null,
       seen_on: P.seen_on || new Date().toISOString().slice(0, 10), source: opt.source_kind === 'online' ? 'url' : 'manual'
     } };
@@ -3373,7 +3374,8 @@ class Component extends DCLogic {
       const seenKeys = new Set();
       const priceRows = plan.newPrices.filter((r) => { const k = I.priceKey(r); if (seenKeys.has(k)) return false; seenKeys.add(k); return true; }).map((r) => ({
         option_id: keyToId[r.import_key], store_id: r.source_kind === 'online' ? r.store_id : null, shop_name: r.store_id == null ? r.shop_name : null, cost_shop_id: costIdOf(r),
-        price: r.price, tax_basis: r.tax_basis, tax_rate: rateOf(r.category), price_kind: r.source_kind === 'online' ? 'online' : 'shelf', seen_on: r.seen_on,
+        price: r.price, tax_basis: r.tax_basis, tax_rate: rateOf(r.category), tax_rounding: r.tax_basis === 'excl' ? I.shopRounding(r.shop_name || r.shopLabel) : 'down',
+        price_kind: r.source_kind === 'online' ? 'online' : 'shelf', seen_on: r.seen_on,
         note: (r.price_high ? 'Range in the sheet: ¥' + r.price.toLocaleString('en-US') + ' to ¥' + r.price_high.toLocaleString('en-US') + '. ' : '') + 'From ' + P.file + '.',
         import_key: I.priceKey(r)
       })).filter((x) => x.option_id);
@@ -3394,7 +3396,7 @@ class Component extends DCLogic {
               : { id: 'mx-imp-' + Date.now() + '-' + items.length, name: r.name, size: r.size_label, cat: r.category };
             items = items.concat([it]);
           }
-          (byShop[r.shopLabel] = byShop[r.shopLabel] || []).push({ itemId: it.id, price: I.inclOf(r.price, r.tax_basis, P.rate[r.category] || 10), shelf: true });
+          (byShop[r.shopLabel] = byShop[r.shopLabel] || []).push({ itemId: it.id, price: I.inclOf(r.price, r.tax_basis, P.rate[r.category] || 10, I.shopRounding(r.shop_name || r.shopLabel)), shelf: true });
         }
         const shops = (M.shops || []);
         for (const name of Object.keys(byShop)) {
@@ -3479,7 +3481,7 @@ class Component extends DCLogic {
         toggle: () => this.cmpImpPatch({ openCat: open ? null : c.name }), toggleLabel: open ? 'Hide items' : 'Show items',
         rows: open ? rows.map((r) => ({
           name: r.name + (r.name_ja ? ' · ' + r.name_ja : ''),
-          meta: [r.shopLabel + (r.source_kind === 'shop' && !costNames.has(String(r.shop_name || '').toLowerCase()) ? ' (not in Cost: saved by name)' : ''), r.price != null ? (r.tax_basis ? C.yen(I.inclOf(r.price, r.tax_basis, P.rate[c.name])) + ' incl. tax' + (r.tax_basis === 'excl' ? ' (tag ' + C.yen(r.price) + ')' : '') : C.yen(r.price) + ', tax not known') : 'no price',
+          meta: [r.shopLabel + (r.source_kind === 'shop' && !costNames.has(String(r.shop_name || '').toLowerCase()) ? ' (not in Cost: saved by name)' : ''), r.price != null ? (r.tax_basis ? C.yen(I.inclOf(r.price, r.tax_basis, P.rate[c.name], I.shopRounding(r.shop_name || r.shopLabel))) + ' incl. tax' + (r.tax_basis === 'excl' ? ' (tag ' + C.yen(r.price) + ')' : '') : C.yen(r.price) + ', tax not known') : 'no price',
             r.price_high ? 'up to ' + C.yen(r.price_high) : '', r.pack_qty + ' ' + r.pack_unit + (r.pack_assumed && r.size_label ? ' (from "' + r.size_label + '")' : ''),
             r.photo ? (P.photos[r.photo.toLowerCase()] ? 'photo ✓' : 'photo ' + r.photo) : '', r.photo_check ? 'check photo' : '', r.duplicateOf ? 'same item as line ' + r.duplicateOf : ''].filter(Boolean).join(' · '),
           style: 'display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F2EEE7;' + (r.include ? '' : 'opacity:0.45;'),
@@ -3940,7 +3942,7 @@ class Component extends DCLogic {
             .map(([k, l]) => ({ label: l, go: () => setP({ price_kind: k }), style: chip(P.price_kind === k) })),
           isMember: P.price_kind === 'member', program: P.member_program, onProgram: (e) => setP({ member_program: e.target.value }),
           hint: !typed ? (basis ? 'Type the number on the tag.' : 'Type the number on the tag, and choose whether it includes tax.')
-            : basis ? '= ' + C.yen(C.inclOf({ price: typed, tax_basis: basis, tax_rate: Number(cat.tax_rate) })) + ' incl. ' + Number(cat.tax_rate) + '% tax' : 'Choose whether ¥' + typed.toLocaleString('en-US') + ' includes tax.',
+            : basis ? '= ' + C.yen(C.inclOf({ price: typed, tax_basis: basis, tax_rate: Number(cat.tax_rate), tax_rounding: window.ChatakImport.shopRounding(E.source_kind === 'shop' ? E.shop : '') })) + ' incl. ' + Number(cat.tax_rate) + '% tax' : 'Choose whether ¥' + typed.toLocaleString('en-US') + ' includes tax.',
           add: E.id ? () => this.cmpAddPrice() : null, addStyle: softBtn(typed > 0 && !S.cmpBusy)
         },
         error: S.cmpError,

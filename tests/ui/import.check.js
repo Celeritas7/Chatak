@@ -16,7 +16,7 @@ const ok = (cond, label) => { console.log((cond ? 'ok  ' : 'FAIL') + '  ' + labe
 // The shelf sheet's shape, with the cases that matter.
 const sheet = [
   ['Shop', 'Category', 'Product (EN)', 'Product (JP)', 'Brand', 'Price incl. tax', 'Price excl. tax', 'Tax basis', 'Size / unit', 'Notes', 'Photo filename', 'Flag'],
-  ['Donki Musashi-Urawa', 'Folding table', 'MY space table', 'マイスペーステーブル', 'Donki', 1802, 1639, 'excl', '60x40 cm', '', 'IMG20261024192355.jpg', 'OK'],
+  ['Donki Musashi-Urawa', 'Folding table', 'MY space table', 'マイスペーステーブル', 'Donki', 1803, 1639, 'excl', '60x40 cm', '', 'IMG20261024192355.jpg', 'OK'],
   ['Nitori Ageo', 'Folding table', 'Side table', 'サイドテーブル', 'Nitori', 2490, 2264, 'incl', '1 pc', '', 'IMG20261025101500.jpg', 'Check photo'],
   ['Gyomu Kawaguchi', 'Drinks', 'Oolong tea', 'ウーロン茶', 'Suntory', 158, null, '', '2L', '', '', ''],
   ['Corner shop', 'Drinks', 'Barley tea', '麦茶', '', 98, null, '', '600 ml', '', '', ''],
@@ -36,6 +36,7 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   }
   if (XL) await m.route('https://cdnjs.cloudflare.com/ajax/libs/xlsx/**', (r) => r.fulfill({ path: XL, contentType: 'application/javascript' }));
   await m.route('**/js/chatak-public-config.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // stay on sample data
+  await m.route('**/Akatsuki/js/akatsuki-broadcast.js', (r) => r.fulfill({ body: '', contentType: 'application/javascript' }));  // the hub's overlay: not part of these checks
   await m.route('**/js/chatak-config.js', (r) => r.fulfill({ body: "window.CHATAK_CONFIG={signedOutView:'sample'};", contentType: 'application/javascript' }));
   const errors = [];
   m.on('pageerror', (e) => errors.push(e.message));
@@ -70,7 +71,7 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   const table = m.locator('section div', { has: m.locator('span', { hasText: /^Folding table$/ }) }).filter({ has: m.getByRole('button', { name: 'Show items' }) }).last();
   await table.getByRole('button', { name: 'Show items' }).click();
   t = await text();
-  ok(t.includes('¥1,802 incl. tax (tag ¥1,639)') && t.includes('check photo'), 'item rows: tax-included price, the tag, the photo flag');
+  ok(t.includes('¥1,803 incl. tax (tag ¥1,639)') && t.includes('check photo'), 'item rows: tax-included price, the tag, the photo flag');
 
   await m.getByLabel('Photos for the import').setInputFiles({ name: 'IMG20261024192355.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') });
   ok((await text()).includes('1 of 2 named photos matched.'), 'photos matched by file name');
@@ -88,7 +89,7 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   await m.getByText('Folding table', { exact: true }).first().click();
   await m.waitForSelector('article');
   const my = (await m.$$eval('article', (a) => a.map((x) => x.innerText))).find((x) => x.split('\n').includes('MY space table')) || '';
-  ok(my.includes('¥1,802') && my.includes('tag ¥1,639 + tax') && my.includes('View photo') && my.includes('2026-10-24'), 'MY space table: price, tag, photo, the day from the photo name');
+  ok(my.includes('¥1,803') && my.includes('tag ¥1,639 + tax') && my.includes('View photo') && my.includes('2026-10-24'), 'MY space table: price, tag, photo, the day from the photo name');
   await m.getByRole('button', { name: '← All needs' }).click();
 
   // the same file again adds nothing

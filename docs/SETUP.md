@@ -64,8 +64,15 @@ supabase secrets set RAKUTEN_APP_ID=xxx RAKUTEN_ACCESS_KEY=xxx YAHOO_APP_ID=xxx 
 # or just: ./scripts/deploy.sh PROJECT_REF
 supabase functions deploy collect-prices  --no-verify-jwt
 supabase functions deploy evaluate-alerts --no-verify-jwt
-supabase functions deploy add-product                       # keeps JWT: it writes on behalf of a user
+supabase functions deploy add-product     --no-verify-jwt
+supabase functions deploy send-push       --no-verify-jwt
 ```
+
+All four check their caller in code, so JWT verification stays off (the new
+secret key is not a JWT). Never deploy one without its check:
+collect-prices and evaluate-alerts take the secret key only (pg_cron sends it),
+send-push takes the secret key or a signed-in user, and add-product a signed-in
+user. With the public key alone, each answers 401.
 
 Never `RAKUTEN_APP_ID` in the front-end, in the repo, or in a file you might
 `git add` by reflex. The only key that legitimately reaches the browser is the
@@ -186,7 +193,7 @@ is in. Phone notifications need one key pair and one more function.
    ```bash
    supabase secrets set VAPID_PUBLIC_KEY=<public> VAPID_PRIVATE_KEY=<private> \
      VAPID_SUBJECT=mailto:you@example.com APP_URL=https://celeritas7.github.io/Chatak
-   supabase functions deploy send-push        # keeps JWT verification on
+   supabase functions deploy send-push --no-verify-jwt   # it checks its caller in code
    ```
    `./scripts/deploy.sh PROJECT_REF` deploys it along with the others.
 4. **Give the public half to the app:** `vapidPublicKey: '<public>'` in
