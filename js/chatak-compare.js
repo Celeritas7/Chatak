@@ -12,8 +12,14 @@
   'use strict';
 
   const yen = (n) => '¥' + Math.round(n).toLocaleString('en-US');
-  // Matches the database's generated price_incl: tax added, rounded down.
-  const inclOf = (p) => (p.tax_basis === 'incl' ? p.price : Math.floor(p.price * (100 + Number(p.tax_rate || 10)) / 100));
+  // Tax added and rounded the way the shop rounds its tags; matches the
+  // database's generated price_incl. Whole-yen arithmetic, so 1235 + 10% is
+  // exactly 1358.5 and rounds half up to 1359, never to a float's 1358.
+  const withTax = (price, rate, rounding) => {
+    const n = Math.round(price * (100 + Number(rate || 10)));  // hundredths of a yen
+    return rounding === 'half_up' ? Math.floor((n + 50) / 100) : rounding === 'up' ? Math.ceil(n / 100) : Math.floor(n / 100);
+  };
+  const inclOf = (p) => (p.tax_basis === 'incl' ? p.price : withTax(p.price, p.tax_rate, p.tax_rounding));
   const shopKey = (p) => (p.store_id != null ? 'store:' + p.store_id : p.cost_shop_id != null ? 'cost:' + p.cost_shop_id : 'name:' + (p.shop_name || ''));
   const has = (v) => v !== undefined && v !== null && v !== '';
 
@@ -264,7 +270,7 @@
     return { store_id, name, asin };
   }
 
-  const api = { carrySpecs, linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
+  const api = { withTax, carrySpecs, linkInfo, modelCodeOf, yen, inclOf, currentPrices, priceSummary, bestInColumn, payMore, perUnit, sortRows, filterRows, compareCategory, fmtVal, keyOf, sample };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakCompare = api;
 })(typeof window !== 'undefined' ? window : globalThis);

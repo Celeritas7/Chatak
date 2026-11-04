@@ -530,7 +530,7 @@ export async function deleteCmpOption(id) {
 export async function addCmpPrice(p) {
   const { data, error } = await db.from('chatak_cmp_prices').insert({
     option_id: p.option_id, cost_shop_id: p.cost_shop_id ?? null, shop_name: p.shop_name || null, store_id: p.store_id ?? null,
-    price: p.price, tax_basis: p.tax_basis, tax_rate: p.tax_rate ?? 10, price_kind: p.price_kind || 'shelf',
+    price: p.price, tax_basis: p.tax_basis, tax_rate: p.tax_rate ?? 10, tax_rounding: p.tax_rounding || 'down', price_kind: p.price_kind || 'shelf',
     member_program: p.member_program || null, seen_on: p.seen_on, source: p.source || 'manual', note: p.note || null
   }).select().single();
   if (error) throw error;
@@ -565,7 +565,7 @@ export async function importCmpOptions(rows) {
 export async function importCmpPrices(rows) {
   return insertChunks('chatak_cmp_prices', rows.map((p) => ({
     option_id: p.option_id, store_id: p.store_id ?? null, shop_name: p.shop_name || null, cost_shop_id: p.cost_shop_id ?? null,
-    price: p.price, tax_basis: p.tax_basis, tax_rate: p.tax_rate ?? 10, price_kind: p.price_kind || 'shelf',
+    price: p.price, tax_basis: p.tax_basis, tax_rate: p.tax_rate ?? 10, tax_rounding: p.tax_rounding || 'down', price_kind: p.price_kind || 'shelf',
     seen_on: p.seen_on, source: 'import', note: p.note || null, import_key: p.import_key, photo_id: p.photo_id ?? null
   })), null);
 }

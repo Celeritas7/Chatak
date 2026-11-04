@@ -753,9 +753,14 @@ create table if not exists public.chatak_cmp_prices (
   price           integer not null check (price > 0),
   tax_basis       text not null check (tax_basis in ('incl', 'excl')),
   tax_rate        numeric(4,2) not null default 10 check (tax_rate in (8, 10)),
-  -- The one number comparisons use. Rounded down, as shops round on the tag.
+  -- How the shop rounds tax on its tags: most round down, Donki rounds half up
+  -- (898 + 10% = 987.8 is tagged 988). Set per price when it is entered.
+  tax_rounding    text not null default 'down' check (tax_rounding in ('down', 'half_up', 'up')),
+  -- The one number comparisons use: the tax-included price, as the tag shows it.
   price_incl      integer generated always as (
                     case when tax_basis = 'incl' then price
+                         when tax_rounding = 'half_up' then round(price * (100 + tax_rate) / 100)::integer
+                         when tax_rounding = 'up' then ceil(price * (100 + tax_rate) / 100)::integer
                          else floor(price * (100 + tax_rate) / 100)::integer end) stored,
   price_kind      text not null default 'shelf' check (price_kind in ('shelf', 'member', 'sale', 'online')),
   member_program  text,
@@ -768,6 +773,38 @@ create table if not exists public.chatak_cmp_prices (
   check (cost_shop_id is not null or shop_name is not null or store_id is not null),
   check (price_kind <> 'member' or member_program is not null)
 );
+-- Upgrade: tax_rounding (2026-11). price_incl used to round down always; it
+-- now follows the row's rounding. Postgres 17 changes the expression in place;
+-- older servers (the scratch test database) rebuild the column, which nothing
+-- else depends on. Skipped once the expression already reads tax_rounding.
+alter table public.chatak_cmp_prices add column if not exists tax_rounding text not null default 'down';
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conrelid = 'public.chatak_cmp_prices'::regclass
+                  and conname = 'chatak_cmp_prices_tax_rounding_check') then
+    alter table public.chatak_cmp_prices add constraint chatak_cmp_prices_tax_rounding_check
+      check (tax_rounding in ('down', 'half_up', 'up'));
+  end if;
+  if not exists (select 1 from pg_attrdef d join pg_attribute a on a.attrelid = d.adrelid and a.attnum = d.adnum
+                  where d.adrelid = 'public.chatak_cmp_prices'::regclass and a.attname = 'price_incl'
+                    and pg_get_expr(d.adbin, d.adrelid) like '%tax_rounding%') then
+    if current_setting('server_version_num')::int >= 170000 then
+      execute $x$alter table public.chatak_cmp_prices alter column price_incl set expression as (
+        case when tax_basis = 'incl' then price
+             when tax_rounding = 'half_up' then round(price * (100 + tax_rate) / 100)::integer
+             when tax_rounding = 'up' then ceil(price * (100 + tax_rate) / 100)::integer
+             else floor(price * (100 + tax_rate) / 100)::integer end)$x$;
+    else
+      execute 'alter table public.chatak_cmp_prices drop column price_incl';
+      execute $x$alter table public.chatak_cmp_prices add column price_incl integer generated always as (
+        case when tax_basis = 'incl' then price
+             when tax_rounding = 'half_up' then round(price * (100 + tax_rate) / 100)::integer
+             when tax_rounding = 'up' then ceil(price * (100 + tax_rate) / 100)::integer
+             else floor(price * (100 + tax_rate) / 100)::integer end) stored$x$;
+    end if;
+  end if;
+end $$;
+
 create unique index if not exists chatak_cmp_prices_import
   on public.chatak_cmp_prices (user_id, import_key) where import_key is not null;
 create index if not exists chatak_cmp_prices_option on public.chatak_cmp_prices (option_id, seen_on desc);

@@ -78,6 +78,13 @@
     return null;
   }
 
+  // How a shop rounds tax on its tax-included tag. Donki rounds half up
+  // (898 → 988, 699 → 769, 1999 → 2199 on its tags); any other shop is
+  // taken to round down, the common rule, until a tag shows otherwise.
+  function shopRounding(shop) {
+    return /donki|don quijote|don kihote|ドン|キホーテ/.test(lc(shop)) ? 'half_up' : 'down';
+  }
+
   function basisWord(v) {
     const n = lc(v);
     if (!n) return null;
@@ -212,10 +219,14 @@
   // same sheet adds nothing, a new price on a new day is a new row.
   const priceKey = (r) => r.import_key + ':' + r.price + r.tax_basis + ':' + r.seen_on;
 
-  // What a price includes tax at, rounded down like the tag.
-  const inclOf = (price, basis, rate) => (basis === 'incl' ? price : Math.floor(price * (100 + (rate || 10)) / 100));
+  // What a price includes tax at, rounded as the shop rounds (see ChatakCompare.withTax).
+  const inclOf = (price, basis, rate, rounding) => {
+    if (basis === 'incl') return price;
+    const n = Math.round(price * (100 + (rate || 10)));
+    return rounding === 'half_up' ? Math.floor((n + 50) / 100) : rounding === 'up' ? Math.ceil(n / 100) : Math.floor(n / 100);
+  };
 
-  const api = { parse, mapHeader, findHeader, yenOf, sourceOf, packOf, shopBasis, dayFromPhoto, dayOf, priceKey, inclOf };
+  const api = { parse, mapHeader, findHeader, yenOf, sourceOf, packOf, shopBasis, shopRounding, dayFromPhoto, dayOf, priceKey, inclOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);
