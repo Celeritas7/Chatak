@@ -197,7 +197,9 @@ is in. Phone notifications need one key pair and one more function.
    ```
    `./scripts/deploy.sh PROJECT_REF` deploys it along with the others.
 4. **Give the public half to the app:** `vapidPublicKey: '<public>'` in
-   `js/chatak-config.js`. It is public by design.
+   `js/chatak-public-config.js` for the published site (set since 4 Nov 2026),
+   or in `js/chatak-config.js` for a local setup on another project. It is
+   public by design; the private half lives only in the Supabase secret.
 5. **Turn it on per device:** open Chatak on the phone → Alerts → *Turn on*,
    then Settings → *Send test*. On iPhone, first add Chatak to the Home Screen
    (Share → Add to Home Screen) and open it from there; iOS 16.4 or later.
