@@ -129,6 +129,27 @@ const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   await m.waitForSelector('text=Imported quick.csv');
   ok((await text()).includes('Imported quick.csv: 1 new need, 4 options, 4 prices.'), 'csv imported into one need ("Imported")');
 
+  // attach photos by the file name in an option's notes
+  await m.getByRole('button', { name: /^Imported/ }).click();
+  await m.locator('article', { hasText: 'Cup noodle' }).getByRole('button', { name: 'Edit' }).click();
+  await m.getByPlaceholder('Notes').fill('Read from the shelf. Photo IMG_20261101_120000.jpg.');
+  await m.getByRole('button', { name: 'Save', exact: true }).click();
+  await m.waitForSelector('text=Saved Cup noodle.');
+  await m.getByRole('button', { name: '← All needs' }).click();
+  const two = [{ name: 'IMG20261101120000.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') },
+    { name: 'IMG20261101130000.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(photo, 'base64') }];
+  await m.getByLabel('Attach photos').setInputFiles(two);
+  t = await text();
+  ok(t.includes('1 photo to attach') && t.includes('Cup noodle · Imported') && t.includes('IMG20261101120000.jpg'), 'attach: the photo named in the notes goes to that option');
+  ok(t.includes('No option names this photo, so it is not attached: IMG20261101130000.jpg'), 'attach: a photo no option names is listed, not guessed');
+  await m.getByRole('button', { name: 'Attach 1 photo' }).click();
+  await m.waitForSelector('text=Attached 1 photo to 1 option.');
+  await m.getByLabel('Attach photos').setInputFiles(two.slice(0, 1));
+  t = await text();
+  ok(t.includes('No photos to attach') && t.includes('1 photo is already attached'), 'attach: a second run adds nothing');
+  ok(await m.evaluate(() => document.documentElement.scrollWidth) === 390, 'attach: no sideways scroll on the phone');
+  await m.getByRole('button', { name: 'Cancel' }).click();
+
   // the matrix has the drinks, tax-included
   await m.locator('.ck-tab', { hasText: 'Matrix' }).click();
   await m.waitForTimeout(500);

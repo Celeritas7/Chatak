@@ -1387,7 +1387,38 @@
                 <span style="align-self:flex-start;padding:9px 16px;border-radius:11px;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;">Choose file</span>
                 <input type="file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" onChange="{{ cmp.onImportFile }}" aria-label="Import a spreadsheet" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
               </label>
+              <label style="position:relative;padding:18px;border-radius:20px;background:#FBFAF7;border:1px dashed #DDD7CE;display:flex;flex-direction:column;gap:8px;cursor:pointer;">
+                <span style="font-size:13px;font-weight:700;">Attach photos</span>
+                <span style="font-size:11px;color:#6F6A62;line-height:1.45;">Photos named in an option’s notes, e.g. IMG20261024191712.jpg. Choose several at once; you see where each goes before anything is uploaded.</span>
+                <span style="align-self:flex-start;padding:9px 16px;border-radius:11px;background:#1C1A17;color:#fff;font-size:12px;font-weight:700;">Choose photos</span>
+                <input type="file" accept="image/*" multiple="multiple" onChange="{{ cmp.onAttachFiles }}" aria-label="Attach photos" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;" />
+              </label>
             </div>
+          </sc-if>
+
+          <!-- attach photos review -->
+          <sc-if value="{{ cmp.showAttach }}">
+            <section style="padding:18px;border-radius:18px;background:#fff;border:1px solid #D6E9E0;display:flex;flex-direction:column;gap:12px;">
+              <h2 style="margin:0;font-size:16px;font-weight:800;">{{ cmp.att.title }}</h2>
+              <span style="font-size:11px;color:#6F6A62;line-height:1.45;">{{ cmp.att.hint }}</span>
+              <sc-if value="{{ cmp.att.hasRows }}">
+                <div style="display:flex;flex-direction:column;">
+                  <sc-for list="{{ cmp.att.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px;padding:8px 0;border-top:1px solid #F2EEE7;">
+                      <span style="font-size:13px;font-weight:700;min-width:0;overflow-wrap:anywhere;">{{ r.option }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F6A62;overflow-wrap:anywhere;">{{ r.file }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ cmp.att.already }}"><span style="font-size:11px;color:#6F6A62;">{{ cmp.att.already }}</span></sc-if>
+              <sc-if value="{{ cmp.att.unmatched }}"><span style="font-size:11px;color:#8A5A1F;line-height:1.45;overflow-wrap:anywhere;">{{ cmp.att.unmatched }}</span></sc-if>
+              <sc-if value="{{ cmp.att.progress }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.att.progress }}</span></sc-if>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button onClick="{{ cmp.att.run }}" style="{{ cmp.att.runStyle }}">{{ cmp.att.runLabel }}</button>
+                <sc-if value="{{ cmp.att.cancel }}"><button onClick="{{ cmp.att.cancel }}" style="padding:10px 14px;border-radius:12px;border:0;background:none;color:#6F6A62;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button></sc-if>
+              </div>
+            </section>
           </sc-if>
 
           <!-- import review -->
@@ -1971,6 +2002,7 @@ class Component extends DCLogic {
     cmpWatch: null,
     // Import: the spreadsheet being reviewed, then loaded.
     cmpImp: null,
+    cmpAttach: null,
     // Send to wishlist: the option awaiting confirmation, and Cost's replies by request id.
     cmpWishConfirm: null, cmpWishReplies: {},
     // + From Rakuten: search results to add as options, and which ones were added.
@@ -3260,6 +3292,45 @@ class Component extends DCLogic {
     return this._xlsxLoad;
   }
 
+  // ---- attach photos by file name ----
+  // Options read from photos name their photo in the notes. Pick the photos;
+  // each goes to the options that name it, after a review.
+  cmpAttachPick(list) {
+    const C = window.ChatakCompare, D = this.state.cmp;
+    const files = Array.from(list || []);
+    if (!files.length || !C || !D) return;
+    const byName = {};
+    for (const f of files) byName[f.name] = f;
+    const result = C.matchPhotos(files.map((f) => f.name), D.options || [], D.prices || [], D.photos || []);
+    this.setState({ cmpAttach: { status: 'review', byName, result, progress: null, error: null }, cmpError: null, cmpInfo: null });
+  }
+
+  async cmpAttachRun() {
+    const A = this.state.cmpAttach, Ph = window.ChatakPhoto;
+    if (!A || A.status === 'running' || !A.result.matches.length || !Ph) return;
+    const live = this.cmpLive(), todo = A.result.matches, shrunk = {}, errors = [];
+    let done = 0;
+    this.setState({ cmpAttach: { ...A, status: 'running', error: null } });
+    for (const m of todo) {
+      this.setState((s) => ({ cmpAttach: s.cmpAttach && { ...s.cmpAttach, progress: 'Photo ' + (done + errors.length + 1) + ' of ' + todo.length + '…' } }));
+      try {
+        // One photo named by two options is shrunk once and uploaded to each.
+        const x = shrunk[m.file] || (shrunk[m.file] = await Ph.shrink(A.byName[m.file]));
+        if (live) await this._api.uploadCmpPhoto(m.option_id, x);
+        else {
+          const url = URL.createObjectURL(x.blob);
+          this.setState((s) => ({ cmpPhotoUrls: { ...s.cmpPhotoUrls, [url]: url }, cmp: { ...s.cmp, photos: (s.cmp.photos || []).concat([{ id: 'ph-att-' + Date.now() + '-' + done,
+            option_id: m.option_id, storage_path: url, original_name: x.original_name, taken_at: x.taken_at, width: x.width, height: x.height, bytes: x.bytes, created_at: new Date().toISOString() }]) } }));
+        }
+        done++;
+      } catch (e) { errors.push(m.file + ': ' + (e.message || e)); }
+    }
+    if (live) await this.loadCompare();
+    const ids = new Set(todo.map((m) => m.option_id));
+    this.setState({ cmpAttach: null, cmpError: errors.length ? 'Photos not attached: ' + errors.join('; ') : null,
+      cmpInfo: done ? 'Attached ' + (done === 1 ? '1 photo' : done + ' photos') + ' to ' + (ids.size === 1 ? '1 option' : ids.size + ' options') + '.' : null });
+  }
+
   cmpImpPatch(patch) { this.setState((s) => ({ cmpImp: s.cmpImp ? { ...s.cmpImp, ...patch } : null })); }
 
   async cmpImportFile(file) {
@@ -3700,8 +3771,25 @@ class Component extends DCLogic {
       });
       const can = S.cmpNewCat.trim().length > 0 && !S.cmpBusy;
       if (S.cmpImp) return { ...base, showImport: true, imp: this.importVals(S), title: 'Compare', subtitle: '' };
+      if (S.cmpAttach) {
+        const A = S.cmpAttach, R = A.result, running = A.status === 'running';
+        const optOf = (id) => (D.options || []).find((o) => o.id === id), catOf = (o) => (D.categories || []).find((c) => c.id === (o && o.category_id));
+        const n = R.matches.length;
+        return { ...base, showAttach: true, title: 'Compare', subtitle: '', att: {
+          title: n ? (n === 1 ? '1 photo to attach' : n + ' photos to attach') : 'No photos to attach',
+          rows: R.matches.map((m) => { const o = optOf(m.option_id), c = catOf(o); return { file: m.file, option: (o ? o.name : 'Option') + (c ? ' · ' + c.name : '') }; }),
+          hasRows: n > 0,
+          already: R.already.length ? (R.already.length === 1 ? '1 photo is' : R.already.length + ' photos are') + ' already attached to the option that names it, and left as it is.' : '',
+          unmatched: R.unmatched.length ? 'No option names ' + (R.unmatched.length === 1 ? 'this photo' : 'these ' + R.unmatched.length + ' photos') + ', so ' + (R.unmatched.length === 1 ? 'it is' : 'they are') + ' not attached: '
+            + R.unmatched.slice(0, 12).join(', ') + (R.unmatched.length > 12 ? ' and ' + (R.unmatched.length - 12) + ' more' : '') + '. Add the file name to an option’s notes, or use Edit → Add photo.' : '',
+          hint: 'Each photo goes to the options whose notes or prices name it. Shrunk on this device to about 300 KB before upload; location data is removed.',
+          progress: A.progress, run: () => this.cmpAttachRun(), runLabel: running ? 'Attaching…' : n === 1 ? 'Attach 1 photo' : 'Attach ' + n + ' photos', runStyle: softBtn(n > 0 && !running),
+          cancel: running ? null : () => this.setState({ cmpAttach: null })
+        } };
+      }
       return { ...base, showList: true, cats, title: 'Compare',
         onImportFile: (e) => { const f = e.target.files && e.target.files[0]; try { e.target.value = ''; } catch (x) {} this.cmpImportFile(f); },
+        onAttachFiles: (e) => { const f = e.target.files ? Array.from(e.target.files) : []; try { e.target.value = ''; } catch (x) {} this.cmpAttachPick(f); },
         subtitle: 'What to buy: options for one need side by side, on one tax basis, with your own photos. ' + (sample ? 'Sample data: six folding tables from your notes.' : 'Only you can see these.'),
         newCatName: S.cmpNewCat, onNewCatName: (e) => this.setState({ cmpNewCat: e.target.value, cmpError: null }),
         onNewCatKey: (e) => { if (e.key === 'Enter') this.cmpCreateCategory(); }, createCat: () => this.cmpCreateCategory(), createCatStyle: softBtn(can) };
