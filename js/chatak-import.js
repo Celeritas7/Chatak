@@ -78,6 +78,14 @@
     return null;
   }
 
+  // Food and drink take the reduced 8% rate; everything else 10%. Read from the
+  // category name, so "Vegetables" or "Fresh fish" need no fixing in the
+  // review. Things used with food (tea utensils, a coffee maker, pet food) are
+  // not food for tax and stay at 10%. The review can still change either way.
+  const FOOD = /food|drink|beverage|grocer|snack|sweets?\b|dessert|confection|candy|chocolate|biscuit|bread|bakery|\brice\b|noodle|pasta|flour|cereal|vegetable|\bveg\b|fruit|produce|\bfish(?!ing)|seafood|\bmeat|poultry|chicken|pork|beef|dairy|\bmilk|cheese|yog(h)?urt|\beggs?\b|tofu|spice|seasoning|sauce|condiment|\boils?\b|olive|canned|frozen|juice|\bwater\b|\btea\b|coffee|soup|curry|飲|食|菓子|調味|野菜|果物|魚|肉|乳|卵|米|麺|パン|冷凍|惣菜/i;
+  const NOT_FOOD = /utensil|maker|machine|teapot|kettle|\bmugs?\b|appliance|tools?\b|cooker|juicer|grinder|ladle|whisk|drinkware|glassware|water bottle|\bpets?\b|dog food|cat food|essential oil|fragrance|diffuser|cleaning|detergent|食器|器具|ポット/i;
+  const isFood = (category) => FOOD.test(String(category || '')) && !NOT_FOOD.test(String(category || ''));
+
   // How a shop rounds tax on its tax-included tag. Donki rounds half up
   // (898 → 988, 699 → 769, 1999 → 2199 on its tags); any other shop is
   // taken to round down, the common rule, until a tag shows otherwise.
@@ -226,7 +234,7 @@
     return rounding === 'half_up' ? Math.floor((n + 50) / 100) : rounding === 'up' ? Math.ceil(n / 100) : Math.floor(n / 100);
   };
 
-  const api = { parse, mapHeader, findHeader, yenOf, sourceOf, packOf, shopBasis, shopRounding, dayFromPhoto, dayOf, priceKey, inclOf };
+  const api = { parse, mapHeader, findHeader, yenOf, sourceOf, packOf, shopBasis, shopRounding, isFood, dayFromPhoto, dayOf, priceKey, inclOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ChatakImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

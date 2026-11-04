@@ -121,3 +121,10 @@ test('shops round tax by their own rule; import agrees with Compare', () => {
     assert.equal(I.inclOf(price, 'excl', rate, r), C.inclOf({ price, tax_basis: 'excl', tax_rate: rate, tax_rounding: r }));
   }
 });
+
+test('food categories take 8%, things used with food stay at 10%', () => {
+  for (const c of ['Frozen food', 'Drinks', 'Snacks', 'Vegetables', 'Fresh fish', 'Seasoning', 'Spices', 'Sweets', 'Dairy', 'Canned food', 'Rice', 'Noodles', 'Fruit', 'Meat', 'Eggs', 'Bread', 'Coffee', 'Green tea', '野菜', '冷凍食品'])
+    assert.equal(I.isFood(c), true, c);
+  for (const c of ['Tea utensils', 'Kitchen', 'Fishing', 'Leggings', 'Waterproof', 'Coffee maker', 'Rice cooker', 'Juicer', 'Home fragrance', 'Essential oil', 'Pet food', 'Water bottle', 'Zojirushi bottle', 'Slicer', 'Blender', 'Cleaning', 'Craft supplies'])
+    assert.equal(I.isFood(c), false, c);
+});

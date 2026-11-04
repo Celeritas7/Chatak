@@ -3348,9 +3348,8 @@ class Component extends DCLogic {
         if (!parsed) parsed = { ...p, sheet: name };
       }
       if (parsed.error || !parsed.rows.length) { this.setState({ cmpImp: null, cmpError: file.name + ': ' + (parsed.error || 'no rows with a product name.') }); return; }
-      const food = /food|drink|tea|coffee|snack|grocer|飲|食|菓子|調味|rice|noodle|beverage/i;
       const dest = {}, rate = {};
-      for (const c of parsed.categories) { dest[c.name] = 'compare'; rate[c.name] = food.test(c.name) ? 8 : 10; }
+      for (const c of parsed.categories) { dest[c.name] = 'compare'; rate[c.name] = I.isFood(c.name) ? 8 : 10; }
       this.setState({ cmpImp: { status: 'review', file: file.name, sheet: parsed.sheet, rows: parsed.rows, categories: parsed.categories, skipped: parsed.skipped,
         dest, rate, basisByShop: {}, photos: {}, openCat: null, showSkipped: false } });
     } catch (e) {
