@@ -1368,14 +1368,24 @@
 
           <!-- needs (categories) -->
           <sc-if value="{{ cmp.showList }}">
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+              <sc-for list="{{ cmp.needFilters }}" as="f"><button onClick="{{ f.go }}" aria-pressed="{{ f.active }}" style="{{ f.style }}">{{ f.label }}</button></sc-for>
+            </div>
+            <sc-if value="{{ cmp.noFilteredNeeds }}"><p style="font-size:12px;color:#6F6A62;">No needs in this group. Select All to see everything.</p></sc-if>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:14px;">
               <sc-for list="{{ cmp.cats }}" as="c" hint-placeholder-count="3">
-                <button onClick="{{ c.open }}" style="text-align:left;padding:18px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;cursor:pointer;display:flex;flex-direction:column;gap:8px;font:inherit;color:inherit;" style-hover="border-color:#D2CABC;box-shadow:0 8px 24px rgba(28,26,23,0.07);">
-                  <span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;">{{ c.name }}</span>
+                <article style="{{ c.cardStyle }}">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:7px;">
+                    <button onClick="{{ c.open }}" style="flex:1;text-align:left;border:0;background:none;padding:0;font:inherit;font-weight:800;font-size:16px;color:inherit;cursor:pointer;">{{ c.name }}</button>
+                    <span style="{{ c.stateStyle }}">{{ c.stateLabel }}</span>
+                  </div>
                   <span style="font-size:12px;color:#6F6A62;">{{ c.count }}</span>
                   <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;">{{ c.range }}</span>
                   <sc-if value="{{ c.shortlisted }}"><span style="font-size:11px;font-weight:700;color:#0E6B4E;">{{ c.shortlisted }}</span></sc-if>
-                </button>
+                  <div style="margin-top:auto;padding-top:7px;border-top:1px solid #F0ECE4;display:flex;gap:5px;flex-wrap:wrap;">
+                    <sc-for list="{{ c.actions }}" as="a"><button onClick="{{ a.go }}" aria-pressed="{{ a.active }}" aria-label="{{ a.aria }}" disabled="{{ a.disabled }}" style="{{ a.style }}">{{ a.label }}</button></sc-for>
+                  </div>
+                </article>
               </sc-for>
               <div style="padding:18px;border-radius:20px;background:#FBFAF7;border:1px dashed #DDD7CE;display:flex;flex-direction:column;gap:10px;">
                 <span style="font-size:13px;font-weight:700;">New need</span>
@@ -2010,7 +2020,7 @@ class Component extends DCLogic {
     cmp: null, cmpCat: null, cmpView: (typeof window !== 'undefined' && window.innerWidth < 760) ? 'cards' : 'table',
     cmpSort: 'price', cmpDir: 'asc', cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} },
     cmpMore: false, cmpEdit: null, cmpPrice: null, cmpFieldsOpen: false,
-    cmpNewField: { label: '', unit: '', kind: 'number', better: 'none', choices: '' }, cmpNewCat: '',
+    cmpNewField: { label: '', unit: '', kind: 'number', better: 'none', choices: '' }, cmpNewCat: '', cmpNeedFilter: 'all',
     cmpBusy: false, cmpError: null, cmpInfo: null, cmpConfirmDel: false, cmpConfirmArchive: false,
     // Photos: signed links by storage path (live) or object URLs (sample and not-yet-saved).
     cmpPhotoUrls: {}, cmpPending: [], cmpPhotoBusy: null, cmpViewPhoto: null, cmpConfirmPhoto: null,
@@ -3245,6 +3255,14 @@ class Component extends DCLogic {
       (c) => ({ ...c, options: c.options.map((x) => (x.id === o.id ? { ...x, status } : x)) }), null);
   }
 
+  cmpSetNeedStatus(c, status) {
+    if (this.state.cmpBusy) return;
+    const next = (c.purchase_status || 'normal') === status ? 'normal' : status;
+    return this.cmpWrite(() => this._api.setCmpCategoryStatus(c.id, next),
+      (d) => ({ ...d, categories: d.categories.map((x) => x.id === c.id ? { ...x, purchase_status: next } : x) }),
+      c.name + ' marked ' + next + '.');
+  }
+
   async cmpCreateCategory() {
     const name = this.state.cmpNewCat.trim();
     if (!name || this.state.cmpBusy) return;
@@ -3789,19 +3807,40 @@ class Component extends DCLogic {
     const shopOptions = this.cmpShops();
 
     if (!cat) {
-      const cats = D.categories.map((c) => {
+      const states = [['priority','⭐ Priority','#FFF2CC','#865900'],['bought','✅ Bought','#E3F4EA','#17613D'],['later','⏳ Later','#EDF1FC','#405991'],['drop','❌ Drop','#FBE8E7','#A03E38']];
+      const rank = { priority:0, normal:1, later:2, bought:3, drop:4 };
+      const filter = S.cmpNeedFilter || 'all';
+      const cats = D.categories.slice()
+        .sort((a,b) => (rank[a.purchase_status || 'normal'] ?? 1) - (rank[b.purchase_status || 'normal'] ?? 1) || (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name))
+        .filter((c) => filter === 'all' || (c.purchase_status || 'normal') === filter)
+        .map((c) => {
         const v = C.compareCategory(c, D.fields, D.options, D.prices);
         const ps = v.all.filter((r) => r.lead).map((r) => r.lead.price_incl);
         const sl = v.all.filter((r) => r.status === 'shortlisted').length;
+        const status = c.purchase_status || 'normal', selected = states.find((x) => x[0] === status);
         return {
-          name: c.name,
-          count: v.all.length ? v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · ' + v.fields.length + ' fields' : 'No options yet · ' + v.fields.length + ' fields',
-          range: ps.length ? C.yen(Math.min(...ps)) + (ps.length > 1 ? ' – ' + C.yen(Math.max(...ps)) : '') + ' incl. tax' : '—',
-          shortlisted: sl ? sl + ' shortlisted' : '',
-          open: () => this.setState({ cmpCat: c.id, cmpEdit: null, cmpWatch: null, cmpAdd: null, cmpFieldsOpen: false, cmpError: null, cmpInfo: null, cmpSort: 'price', cmpDir: 'asc',
-            cmpFilters: { maxPrice: '', statuses: [], source: 'all', mustHave: [], min: {} }, cmpConfirmArchive: false })
+          name:c.name,
+          stateLabel: selected ? selected[1] : '',
+          stateStyle: 'font-size:10px;font-weight:700;border-radius:9px;white-space:nowrap;padding:' + (selected ? '4px 7px' : '0') + ';background:' + (selected ? selected[2] : 'transparent') + ';color:' + (selected ? selected[3] : 'inherit') + ';',
+          cardStyle: 'padding:18px;border-radius:20px;background:#fff;border:1px solid ' + (status === 'priority' ? '#CDB054' : '#EAE5DD') + ';display:flex;flex-direction:column;gap:8px;min-height:160px;',
+          count:v.all.length ? v.all.length + (v.all.length === 1 ? ' option' : ' options') + ' · ' + v.fields.length + ' fields' : 'No options yet · ' + v.fields.length + ' fields',
+          range:ps.length ? C.yen(Math.min(...ps)) + (ps.length > 1 ? ' – ' + C.yen(Math.max(...ps)) : '') + ' incl. tax' : '—',
+          shortlisted:sl ? sl + ' shortlisted' : '',
+          actions:states.map(([id,label,bg,fg]) => ({
+            label, active:status === id, disabled:S.cmpBusy,
+            aria:(status === id ? 'Clear ' : 'Mark ') + c.name + ' ' + label,
+            go:() => this.cmpSetNeedStatus(c,id),
+            style:'padding:5px 7px;border-radius:8px;border:1px solid ' + (status === id ? fg : '#EAE5DD') + ';background:' + (status === id ? bg : '#fff') + ';color:' + (status === id ? fg : '#6F6A62') + ';font-size:10px;font-weight:700;cursor:pointer;'
+          })),
+          open:() => this.setState({ cmpCat:c.id, cmpEdit:null, cmpWatch:null, cmpAdd:null, cmpFieldsOpen:false, cmpError:null, cmpInfo:null, cmpSort:'price', cmpDir:'asc',
+            cmpFilters:{ maxPrice:'', statuses:[], source:'all', mustHave:[], min:{} }, cmpConfirmArchive:false })
         };
       });
+      const needFilters = [['all','All'],...states.map((x) => [x[0],x[1]])].map(([id,label]) => ({
+        label:label + ' (' + (id === 'all' ? D.categories.length : D.categories.filter((c) => (c.purchase_status || 'normal') === id).length) + ')',
+        active:filter === id, go:() => this.setState({ cmpNeedFilter:id }),
+        style:'padding:8px 12px;border-radius:10px;border:1px solid ' + (filter === id ? '#0E6B4E' : '#DDD7CE') + ';background:' + (filter === id ? '#E5F4ED' : '#fff') + ';color:' + (filter === id ? '#0E6B4E' : '#4A443C') + ';font-size:12px;font-weight:700;cursor:pointer;'
+      }));
       const can = S.cmpNewCat.trim().length > 0 && !S.cmpBusy;
       if (S.cmpImp) return { ...base, showImport: true, imp: this.importVals(S), title: 'Compare', subtitle: '' };
       if (S.cmpAttach) {
@@ -3825,7 +3864,7 @@ class Component extends DCLogic {
           cancel: running ? null : () => this.setState({ cmpAttach: null })
         } };
       }
-      return { ...base, showList: true, cats, title: 'Compare',
+      return { ...base, showList: true, cats, needFilters, noFilteredNeeds: !cats.length && filter !== 'all', title: 'Compare',
         onImportFile: (e) => { const f = e.target.files && e.target.files[0]; try { e.target.value = ''; } catch (x) {} this.cmpImportFile(f); },
         onAttachFiles: (e) => { const f = e.target.files ? Array.from(e.target.files) : []; try { e.target.value = ''; } catch (x) {} this.cmpAttachPick(f); },
         subtitle: 'What to buy: options for one need side by side, on one tax basis, with your own photos. ' + (sample ? 'Sample data: six folding tables from your notes.' : 'Only you can see these.'),
