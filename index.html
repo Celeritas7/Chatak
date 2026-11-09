@@ -1415,6 +1415,20 @@
               </sc-if>
               <sc-if value="{{ cmp.att.already }}"><span style="font-size:11px;color:#6F6A62;">{{ cmp.att.already }}</span></sc-if>
               <sc-if value="{{ cmp.att.unmatched }}"><span style="font-size:11px;color:#8A5A1F;line-height:1.45;overflow-wrap:anywhere;">{{ cmp.att.unmatched }}</span></sc-if>
+              <sc-if value="{{ cmp.att.unmatchedRows.length }}">
+                <div style="padding:12px;border:1px solid #EAE5DD;border-radius:12px;display:flex;flex-direction:column;gap:9px;">
+                  <strong style="font-size:12px;">Assign photos to products</strong>
+                  <sc-for list="{{ cmp.att.unmatchedRows }}" as="r">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                      <span style="font-size:12px;flex:1;min-width:140px;overflow-wrap:anywhere;">{{ r.file }}</span>
+                      <select value="{{ r.selected }}" onChange="{{ r.assign }}" disabled="{{ cmp.att.running }}" aria-label="{{ r.label }}" style="flex:2;min-width:180px;padding:9px;border-radius:10px;border:1px solid #DDD7CE;background:#fff;">
+                        <option value="">Skip photo</option>
+                        <sc-for list="{{ r.options }}" as="o"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+                      </select>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
               <sc-if value="{{ cmp.att.progress }}"><span style="font-size:12px;color:#6F6A62;">{{ cmp.att.progress }}</span></sc-if>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <button onClick="{{ cmp.att.run }}" style="{{ cmp.att.runStyle }}">{{ cmp.att.runLabel }}</button>
@@ -3304,7 +3318,25 @@ class Component extends DCLogic {
     const byName = {};
     for (const f of files) byName[f.name] = f;
     const result = C.matchPhotos(files.map((f) => f.name), D.options || [], D.prices || [], D.photos || []);
-    this.setState({ cmpAttach: { status: 'review', byName, result, progress: null, error: null }, cmpError: null, cmpInfo: null });
+    this.setState({ cmpAttach: { status: 'review', byName, originalResult: result, assignments: {}, result, progress: null, error: null }, cmpError: null, cmpInfo: null });
+  }
+
+  cmpAttachAssign(file, optionId) {
+    this.setState((s) => {
+      const A = s.cmpAttach;
+      if (!A || A.status === 'running') return null;
+      const assignments = { ...(A.assignments || {}), [file]: optionId };
+      const original = A.originalResult;
+      const matches = original.matches.slice(), already = original.already.slice(), unmatched = [];
+      for (const name of original.unmatched) {
+        const id = assignments[name];
+        if (!id || !(s.cmp.options || []).some((o) => String(o.id) === String(id))) { unmatched.push(name); continue; }
+        const exists = (s.cmp.photos || []).some((p) => String(p.option_id) === String(id) && window.ChatakCompare.photoKey(p.original_name) === window.ChatakCompare.photoKey(name));
+        if (exists) already.push({ file: name, option_id: id });
+        else matches.push({ file: name, option_id: id });
+      }
+      return { cmpAttach: { ...A, assignments, result: { ...original, matches, already, unmatched } } };
+    });
   }
 
   async cmpAttachRun() {
@@ -3781,9 +3813,14 @@ class Component extends DCLogic {
           rows: R.matches.map((m) => { const o = optOf(m.option_id), c = catOf(o); return { file: m.file, option: (o ? o.name : 'Option') + (c ? ' · ' + c.name : '') }; }),
           hasRows: n > 0,
           already: R.already.length ? (R.already.length === 1 ? '1 photo is' : R.already.length + ' photos are') + ' already attached to the option that names it, and left as it is.' : '',
-          unmatched: R.unmatched.length ? 'No option names ' + (R.unmatched.length === 1 ? 'this photo' : 'these ' + R.unmatched.length + ' photos') + ', so ' + (R.unmatched.length === 1 ? 'it is' : 'they are') + ' not attached: '
-            + R.unmatched.slice(0, 12).join(', ') + (R.unmatched.length > 12 ? ' and ' + (R.unmatched.length - 12) + ' more' : '') + '. Add the file name to an option’s notes, or use Edit → Add photo.' : '',
-          hint: 'Each photo goes to the options whose notes or prices name it. Shrunk on this device to about 300 KB before upload; location data is removed.',
+          unmatched: R.unmatched.length ? R.unmatched.length + ' photo(s) not assigned yet. Select a product or leave them skipped.' : '',
+          unmatchedRows: (A.originalResult.unmatched || []).map((file) => ({
+            file, selected: A.assignments[file] || '', label: 'Product for ' + file,
+            options: (D.options || []).map((o) => { const c = catOf(o); return { id: String(o.id), label: o.name + (c ? ' · ' + c.name : '') }; }),
+            assign: (e) => this.cmpAttachAssign(file, e.target.value)
+          })),
+          running,
+          hint: 'Review the matches. Only selected photos upload to private Supabase Storage; Drive originals remain untouched. Photos are resized locally.',
           progress: A.progress, run: () => this.cmpAttachRun(), runLabel: running ? 'Attaching…' : n === 1 ? 'Attach 1 photo' : 'Attach ' + n + ' photos', runStyle: softBtn(n > 0 && !running),
           cancel: running ? null : () => this.setState({ cmpAttach: null })
         } };
