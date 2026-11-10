@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=bird-20261110">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Chatak">
+<script src="./js/chatak-install.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -158,6 +159,9 @@
       </div>
       <sc-if value="{{ perms.track }}" hint-placeholder-val="{{ true }}">
         <button class="ck-mobile-only ck-madd" onClick="{{ goAdd }}" aria-label="Track a product">+</button>
+      </sc-if>
+      <sc-if value="{{ install.showHeader }}">
+        <button onClick="{{ install.open }}" aria-label="Install Chatak on this device" style="padding:9px 12px;border-radius:11px;border:1px solid #A5D1C0;background:#E7F5EE;color:#0E6B4E;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">↓ Install</button>
       </sc-if>
       <div class="ck-desktop-only" style="margin-left:auto;display:flex;align-items:center;gap:10px;">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:#fff;border:1px solid #EAE5DD;font-size:12px;font-weight:600;color:#6F6A62;">
@@ -1918,7 +1922,17 @@
             <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-0.02em;">Settings</h1>
             <p style="margin:0;font-size:14px;color:#6F6A62;">Defaults for every product you track.</p>
           </div>
-          <sc-for list="{{ settingGroups }}" as="g" hint-placeholder-count="3">
+          <section style="padding:18px 20px;border-radius:20px;background:#F3F9F6;border:1px solid #D6E9E0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+             <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+               <img src="./icons/icon-192.png?v=bird-20261110" alt="" width="48" height="48" style="border-radius:12px;flex-shrink:0;"/>
+               <div style="display:flex;flex-direction:column;gap:3px;">
+                 <strong style="font-size:14px;">Install Chatak on your phone</strong>
+                 <span style="font-size:12px;line-height:1.45;color:#607168;">{{ install.summary }}</span>
+               </div>
+             </div>
+             <button onClick="{{ install.open }}" style="padding:11px 15px;border-radius:12px;background:#0E6B4E;border:0;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">{{ install.buttonLabel }}</button>
+           </section>
+           <sc-for list="{{ settingGroups }}" as="g" hint-placeholder-count="3">
             <div style="padding:20px 22px;border-radius:20px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:14px;">
               <h3 style="margin:0;font-size:13px;font-weight:800;letter-spacing:0.02em;">{{ g.title }}</h3>
               <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
@@ -1947,7 +1961,31 @@
         </div>
       </sc-if>
 
-      <!-- ============ ONBOARDING ============ -->
+      <!-- ============ MOBILE INSTALL GUIDE ============ -->
+       <sc-if value="{{ install.showGuide }}">
+         <div role="dialog" aria-modal="true" aria-label="Install Chatak" style="position:fixed;inset:0;background:rgba(24,34,29,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;">
+           <div style="width:100%;max-width:420px;background:#fff;border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 22px 65px rgba(0,0,0,.19);">
+             <div style="display:flex;align-items:center;gap:13px;">
+               <img src="./icons/icon-192.png?v=bird-20261110" alt="" width="64" height="64" style="border-radius:15px;flex-shrink:0;" />
+               <div style="min-width:0;">
+                 <h2 style="margin:0;font-size:20px;font-weight:800;">{{ install.guideTitle }}</h2>
+                 <p style="margin:5px 0 0;font-size:12px;line-height:1.5;color:#6F6A62;">{{ install.guideIntro }}</p>
+               </div>
+             </div>
+             <sc-for list="{{ install.steps }}" as="step">
+               <div style="display:flex;gap:10px;align-items:flex-start;">
+                 <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;border-radius:50%;background:#E2F3EA;color:#0E6B4E;font-size:12px;font-weight:800;">{{ step.number }}</span>
+                 <span style="font-size:13px;line-height:1.5;color:#4A443C;">{{ step.text }}</span>
+               </div>
+             </sc-for>
+             <sc-if value="{{ install.error }}"><p style="font-size:12px;color:#A5322A;margin:0;">{{ install.error }}</p></sc-if>
+             <sc-if value="{{ install.canPrompt }}"><button onClick="{{ install.prompt }}" style="background:#0E6B4E;color:#fff;padding:12px;border:0;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">Install Chatak</button></sc-if>
+             <button onClick="{{ install.close }}" style="border:1px solid #EAE5DD;background:#fff;padding:11px 14px;border-radius:12px;font-size:13px;font-weight:700;color:#4A443C;cursor:pointer;">Close</button>
+           </div>
+         </div>
+       </sc-if>
+
+       <!-- ============ ONBOARDING ============ -->
       <sc-if value="{{ isOnboarding }}">
         <div style="max-width:720px;margin:32px auto 0;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center;">
           <div class="ck-onboard" style="width:100%;padding:38px 34px;border-radius:26px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:20px;align-items:center;">
@@ -1997,6 +2035,8 @@ class Component extends DCLogic {
     search: 'alpinist',
     dealFilter: 'All stores',
     onboardStep: 0,
+     installStatus: { mode: 'manual', installed: false, canPrompt: false, platform: 'other' },
+     installGuideOpen: false, installError: null,
     live: null,
     alertOn: { target: true, fake: true, low: true, event: true, matrix: true },
     // Price notifier. notif = the live read (getNotifier); sampleNotif = the
@@ -2109,6 +2149,7 @@ class Component extends DCLogic {
     if (this._onBack) { document.removeEventListener('visibilitychange', this._onBack); window.removeEventListener('focus', this._onBack); }
     if (this._openFromHash) window.removeEventListener('hashchange', this._openFromHash);
     if (this._onSwMessage) navigator.serviceWorker.removeEventListener('message', this._onSwMessage);
+     if (this._installUnsub) this._installUnsub();
   }
   componentDidUpdate(_, prev) {
     this.mxSyncWherePoll();
@@ -2118,11 +2159,26 @@ class Component extends DCLogic {
     if (this.state.cmpViewPhoto && !(prev && prev.cmpViewPhoto) && this.cmpViewerRef.current) { try { this.cmpViewerRef.current.focus(); } catch (e) {} }
   }
 
-  // ---------- live data ----------
+  // ---------- mobile home-screen installation ----------
+   async installPrompt() {
+     const helper = window.ChatakInstall;
+     if (!helper) return;
+     this.setState({ installError: null });
+     const result = await helper.promptInstall();
+     if (result.result === 'accepted' || result.result === 'installed') this.setState({ installGuideOpen: false });
+     else if (result.result === 'error') this.setState({ installError: 'The browser could not start installation. Use its menu → Install app or Add to Home Screen.' });
+   }
+
+   // ---------- live data ----------
   // Runs once on mount. With no Supabase config the app stays on generated
   // fixtures and SAYS so; with config it loads the user's watchlist and hands
   // each product to the same analyse() the fixtures use.
   componentDidMount() {
+     if (window.ChatakInstall) {
+       this._installUnsub = window.ChatakInstall.subscribe((status) => {
+         this.setState({ installStatus: status, ...(status.installed ? { installGuideOpen: false } : {}) });
+       });
+     }
     // Back from Cost's shop screen: re-read the shop list (Cost owns shops).
     // Coming back to the tab also refreshes the alert inbox.
     this._onBack = () => {
@@ -5043,6 +5099,39 @@ class Component extends DCLogic {
     // Viewers read the matrix; editors and admins type into it.
     const mxv = this.matrixVals(S, this._role ? this._role.role !== 'viewer' : true);
     const nav = buildNav(nf.status === 'ready' ? unreadCount : 0, mxv.due);
+     const ist = S.installStatus || {};
+     const imode = ist.mode || 'manual';
+     const iOS = ist.platform === 'ios';
+     const android = ist.platform === 'android';
+     const installSteps = imode === 'installed' ? [
+       'Chatak is installed. Open it from your Home Screen like any other app.'
+     ] : iOS ? [
+       'Open Chatak in Safari on your iPhone or iPad.',
+       'Tap Share (square with an upward arrow), then choose Add to Home Screen.',
+       'Tap Add, then open Chatak from the Home Screen.'
+     ] : android ? [
+       'Open Chatak in Chrome on your Android phone.',
+       imode === 'prompt' ? 'Tap Install Chatak below and approve the browser prompt.' : 'Open Chrome’s ⋮ menu and choose Install app or Add to Home screen.',
+       'Launch Chatak from the new icon on your Home Screen.'
+     ] : [
+       'Open Chatak in Chrome or Edge using its secure HTTPS address.',
+       'Use the browser’s Install app menu, or its install icon in the address bar.',
+       'If the option is missing, use the latest browser version.'
+     ];
+     const install = {
+       summary: ist.installed ? 'Already installed on this device.' : 'Add Chatak to your Home Screen with its bird logo.',
+       buttonLabel: ist.installed ? 'Installed ✓' : 'How to install',
+       showHeader: !ist.installed,
+       showGuide: S.installGuideOpen,
+       guideTitle: ist.installed ? 'Chatak is installed' : 'Install Chatak',
+       guideIntro: imode === 'insecure' ? 'Installation requires HTTPS or localhost.' : 'Keep price comparisons and alerts a tap away.',
+       steps: installSteps.map((text, i) => ({ number: i + 1, text })),
+       canPrompt: imode === 'prompt',
+       error: S.installError,
+       open: () => this.setState({ installGuideOpen: true, installError: null }),
+       close: () => this.setState({ installGuideOpen: false, installError: null }),
+       prompt: () => this.installPrompt()
+     };
 
     // ---- settings ----
     const choiceRow = (label, note, key, opts) => ({
@@ -5186,7 +5275,7 @@ class Component extends DCLogic {
     const isLiveData = L.status !== 'sample';
 
     return {
-      nav, dataStrip, isEmptyLive, isSignIn, isAuthDown, perms,
+      nav, dataStrip, isEmptyLive, isSignIn, isAuthDown, perms, install,
       mx: mxv.vm, isMatrix: screen === 'matrix' && !isSignIn && !isAuthDown,
       cmp: this.compareVals(S), isCompare: screen === 'compare' && !isSignIn && !isAuthDown,
       showApp: !isSignIn && !isAuthDown,
