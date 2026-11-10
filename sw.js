@@ -1,11 +1,19 @@
-// sw.js — Chatak's service worker. Push notifications only.
+// sw.js — Chatak's network-first PWA worker and push notifications.
 //
-// There is deliberately no fetch handler and no cache: the app is served fresh
-// every time, so a stale build can never hide behind the worker. It exists to
-// receive pushes from the send-push edge function and to open the app on tap.
+// Navigation requests are always served from the network. Nothing is cached,
+// so an old build cannot hide behind the worker. This also lets browsers
+// recognize Chatak as an installable web app.
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+
+// Network-only navigation handler, deliberately without an offline cache.
+// Supabase calls, images, and external requests are not intercepted.
+self.addEventListener('fetch', (e) => {
+  if (e.request.mode === 'navigate' && new URL(e.request.url).origin === self.location.origin) {
+    e.respondWith(fetch(e.request));
+  }
+});
 
 self.addEventListener('push', (e) => {
   let m = {};
