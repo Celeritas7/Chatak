@@ -648,6 +648,15 @@ create table if not exists public.chatak_cmp_categories (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+-- Shopping need triage. Existing rows default to normal; safe to run repeatedly.
+alter table public.chatak_cmp_categories
+  add column if not exists purchase_status text not null default 'normal';
+alter table public.chatak_cmp_categories
+  drop constraint if exists chatak_cmp_categories_purchase_status_check;
+alter table public.chatak_cmp_categories
+  add constraint chatak_cmp_categories_purchase_status_check
+  check (purchase_status in ('normal', 'priority', 'bought', 'later', 'drop'));
+
 create unique index if not exists chatak_cmp_categories_name
   on public.chatak_cmp_categories (user_id, lower(name));
 
