@@ -6,6 +6,7 @@
   if (!root || root.ChatakInstall) return;
 
   let pendingPrompt = null;
+  let installedByBrowser = false;
   const subscribers = new Set();
   const nav = root.navigator || {};
   const ua = String(nav.userAgent || '');
@@ -14,7 +15,7 @@
   const android = /Android/i.test(ua);
 
   function standalone() {
-    return nav.standalone === true ||
+    return installedByBrowser || nav.standalone === true ||
       (typeof root.matchMedia === 'function' &&
         (root.matchMedia('(display-mode: standalone)').matches ||
          root.matchMedia('(display-mode: fullscreen)').matches));
@@ -74,6 +75,7 @@
     notify();
   });
   root.addEventListener('appinstalled', function () {
+    installedByBrowser = true;
     pendingPrompt = null;
     notify();
   });
