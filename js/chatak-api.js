@@ -480,6 +480,15 @@ export async function saveCmpCategory({ id, name, tax_rate }) {
   return data;
 }
 
+// One priority state per shopping need. No option or price rows are removed.
+export async function setCmpCategoryStatus(id, status) {
+  if (!['normal', 'priority', 'bought', 'later', 'drop'].includes(status)) throw new Error('Invalid need status');
+  const { data, error } = await db.from('chatak_cmp_categories')
+    .update({ purchase_status: status }).eq('id', id).select('id, purchase_status').single();
+  if (error) throw error;
+  return data;
+}
+
 export async function archiveCmpCategory(id) {
   const { error } = await db.from('chatak_cmp_categories').update({ archived: true }).eq('id', id);
   if (error) throw error;
