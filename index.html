@@ -230,6 +230,12 @@
           </div>
         </div>
 
+        <sc-if value="{{ install.showHeader }}">
+          <button onClick="{{ install.open }}" style="display:flex;align-items:center;gap:8px;padding:11px 18px;border:1px solid #BCDCCE;border-radius:12px;background:#F3F9F6;color:#0E6B4E;font-size:13px;font-weight:700;cursor:pointer;">
+            <img src="./icons/icon-192.png?v=bird-20261110" alt="" width="22" height="22" style="border-radius:6px;" />
+            Install Chatak on this device
+          </button>
+        </sc-if>
         <sc-if value="{{ auth.showForm }}">
           <div style="width:100%;max-width:376px;padding:26px;border-radius:18px;background:#fff;border:1px solid #EAE5DD;display:flex;flex-direction:column;gap:13px;">
             <label for="chatak-email" style="font-size:12px;font-weight:700;color:#1C1A17;">Email address</label>
