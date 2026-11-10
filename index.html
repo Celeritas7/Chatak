@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#17916B">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" type="image/png" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" href="./icons/icon-192.png?v=bird-20261110">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=bird-20261110">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Chatak">
 <script src="./support.js"></script>
@@ -112,7 +112,7 @@
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
   <aside class="ck-side" style="width:236px;flex:0 0 236px;padding:22px 16px;display:flex;flex-direction:column;gap:26px;background:#FFFFFF;border-right:1px solid #EAE5DD;position:sticky;top:0;height:100vh;">
     <div style="display:flex;align-items:center;gap:10px;padding:0 8px;">
-      <div style="width:30px;height:30px;border-radius:10px;background:#17916B;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;line-height:1;">चा</div>
+      <img src="./icons/icon-192.png?v=bird-20261110" alt="" width="30" height="30" style="width:30px;height:30px;border-radius:10px;object-fit:cover;flex-shrink:0;" />
       <div style="display:flex;flex-direction:column;">
         <span style="font-size:15px;font-weight:800;letter-spacing:-0.01em;">Chatak</span>
         <span style="font-size:10px;color:#6F6A62;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">चातक · cātaka</span>
@@ -151,7 +151,7 @@
 
     <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
     <header class="ck-header" style="display:flex;align-items:center;gap:16px;padding:18px 32px;border-bottom:1px solid #EAE5DD;background:rgba(246,244,240,0.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20;">
-      <button class="ck-mobile-only ck-mlogo" onClick="{{ goOnboarding }}" title="How it works" aria-label="Chatak — how it works">चा</button>
+      <button class="ck-mobile-only ck-mlogo" onClick="{{ goOnboarding }}" title="How it works" aria-label="Chatak — how it works"><img src="./icons/icon-192.png?v=bird-20261110" alt="" width="30" height="30" style="border-radius:8px;object-fit:cover;" /></button>
       <div style="flex:1;max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:#fff;border:1px solid #EAE5DD;">
         <span style="color:#6F6A62;font-size:13px;">⌕</span>
         <input value="{{ headerQuery }}" onChange="{{ onHeaderQuery }}" onKeyDown="{{ onHeaderKey }}" placeholder="Search a product, paste a store URL…" style="flex:1;border:0;outline:0;font-size:13px;background:transparent;color:#1C1A17;" />
@@ -219,7 +219,7 @@
     <sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ false }}">
       <div style="min-height:100vh;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:40px 24px;background:#F6F4F0;">
         <div style="display:flex;align-items:center;gap:11px;">
-          <div style="width:34px;height:34px;border-radius:11px;background:#17916B;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;line-height:1;">चा</div>
+          <img src="./icons/icon-192.png?v=bird-20261110" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:10px;object-fit:cover;flex-shrink:0;" />
           <div style="display:flex;flex-direction:column;">
             <span style="font-size:17px;font-weight:800;letter-spacing:-0.01em;">Chatak</span>
             <span style="font-size:10px;color:#6F6A62;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">चातक · cātaka</span>
