@@ -30,6 +30,26 @@ in `js/` — no build step, no install.
 With no credentials in `js/chatak-config.js` the app runs on generated sample
 data and says so in an amber strip under the header.
 
+## Install on mobile
+
+Chatak is an installable Progressive Web App (PWA), not an APK or App Store app.
+Open the published Chatak site over HTTPS using your phone:
+
+- **Android (Chrome):** Open Chatak, tap **↓ Install** in the header, then
+  **Install Chatak** if Chrome offers it. Alternatively choose
+  **⋮ → Install app** or **Add to Home screen**.
+- **iPhone / iPad (Safari):** Open Chatak in Safari, tap **Share**,
+  choose **Add to Home Screen**, and tap **Add**.
+- **Already installed:** Open Chatak from the Home Screen. The install
+  control hides in standalone mode.
+
+You can also see the installation guide in **Settings → Install Chatak**.
+The browser controls whether its native installation prompt is available.
+The app needs internet connectivity for live prices and Supabase data; it
+does not provide offline data caching. The Chātaka bird icon is bundled in
+`icons/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, and
+`apple-touch-icon.png`.
+
 ## Upgrading
 
 Unzip the new package over the repo folder. It contains no `js/chatak-config.js`,
