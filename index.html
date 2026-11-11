@@ -38,6 +38,7 @@
 <script src="./js/chatak-import.js"></script>
 <script src="./js/akatsuki-client.js"></script>
 <script src="https://celeritas7.github.io/Akatsuki/js/akatsuki-broadcast.js"></script>
+<script src="https://celeritas7.github.io/Akatsuki/js/akatsuki-broadcast-panel.js?v=R074"></script>
 <style>
   *{box-sizing:border-box;}
   body{margin:0;background:#F6F4F0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1C1A17;-webkit-font-smoothing:antialiased;}
@@ -393,6 +394,10 @@
             </div>
           </div>
 
+          <sc-if value="{{ canRemindProduct }}">
+            <button onClick="{{ remindProduct }}" style="padding:12px 16px;border-radius:12px;border:1px solid #17916B;background:#fff;color:#0F6B4F;font-weight:700;cursor:pointer;">Akatsuki reminder · schedule / status</button>
+            <sc-if value="{{ reminderError }}"><div role="status">{{ reminderError }}</div></sc-if>
+          </sc-if>
           <!-- Verdict take A: signal card -->
           <sc-if value="{{ verdictIsCard }}">
             <div style="{{ verdictCardStyle }}">
@@ -5282,6 +5287,16 @@ class Component extends DCLogic {
 
     return {
       nav, dataStrip, isEmptyLive, isSignIn, isAuthDown, perms, install,
+      canRemindProduct: L.status==='ready' && !!this._session,
+      reminderError: S.reminderError || '',
+      remindProduct: async () => {
+        this.setState({reminderError:''});
+        try {
+          if(!window.AkatsukiBroadcastPanel)throw new Error('Reminder editor did not load. Reopen the app online.');
+          if(!this._taskPanel)this._taskPanel=window.AkatsukiBroadcastPanel(this._api.db,{app:'chatak',hideLauncher:true}).mount();
+          await this._taskPanel.openTask({sourceTaskId:'product:'+p.id,title:('Check price: '+p.name).slice(0,120),type:'check',category:'shopping',url:location.origin+location.pathname+'#home'});
+        }catch(e){this.setState({reminderError:String(e.message||e)});}
+      },
       mx: mxv.vm, isMatrix: screen === 'matrix' && !isSignIn && !isAuthDown,
       cmp: this.compareVals(S), isCompare: screen === 'compare' && !isSignIn && !isAuthDown,
       showApp: !isSignIn && !isAuthDown,
@@ -5548,3 +5563,4 @@ class Component extends DCLogic {
 </script>
 </body>
 </html>
+
